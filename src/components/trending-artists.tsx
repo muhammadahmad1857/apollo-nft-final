@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Heart, Music } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { easeOut, motion } from 'framer-motion'
 
 const artists = [
   {
@@ -43,7 +43,7 @@ const itemVariants = {
     scale: 1,
     transition: {
       duration: 0.8,
-      ease: 'easeOut',
+      ease: easeOut,
     },
   },
 }

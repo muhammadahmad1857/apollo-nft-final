@@ -1,7 +1,7 @@
 'use client'
 
 import { Music, Mic2, Zap } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { easeOut, motion } from 'framer-motion'
 
 const steps = [
   {
@@ -39,7 +39,7 @@ const itemVariants = {
     y: 0,
     transition: {
       duration: 0.8,
-      ease: 'easeOut',
+      ease: easeOut,
     },
   },
 }

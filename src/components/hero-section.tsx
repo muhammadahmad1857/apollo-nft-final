@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Music, Play } from 'lucide-react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-
+import {easeOut,easeInOut} from "framer-motion"
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -23,7 +23,7 @@ const itemVariants = {
     y: 0,
     transition: {
       duration: 0.8,
-      ease: 'easeOut',
+      ease: easeOut,
     },
   },
 }
@@ -36,7 +36,7 @@ const imageVariants = {
     x: 0,
     transition: {
       duration: 1,
-      ease: 'easeOut',
+      ease: easeOut,
     },
   },
 }
@@ -47,7 +47,7 @@ const floatingVariants = {
     transition: {
       duration: 4,
       repeat: Infinity,
-      ease: 'easeInOut',
+      ease: easeInOut,
     },
   },
 }
@@ -83,7 +83,7 @@ export default function HeroSection() {
               className="text-lg sm:text-xl text-muted-foreground"
               variants={itemVariants}
             >
-              Discover, collect, and trade music NFTs using Apollo currency. Own a piece of your favorite artists' legacy.
+              Discover, collect, and trade music NFTs using Apollo currency. Own a piece of your favorite artists&apos; legacy.
             </motion.p>
 
             <motion.div 

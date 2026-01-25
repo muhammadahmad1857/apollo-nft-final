@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import Image from 'next/image'
 import { Moon, Sun } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { easeInOut, motion } from 'framer-motion'
 
 export default function Header() {
   const { theme, setTheme } = useTheme()
@@ -33,7 +33,7 @@ export default function Header() {
           <motion.div 
             className="relative w-10 h-10"
             animate={{ rotate: [0, 5, -5, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            transition={{ duration: 4, repeat: Infinity, ease: easeInOut }}
           >
             <Image
               src={theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'}
