@@ -145,7 +145,7 @@ export default function HeroSection() {
               className="relative w-full h-full max-w-md"
             >
               <Image
-                src={theme === 'dark' ? '/hero-vinyl-dark.png' : '/hero-vinyl-light.png'}
+                src={theme === 'dark' ? '/hero-vinyl-dark.png' : '/hero-vinyl.png'}
                 alt="Music NFT Vinyl Records"
                 fill
                 className="object-contain"
