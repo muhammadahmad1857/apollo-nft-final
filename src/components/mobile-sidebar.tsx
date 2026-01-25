@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
+import type { Variants } from "framer-motion"
 
 interface MobileSidebarProps {
   isOpen: boolean
@@ -9,7 +10,7 @@ interface MobileSidebarProps {
   navItems: Array<{ label: string; href: string }>
 }
 
-const sidebarVariants = {
+const sidebarVariants:Variants = {
   hidden: { x: -300, opacity: 0 },
   visible: {
     x: 0,
@@ -31,13 +32,13 @@ const sidebarVariants = {
   },
 }
 
-const overlayVariants = {
+const overlayVariants:Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1 },
   exit: { opacity: 0 },
 }
 
-const itemVariants = {
+const itemVariants:Variants = {
   hidden: { opacity: 0, x: -20 },
   visible: (i: number) => ({
     opacity: 1,
