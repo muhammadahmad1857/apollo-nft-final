@@ -83,7 +83,7 @@ export default function HeroSection() {
               className="text-lg sm:text-xl text-muted-foreground"
               variants={itemVariants}
             >
-              Discover, collect, and trade music NFTs using Apollo currency. Own a piece of your favorite artists&apos; legacy.
+              Discover, collect, and trade music NFTs using Apollo currency. Own a piece of your favorite artists&a legacy.
             </motion.p>
 
             <motion.div 

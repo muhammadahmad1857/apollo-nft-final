@@ -1,6 +1,6 @@
 'use client'
 
-// import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import Image from 'next/image'
 import { Moon, Sun } from 'lucide-react'
@@ -8,13 +8,13 @@ import { easeInOut, motion } from 'framer-motion'
 
 export default function Header() {
   const { theme, setTheme } = useTheme()
-  // const [mounted, setMounted] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
-  // useEffect(() => {
-  //   setMounted(true)
-  // }, [])
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
-  // if (!mounted) return null
+  if (!mounted) return null
 
   const navItems = [
     { label: 'Marketplace', href: '#' },
