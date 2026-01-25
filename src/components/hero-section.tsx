@@ -2,9 +2,9 @@
 
 import { Button } from '@/components/ui/button'
 import { Music, Play } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { easeOut,easeInOut, motion } from 'framer-motion'
 import Image from 'next/image'
-import {easeOut,easeInOut} from "framer-motion"
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -54,7 +54,7 @@ const floatingVariants = {
 
 export default function HeroSection() {
   return (
-    <section className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-background via-background to-muted">
+    <section className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 bg-linear-to-br from-background via-background to-muted">
       <div className="max-w-7xl mx-auto">
         <motion.div 
           className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center"
@@ -83,7 +83,7 @@ export default function HeroSection() {
               className="text-lg sm:text-xl text-muted-foreground"
               variants={itemVariants}
             >
-              Discover, collect, and trade music NFTs using Apollo currency. Own a piece of your favorite artists&a legacy.
+              Discover, collect, and trade music NFTs using Apollo currency. Own a piece of your favorite artists&apos; legacy.
             </motion.p>
 
             <motion.div 
@@ -133,7 +133,7 @@ export default function HeroSection() {
 
           {/* Right Side - Hero Image */}
           <motion.div 
-            className="relative h-96 sm:h-[500px] flex items-center justify-center"
+            className="relative h-96 sm:h-125 flex items-center justify-center"
             variants={imageVariants}
           >
             <motion.div

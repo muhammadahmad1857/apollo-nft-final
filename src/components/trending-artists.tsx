@@ -1,27 +1,30 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
-import { Heart, Music } from 'lucide-react'
 import { easeOut, motion } from 'framer-motion'
+import Image from 'next/image'
+import { ArrowRight } from 'lucide-react'
 
 const artists = [
   {
     id: 1,
     name: 'DJ NOVA',
     earnings: '1.0M APL VOLUME',
-    followers: '2,534',
+    tracks: '2,534 Tracks',
+    image: '/artist-1.png',
   },
   {
     id: 2,
     name: 'DJ NOVA',
     earnings: '1.0M APL VOLUME',
-    followers: '2,534',
+    tracks: '2,534 Tracks',
+    image: '/artist-2.png',
   },
   {
     id: 3,
     name: 'DJ NEVA',
-    earnings: '1.0M APL',
-    followers: '2,534',
+    earnings: '1.0M APL VOLUME',
+    tracks: '2,534 Tracks',
+    image: '/artist-3.png',
   },
 ]
 
@@ -37,10 +40,10 @@ const containerVariants = {
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, scale: 0.8 },
+  hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
-    scale: 1,
+    y: 0,
     transition: {
       duration: 0.8,
       ease: easeOut,
@@ -50,10 +53,10 @@ const itemVariants = {
 
 export default function TrendingArtists() {
   return (
-    <section className="px-4 sm:px-6 lg:px-8 py-16 bg-muted/30">
+    <section className="px-4 sm:px-6 lg:px-8 py-20 bg-background">
       <div className="max-w-7xl mx-auto">
         <motion.h2 
-          className="text-3xl sm:text-4xl font-bold mb-12"
+          className="text-3xl sm:text-4xl font-bold mb-16"
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
@@ -73,46 +76,69 @@ export default function TrendingArtists() {
             <motion.div
               key={artist.id}
               variants={itemVariants}
-              whileHover={{ y: -12 }}
-              className="rounded-xl bg-primary text-primary-foreground p-8 group hover:shadow-2xl transition-all duration-300 cursor-pointer"
+              className="group relative overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300"
             >
-              <div className="flex flex-col items-center text-center mb-6">
-                <motion.div 
-                  className="w-20 h-20 rounded-full bg-primary-foreground/20 flex items-center justify-center mb-4"
-                  whileHover={{ scale: 1.2, rotate: 360 }}
-                  transition={{ duration: 0.6 }}
-                >
-                  <Music className="w-10 h-10 opacity-50" />
-                </motion.div>
-                <motion.h3 
-                  className="text-2xl font-bold"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  {artist.name}
-                </motion.h3>
-                <p className="text-primary-foreground/75 text-sm mt-2">{artist.earnings}</p>
+              {/* Cover Image */}
+              <div className="relative h-48 overflow-hidden bg-muted">
+                <Image
+                  src={artist.image || "/placeholder.svg"}
+                  alt={artist.name}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent" />
               </div>
 
-              <div className="space-y-4 pt-6 border-t border-primary-foreground/20">
-                <motion.div 
-                  className="flex items-center justify-between text-sm"
-                  whileHover={{ x: 5 }}
+              {/* Artist Info */}
+              <div className="p-6">
+                <h3 className="text-2xl font-bold mb-1">{artist.name}</h3>
+                <p className="text-muted-foreground text-sm mb-4">{artist.earnings}</p>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Published</span>
+                    <span className="font-semibold">{artist.tracks}</span>
+                  </div>
+                </div>
+
+                <motion.button
+                  onClick={() => console.log(`Viewing ${artist.name}`)}
+                  className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium flex items-center justify-between group/btn hover:bg-primary/90 transition-colors duration-300"
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <span className="opacity-75">Followers</span>
-                  <span className="font-bold">{artist.followers}</span>
-                </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Button className="w-full bg-primary-foreground text-primary hover:bg-primary-foreground/90 transition-all">
-                    <Heart className="mr-2" size={18} />
-                    Follow
-                  </Button>
-                </motion.div>
+                  See His Work
+                  <motion.div
+                    animate={{ x: [0, 4, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <ArrowRight size={18} />
+                  </motion.div>
+                </motion.button>
               </div>
             </motion.div>
           ))}
+        </motion.div>
+         <motion.div
+          className="mt-12 flex justify-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+        >
+          <motion.button
+            onClick={() => console.log('Browse all tracks')}
+            className="px-8 py-3 bg-primary text-primary-foreground rounded-lg font-semibold flex items-center gap-2 hover:bg-primary/90 transition-colors duration-300"
+            whileHover={{ gap: 12 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Browse All Artists
+            <motion.div
+              animate={{ x: [0, 4, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <ArrowRight size={20} />
+            </motion.div>
+          </motion.button>
         </motion.div>
       </div>
     </section>

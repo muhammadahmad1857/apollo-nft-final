@@ -1,22 +1,24 @@
 'use client'
 
-import { Play } from 'lucide-react'
+import { ArrowRight, Play } from 'lucide-react'
 import { easeOut, motion } from 'framer-motion'
+import Image from 'next/image'
+import { useState } from 'react'
 
 const tracks = [
   {
     id: 1,
     title: 'Chill Vibes',
     artist: 'Luna Sky',
-    plays: '5.4K APL',
-    color: 'from-blue-500/30 to-cyan-500/30',
+    price: '5.4K APL',
+    image: '/track-1.png',
   },
   {
     id: 2,
     title: 'Cosmic Jazz',
     artist: 'Marco Synthesizer',
-    plays: '5.8K APL',
-    color: 'from-purple-500/30 to-pink-500/30',
+    price: '5.8K APL',
+    image: '/track-2.png',
   },
 ]
 
@@ -25,7 +27,7 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.2,
+      staggerChildren: 0.15,
       delayChildren: 0.1,
     },
   },
@@ -43,22 +45,29 @@ const itemVariants = {
   },
 }
 
-export default function TrendingTracks() {
+export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
+  const [playingId, setPlayingId] = useState<number | null>(null)
+
+  const handlePlay = (id: number) => {
+    setPlayingId(id)
+    setTimeout(() => setPlayingId(null), 2000)
+  }
+
   return (
-    <section className="px-4 sm:px-6 lg:px-8 py-16 bg-background">
+    <section className="px-4 sm:px-6 lg:px-8 py-20 bg-background">
       <div className="max-w-7xl mx-auto">
         <motion.h2 
-          className="text-3xl sm:text-4xl font-bold mb-12"
+          className="text-3xl sm:text-4xl font-bold mb-16"
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.8 }}
         >
-          Trending Tracks
+          {isRecent ? "Recent" : "Trending"} Tracks
         </motion.h2>
 
         <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 gap-8"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
@@ -68,39 +77,88 @@ export default function TrendingTracks() {
             <motion.div
               key={track.id}
               variants={itemVariants}
-              whileHover={{ y: -8 }}
-              className={`group relative overflow-hidden rounded-xl bg-gradient-to-br ${track.color} border border-border p-8 hover:border-accent transition-all duration-300 cursor-pointer`}
+              className="group relative overflow-hidden rounded-2xl border border-border transition-all duration-300"
             >
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <motion.h3 
-                      className="text-2xl font-bold"
-                      whileHover={{ x: 5 }}
-                    >
-                      {track.title}
-                    </motion.h3>
-                    <p className="text-muted-foreground">{track.artist}</p>
-                  </div>
-                  <motion.button 
-                    className="p-3 rounded-full bg-accent text-accent-foreground hover:shadow-lg"
-                    whileHover={{ scale: 1.15, rotate: 90 }}
-                    whileTap={{ scale: 0.9 }}
+              {/* Cover Image */}
+              <div className="relative h-48 overflow-hidden bg-muted">
+                <Image
+                  src={track.image || "/placeholder.svg"}
+                  alt={track.title}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-all duration-300" />
+
+                {/* Play Button Overlay */}
+                <button
+                  onClick={() => handlePlay(track.id)}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <motion.div
+                    className="p-4 rounded-full bg-primary/90 backdrop-blur-sm"
+                    animate={playingId === track.id ? { scale: [1, 1.2, 1] } : {}}
+                    transition={{ duration: 0.6 }}
                   >
-                    <Play className="fill-current" size={24} />
+                    <Play className="fill-primary-foreground text-primary-foreground" size={32} />
+                  </motion.div>
+                </button>
+
+                {/* Music Icon Animation on Click */}
+                {playingId === track.id && (
+                  <motion.div
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                    initial={{ opacity: 1 }}
+                    animate={{ opacity: 0, scale: 2 }}
+                    transition={{ duration: 0.8 }}
+                  >
+                    <div className="text-4xl">♪</div>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Track Info */}
+              <div className="p-6 bg-background border-t border-border">
+                <h3 className="text-xl font-bold mb-1">{track.title}</h3>
+                <p className="text-muted-foreground text-sm mb-4">{track.artist}</p>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Price</p>
+                    <p className="text-lg font-semibold">{track.price}</p>
+                  </div>
+                  <motion.button
+                    onClick={() => handlePlay(track.id)}
+                    className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium transition-all duration-300"
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Play
                   </motion.button>
                 </div>
-
-                <motion.div 
-                  className="pt-6 border-t border-border/50"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <p className="text-sm text-muted-foreground">Price</p>
-                  <p className="text-2xl font-bold">{track.plays}</p>
-                </motion.div>
               </div>
             </motion.div>
           ))}
+        </motion.div>
+         <motion.div
+          className="mt-12 flex justify-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+        >
+          <motion.button
+            onClick={() => console.log('Browse all tracks')}
+            className="px-8 py-3 bg-primary text-primary-foreground rounded-lg font-semibold flex items-center gap-2 hover:bg-primary/90 transition-colors duration-300"
+            whileHover={{ gap: 12 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Browse All Tracks
+            <motion.div
+              animate={{ x: [0, 4, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <ArrowRight size={20} />
+            </motion.div>
+          </motion.button>
         </motion.div>
       </div>
     </section>

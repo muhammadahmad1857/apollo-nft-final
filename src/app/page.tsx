@@ -2,20 +2,18 @@
 
 import Header from '@/components/header'
 import HeroSection from '@/components/hero-section'
-import GenreTags from '@/components/genre-tags'
 import TrendingTracks from '@/components/trending-tracks'
 import TrendingArtists from '@/components/trending-artists'
 import HowItWorks from '@/components/how-it-works'
 import Footer from '@/components/footer'
 
-export default function Page() {
+export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       <Header />
       <HeroSection />
-      <GenreTags />
-      <TrendingTracks />
+      <TrendingTracks isRecent={true} />
       <TrendingArtists />
       <HowItWorks />
       <Footer />
