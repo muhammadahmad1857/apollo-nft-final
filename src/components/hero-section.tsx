@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Music, Play } from 'lucide-react'
 import { easeOut,easeInOut, motion } from 'framer-motion'
 import Image from 'next/image'
+import { useTheme } from 'next-themes'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -53,6 +54,8 @@ const floatingVariants = {
 }
 
 export default function HeroSection() {
+  const { theme } = useTheme()
+
   return (
     <section className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 bg-linear-to-br from-background via-background to-muted">
       <div className="max-w-7xl mx-auto">
@@ -142,7 +145,7 @@ export default function HeroSection() {
               className="relative w-full h-full max-w-md"
             >
               <Image
-                src="/hero-vinyl.png"
+                src={theme === 'dark' ? '/hero-vinyl-dark.png' : '/hero-vinyl-light.png'}
                 alt="Music NFT Vinyl Records"
                 fill
                 className="object-contain"
