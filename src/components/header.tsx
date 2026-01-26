@@ -6,9 +6,10 @@ import Image from 'next/image'
 import { Moon, Sun, Menu } from 'lucide-react'
 import { motion } from 'framer-motion'
 import MobileSidebar from './mobile-sidebar'
+import Logo from './Logo'
 
 export default function Header() {
-  const { theme, setTheme } = useTheme()
+  const { resolvedTheme:theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -33,38 +34,27 @@ export default function Header() {
             className="flex items-center gap-3"
             whileHover={{ scale: 1.05 }}
           >
-            <motion.div 
-              className="relative w-10 h-10"
-              animate={{ rotate: [0, 5, -5, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <Image
-                src={theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'}
-                alt="Apollo NFT"
-                fill
-                className="object-contain"
-              />
-            </motion.div>
-            <motion.h1 
+            <Logo/>
+            {/* <motion.h1 
               className="text-xl font-bold tracking-tight"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
             >
               Apollo NFT
-            </motion.h1>
+            </motion.h1> */}
           </motion.div>
 
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-6">
             {navItems.map((item, idx) => (
               <motion.a
                 key={item.label}
                 href={item.href}
-                className="text-sm hover:text-accent transition-colors"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: idx * 0.1 }}
-                whileHover={{ scale: 1.1, color: 'var(--accent)' }}
+                className="text-sm text-primary transition-all hover:text-primary-foreground! hover:bg-primary/80 p-2 rounded-lg"
+                // initial={{ opacity: 0, y: -10 }}
+                // animate={{ opacity: 1, y: 0 }}
+                // transition={{ duration: 0.6, delay: idx * 0.1 }}
+                // whileHover={{ scale: 1.1, color: 'var(--primary)/30' }}
               >
                 {item.label}
               </motion.a>

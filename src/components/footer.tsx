@@ -21,7 +21,7 @@ const itemVariants = {
 
 export default function Footer() {
   return (
-    <footer className="px-4 sm:px-6 lg:px-8 py-12 bg-primary text-primary-foreground">
+    <footer className="px-4 sm:px-6 border-t border-border lg:px-8 py-12 bg-background text-primary">
       <div className="max-w-7xl mx-auto">
         <motion.div 
           className="flex flex-col sm:flex-row items-center justify-between gap-6"

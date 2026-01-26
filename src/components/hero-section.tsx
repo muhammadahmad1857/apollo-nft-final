@@ -54,7 +54,7 @@ const floatingVariants = {
 }
 
 export default function HeroSection() {
-  const { theme } = useTheme()
+  const { resolvedTheme:theme } = useTheme()
 
   return (
     <section className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 bg-linear-to-br from-background via-background to-muted">
@@ -79,7 +79,7 @@ export default function HeroSection() {
               className="text-5xl sm:text-6xl font-bold tracking-tight leading-tight"
               variants={itemVariants}
             >
-              Where Music Lives <span className="text-accent">On-Chain</span>
+              Where Music Lives <span className="dark:text-white text-black font-bold">On-Chain</span>
             </motion.h1>
 
             <motion.p 

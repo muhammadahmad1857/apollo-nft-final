@@ -46,7 +46,7 @@ const itemVariants = {
 
 export default function HowItWorks() {
   return (
-    <section className="px-4 sm:px-6 lg:px-8 py-20 bg-primary dark:bg-primary text-primary-foreground">
+    <section className="px-4 sm:px-6 lg:px-8 py-20 bg-background text-primary-foreground">
       <div className="max-w-7xl mx-auto">
         <motion.div 
           className="text-center mb-16"
@@ -55,10 +55,10 @@ export default function HowItWorks() {
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
         >
-          <motion.h2 className="text-4xl sm:text-5xl font-bold mb-4" variants={itemVariants}>
+          <motion.h2 className="text-4xl text-primary sm:text-5xl font-bold mb-4" variants={itemVariants}>
             How It Works
           </motion.h2>
-          <motion.p className="text-lg sm:text-xl text-primary-foreground/80" variants={itemVariants}>
+          <motion.p className="text-lg sm:text-xl text-primary/80" variants={itemVariants}>
             Three simple steps to start your music NFT journey
           </motion.p>
         </motion.div>
@@ -83,13 +83,13 @@ export default function HowItWorks() {
               >
                 <motion.div
                   whileHover={{ scale: 1.05 }}
-                  className="bg-primary-foreground text-primary rounded-2xl p-8 h-full flex flex-col items-center justify-center text-center"
+                  className="bg-primary text-primary-foreground rounded-2xl p-8 h-full flex flex-col items-center justify-center text-center"
                 >
                   <motion.div
                     className="mb-6 p-4 bg-primary/10 rounded-full"
                     whileHover={{ rotate: 10 }}
                   >
-                    <Icon className="w-8 h-8 text-primary" />
+                    <Icon className="w-8 h-8 text-primary-foreground" />
                   </motion.div>
                   <h3 className="text-xl font-bold">{step.title}</h3>
                 </motion.div>
