@@ -1,5 +1,5 @@
-import { AppSidebar } from '@/components/sidebar/app-sidebar-sidebar'
-import SidebarHeader from '@/components/sidebar/sidebar-headerr-header'
+import { AppSidebar } from '@/components/sidebar/app-sidebar'
+import SidebarHeader from '@/components/sidebar/sidebar-header'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
 import React from 'react'
