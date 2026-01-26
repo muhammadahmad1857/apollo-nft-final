@@ -12,17 +12,20 @@ import {
   ShoppingCart,
 } from "lucide-react"
 
-import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
+import { NavMain } from "@/components/sidebar/nav-main"
+import { NavUser } from "@/components/sidebar/nav-user"
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarRail,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar"
-import Logo from "./Logo"
+import Logo from "../Logo"
 
 // This is sample data.
 const data = {
@@ -107,7 +110,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         {/* <TeamSwitcher teams={data.teams} /> */}
+        <SidebarMenuItem>
+                <SidebarMenuButton tooltip={"Toggle sidebar"} asChild>
+                
+              <SidebarTrigger className={`-ml-1 ${state === "expanded" ? "hidden" : "block"}`} />
+                </SidebarMenuButton>
+              </SidebarMenuItem>
         <Logo show={state === "expanded"} width={150}/>
+
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

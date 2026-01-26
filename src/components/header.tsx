@@ -5,7 +5,7 @@ import { useTheme } from 'next-themes'
 import Image from 'next/image'
 import { Moon, Sun, Menu } from 'lucide-react'
 import { motion } from 'framer-motion'
-import MobileSidebar from './mobile-sidebar'
+import MobileSidebar from './sidebar/mobile-sidebar'
 import Logo from './Logo'
 
 export default function Header() {
