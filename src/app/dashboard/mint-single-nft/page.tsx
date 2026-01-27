@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useMintContract } from "@/hooks/useMint";
 import Image from "next/image";
 import { nftABIArray, nftAddress } from "@/lib/wagmi/contracts";
-import { SparklesIcon } from "@heroicons/react/24/solid";
+import { SparklesIcon } from "lucide-react";
 const PINATA_GATEWAY = "https://gateway.pinata.cloud/ipfs/";
 
 export default function MintSingleNFTPage() {
