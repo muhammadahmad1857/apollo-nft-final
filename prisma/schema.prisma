@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  walletAddress String    @unique
+  name          String
+  avatarUrl     String?
+  email         String?  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // NFTs
+  nftsCreated   NFT[]     @relation("CreatorNFTs")
+  nftsOwned     NFT[]     @relation("OwnerNFTs")
+
+  // Auctions
+  auctionsSold  Auction[] @relation("SellerAuctions")
+  auctionsWon   Auction[] @relation("HighestBidderAuctions") // Highest bidder in auctions
+
+  // Bids
+  bidsPlaced    Bid[]     @relation("BidderBids")
+
+  // Other
+  nftLikes      NFTLike[]
+  files         File[]
+}
+
+model NFT {
+  id          Int       @id @default(autoincrement())
+  tokenId     Int       @unique
+  creatorId   Int
+  ownerId     Int
+  tokenUri    String
+  royaltyBps  Int
+  mintPrice   Float
+  isListed    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  creator     User      @relation("CreatorNFTs", fields: [creatorId], references: [id])
+  owner       User      @relation("OwnerNFTs", fields: [ownerId], references: [id])
+  likes       NFTLike[]
+  auction     Auction?
+}
+
+model NFTLike {
+  id        Int     @id @default(autoincrement())
+  nftId     Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  nft  NFT  @relation(fields: [nftId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([nftId, userId])
+}
+
+model Auction {
+  id              Int       @id @default(autoincrement())
+  nftId           Int       @unique
+  sellerId        Int
+  minBid          Float
+  highestBid      Float?
+  highestBidderId Int?
+  startTime       DateTime
+  endTime         DateTime
+  settled         Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  nft            NFT       @relation(fields: [nftId], references: [id])
+  seller         User      @relation("SellerAuctions", fields: [sellerId], references: [id])
+  highestBidder  User?     @relation("HighestBidderAuctions", fields: [highestBidderId], references: [id])
+  bids           Bid[]
+}
+
+model Bid {
+  id        Int      @id @default(autoincrement())
+  auctionId Int
+  bidderId  Int
+  amount    Float
+  createdAt DateTime @default(now())
+
+  auction  Auction @relation(fields: [auctionId], references: [id])
+  bidder   User    @relation("BidderBids", fields: [bidderId], references: [id])
+}
+
+model File {
+  id         String   @id @default(uuid())
+  walletId   String
+  ipfsUrl    String
+  type       String
+  isMinted   Boolean
+  filename   String
+  createdAt  DateTime @default(now())
+
+  user       User?    @relation(fields: [walletId], references: [walletAddress], onDelete: Cascade)
+}

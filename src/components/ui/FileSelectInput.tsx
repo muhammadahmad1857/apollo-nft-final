@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 
 import CustomSelect from "./CustomSelect";
 import type { FileFromDB } from "@/types";
+import { db } from "@/lib/prisma";
 
 interface FileSelectInputProps {
   walletId: string;
@@ -26,12 +27,15 @@ const FileSelectInput = ({
     const fetchFiles = async () => {
       setIsLoading(true)
       try {
-        // Dummy data for development
-        const allFiles: FileFromDB[] = [
-          { filename: "track1.mp3", type: ".mp3", ipfsUrl: "ipfs://dummy1" },
-          { filename: "cover1.png", type: ".png", ipfsUrl: "ipfs://dummy2" },
-          { filename: "metadata1.json", type: ".json", ipfsUrl: "ipfs://dummy3" },
-        ];
+        const allFiles = await db.file.findMany({
+  where: { wallet_id: walletId, isMinted: false },
+  select: {
+    id: true,
+    ipfsUrl: true,
+    filename: true,
+    type: true,
+  },
+});
         let filteredFiles = allFiles;
         if (fileExtensions && fileExtensions.length > 0) {
           filteredFiles = allFiles.filter((file) =>

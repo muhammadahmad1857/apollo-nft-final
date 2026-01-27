@@ -3,6 +3,7 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagm
 import { toast } from "sonner";
 import type { BaseError } from "wagmi";
 import type { Abi } from "abitype";
+import { db } from "@/lib/prisma";
 
 interface UseMintContractProps {
   contractAddress: `0x${string}`;
@@ -22,21 +23,26 @@ export function useMintContract({ contractAddress, abi }: UseMintContractProps) 
   const updateMintStatus = useCallback(
     async (fileIpfsUrl: string | string[]) => {
       if (!address) return;
-      const supabase = createClient();
       const uris = Array.isArray(fileIpfsUrl) ? fileIpfsUrl : [fileIpfsUrl];
 
       for (const uri of uris) {
         try {
-          const { data, error } = await supabase
-            .from("files")
-            .select("id")
-            .eq("ipfsUrl", uri)
-            .eq("wallet_id", address)
-            .single();
+          const file = await db.file.findFirst({
+  where: {
+    ipfsUrl: uri,
+    walletId: address,
+  },
+  select: {
+    id: true,
+  },
+});
 
-          if (!data?.id || error) continue;
+          if (!file?.id) continue;
 
-          await supabase.from("files").update({ isMinted: true }).eq("id", data.id);
+          await db.file.update({
+            where: { id: file.id },
+            data: { isMinted: true },
+          });
         } catch (err) {
           console.error("Error updating mint status:", err);
         }

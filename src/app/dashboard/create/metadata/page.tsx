@@ -9,12 +9,18 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import type { MetadataFormValues } from "@/types";
+import { db } from "@/lib/prisma";
 
 export default function MetadataPage() {
   const { address, isConnected } = useAccount();
   const router = useRouter();
-  const [metadata, setMetadata] = useState<MetadataFormValues>({
+  const [metadata, setMetadata] = useState<{
+    name: string;
+    title: string;
+    description: string;
+    coverImageUrl?: string;
+    musicTrackUrl: string;
+  }>({
     name: "",
     title: "",
     description: "",
@@ -22,16 +28,9 @@ export default function MetadataPage() {
   });
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleMetadataChange = (newMetadata: MetadataFormValues) => {
+  const handleMetadataChange = (newMetadata: typeof metadata) => {
     setMetadata(newMetadata);
   };
-
-  const handleReset = () => {
-    setMetadata({ name: "", title: "", description: "", musicTrackUrl: "" });
-    toast.info("Form reset");
-  };
-
-  const canSaveMetadata = metadata.name.trim() !== "" && metadata.title.trim() !== "";
 
   const saveMetadata = async () => {
     if (!metadata.name || !metadata.title || !metadata.musicTrackUrl) {
@@ -47,12 +46,71 @@ export default function MetadataPage() {
     setIsSaving(true);
 
     try {
-      // Dummy logic for development
-      const dummyId = "dummy-id-123";
+const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
+      console.log("JWT", jwtRes);
+      if (!jwtRes.ok) {
+        throw new Error("Failed to get upload token");
+      }
+      const { JWT } = await jwtRes.json();
+      // Create metadata JSON
+      const metadataJSON = {
+        name: metadata.name,
+        title: metadata.title,
+        description: metadata.description,
+        cover: metadata.coverImageUrl || null,
+        media: metadata.musicTrackUrl,
+      };
+      console.log(metadataJSON)
+
+      // Upload metadata to Pinata with name format "name-title.json"
+     
+      const metadataFileName = `${metadata.name}-${metadata.title}.json`;
+
+      const metadataUploadRes = await fetch(
+        "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${JWT}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            pinataMetadata: {
+              name: metadataFileName,
+            },
+            pinataContent: metadataJSON,
+          }),
+        }
+      );
+
+      if (!metadataUploadRes.ok) {
+        const errorText = await metadataUploadRes.text();
+        throw new Error(errorText || "Failed to upload metadata");
+      }
+
+      const metadataJson = await metadataUploadRes.json();
+      const metadataIpfsUrl = `ipfs://${metadataJson.IpfsHash}`;
+
+      // Save metadata to Supabase
+      const data = await db.file
+            .create({data:{
+            type: ".json",
+            ipfsUrl: metadataIpfsUrl,
+            isMinted: false,
+            wallet_id: address,
+            filename: metadataFileName, // Save the filename (name-title.json)
+        }})
+        
+
+      if (!data) throw new Error("Failed to save metadata to database");
+
       toast.success("Metadata uploaded and saved to database!");
-      setTimeout(() => {
-        router.push(`/files/${dummyId}`);
-      }, 1000);
+      // Redirect to file detail page
+      if (data?.id) {
+        setTimeout(() => {
+          router.push(`/files/${data.id}`);
+        }, 1000);
+      }
     } catch (error) {
       console.log("Save error:", error);
       toast.error(
@@ -62,6 +120,14 @@ export default function MetadataPage() {
       setIsSaving(false);
     }
   };
+
+  const handleReset = () => {
+    setMetadata({ name: "", title: "", description: "", musicTrackUrl: "" });
+    toast.info("Form reset");
+  };
+
+  const canSaveMetadata =
+    metadata.name.trim() !== "" && metadata.title.trim() !== "";
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -93,7 +159,7 @@ export default function MetadataPage() {
                 initial={{ width: 0 }}
                 animate={{ width: "100%" }}
                 transition={{ duration: 0.4, delay: 0.2 }}
-                className="mt-3 h-0.5 bg-linear-to-r from-cyan-500 to-blue-500"
+                className="mt-3 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500"
               />
             </motion.div>
 

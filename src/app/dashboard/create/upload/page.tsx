@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { db } from "@/lib/prisma";
 
 export default function UploadPage() {
   const { address, isConnected } = useAccount();
@@ -49,15 +50,27 @@ export default function UploadPage() {
     //   if (error) {
     //     throw error;
     //   }
+    const data = await db.file.create({
+        data: {
+          wallet_id: address,
+          ipfsUrl: ipfsUrl,
+          type: fileType,
+          isMinted: false,
+          filename: fileName, // Save original filename from desktop
+        },
+      });
+      console.log("Saved file to database", data);
 
-setTimeout(() => {
-    toast.success("File uploaded and saved to database!");
-          router.push(`/files/`);
-        }, 1000);
+      if(!data) throw new Error("Failed to save file to database");
+
+      toast.success("File uploaded and saved to database!");
+
       // Redirect to file detail page
-    //   if (data?.id) {
-        
-    //   }
+      if (data?.id) {
+        setTimeout(() => {
+          router.push(`/files/${data.id}`);
+        }, 1000);
+       }
     } catch (error) {
       console.error("Failed to save file", error);
       toast.error("Failed to save file. Please try again.");
