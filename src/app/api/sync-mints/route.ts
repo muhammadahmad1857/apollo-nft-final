@@ -61,7 +61,6 @@ export async function GET() {
         const res = await fetch(httpUri);
         if (!res.ok) {
           console.warn(`[SYNC-MINTS] Metadata fetch failed for tokenId ${tokenId}, skipping.`);
-          continue;
         }
         const meta = await res.json();
         console.log(`[SYNC-MINTS] Metadata for tokenId ${tokenId}:`, meta);
