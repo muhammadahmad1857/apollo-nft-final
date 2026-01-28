@@ -16,14 +16,14 @@ export default function UploadPage() {
   const router = useRouter();
   const [uploadedFile, setUploadedFile] = useState<{
     ipfsUrl: string;
-    type: ".mp3" | ".mp4" | ".wav";
+    type: string;
     name: string;
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleFileUpload = async (
     ipfsUrl: string,
-    fileType: ".mp3" | ".mp4" | ".wav",
+    fileType: string,
     fileName: string
   ) => {
     setUploadedFile({ ipfsUrl, type: fileType, name: fileName });
