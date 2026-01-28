@@ -8,7 +8,6 @@ export const useUser = (address?: string) =>
     queryFn: async () => {
       if(!address) return null
       const res = await getUserByWallet(address);
-      if (!res.ok) return null;
-      return res.json();
+      return res;
     },
   });
