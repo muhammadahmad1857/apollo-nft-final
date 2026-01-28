@@ -46,7 +46,7 @@ export function FileUpload({
       // Prepare form data
       const formData = new FormData();
       formData.append("file", file);
-
+      console.log("Form Data", formData);
       // Upload to Pinata
       const uploadRes = await fetch(
         "https://api.pinata.cloud/pinning/pinFileToIPFS",
