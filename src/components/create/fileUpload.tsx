@@ -101,22 +101,22 @@ const uploadToPinata = async (file: File) => {
     });
 
     if (!signedRes.ok) throw new Error("Failed to get signed URL");
-    const { url, fields } = await signedRes.json();
+    const { data } = await signedRes.json();
 
     // 2️⃣ Prepare FormData for upload
     const formData = new FormData();
-    Object.entries(fields).forEach(([key, value]) => formData.append(key, value as string));
+    // Object.entries(fields).forEach(([key, value]) => formData.append(key, value as string));
     formData.append("file", file);
 
     // 3️⃣ Upload directly to Pinata
-    const uploadRes = await fetch(url, { method: "POST", body: formData });
+    const uploadRes = await fetch(data, { method: "POST", body: formData });
     if (!uploadRes.ok) throw new Error("Pinata upload failed");
 
-    const ipfsHash = fields.cid; // usually included in fields
+    const ipfsHash = ""; // usually included in fields
     const ipfsUrl = `ipfs://${ipfsHash}`;
 
     setUploadProgress(100);
-    onUploadComplete(ipfsUrl, file.name.split(".").pop()||"" , file.name);
+    // onUploadComplete(ipfsUrl, file.name.split(".").pop()||"" , file.name);
     toast.success("File uploaded successfully!");
   } catch (err) {
     console.error("Upload error:", err);
