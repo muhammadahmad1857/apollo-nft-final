@@ -88,6 +88,7 @@ export function FileUpload({
   //     setUploadProgress(0);
   //   }
   // };
+// eslint-disable-next-line react-hooks/exhaustive-deps
 const uploadToPinata = async (file: File) => {
   try {
     setIsUploading(true);
@@ -115,11 +116,11 @@ const uploadToPinata = async (file: File) => {
     const uploadResJson =  await uploadRes.json()
     console.log("upload response",uploadResJson)
 
-    const ipfsHash = ""; // usually included in fields
+    const ipfsHash = uploadResJson?.data.cid; // usually included in fields
     const ipfsUrl = `ipfs://${ipfsHash}`;
     console.log(ipfsHash,ipfsUrl)
     setUploadProgress(100);
-    // onUploadComplete(ipfsUrl, file.name.split(".").pop()||"" , file.name);
+    onUploadComplete(ipfsUrl, file.name.split(".").pop()||"" , file.name);
     toast.success("File uploaded successfully!");
   } catch (err) {
     console.error("Upload error:", err);

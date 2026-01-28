@@ -51,38 +51,25 @@ export function MetadataForm({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const uploadCoverImage = async (file: File) => {
     try {
+ // 1️⃣ Get signed URL from your server
+    const signedRes = await fetch("/api/pinata/signed-upload-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename: file.name }),
+    });
 
-      // Get signed JWT
-      const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
-      if (!jwtRes.ok) {
-        throw new Error("Failed to get upload token");
-      }
-    const { JWT } = await jwtRes.json();
-
-    //   const JWT =
-    //     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiIwZjYzNTg1Yy0yMTI3LTRlMjctOTI3NC1kOTE5MDUxMDgxNmEiLCJlbWFpbCI6ImFobWVkamF3YWQxODU3QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaW5fcG9saWN5Ijp7InJlZ2lvbnMiOlt7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6IkZSQTEifSx7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6Ik5ZQzEifV0sInZlcnNpb24iOjF9LCJtZmFfZW5hYmxlZCI6ZmFsc2UsInN0YXR1cyI6IkFDVElWRSJ9LCJhdXRoZW50aWNhdGlvblR5cGUiOiJzY29wZWRLZXkiLCJzY29wZWRLZXlLZXkiOiI0MjNjM2Q2NzU1Mzk2NzBmYmI5NiIsInNjb3BlZEtleVNlY3JldCI6ImU4YmZiOTlkNTA4ZGUwNTQ0NjI0MjBhZDNmZjU1OGViMzZjNzJjNjFhNWMwODc1ZWFiMjQ2YWQxZWE4NGJiMGMiLCJleHAiOjE3OTk1MTk3OTR9.tkrNj23347LGFDzEKiv2J-i0kntPOiDdPtyWns8Ge5Q";
-    //   // Prepare form data
+    if (!signedRes.ok) throw new Error("Failed to get signed URL");
+    const { data } = await signedRes.json();
       const formData = new FormData();
       formData.append("file", file);
+// 3️⃣ Upload directly to Pinata
+    const uploadRes = await fetch(data, { method: "POST", body: formData });
+    if (!uploadRes.ok) throw new Error("Pinata upload failed");
+    const uploadResJson =  await uploadRes.json()
+    console.log("upload response",uploadResJson)
 
-      // Upload to Pinata
-      const uploadRes = await fetch(
-        "https://api.pinata.cloud/pinning/pinFileToIPFS",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${JWT}`,
-          },
-          body: formData,
-        }
-      );
 
-      if (!uploadRes.ok) {
-        throw new Error("Upload failed");
-      }
-
-      const json = await uploadRes.json();
-      const ipfsHash = json.IpfsHash;
+      const ipfsHash = uploadResJson.cid;
       const ipfsUrl = `ipfs://${ipfsHash}`;
 
        onMetadataChange({

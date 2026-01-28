@@ -141,7 +141,13 @@ export function useMintContract({
 
     // Tx success
     if (isSuccess && toastIdRef.current) {
-      toast.success("Mint successful 🎉", {
+      fetch('/api/sync-mints', {
+      method: 'GET',
+      // headers: {
+      //   'x-sync-secret': process.env.NEXT_PUBLIC_SYNC_SECRET || 'dev-secret' // use public for simplicity or env
+      // }
+    }).catch(() => {});
+      toast.success("NFT minted successfully 🎉", {
         id: toastIdRef.current,
       });
 
