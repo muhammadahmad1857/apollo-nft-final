@@ -52,11 +52,16 @@ export default function UploadPage() {
     //   }
     const data = await createFile({
         
-          wallet_id: address,
           ipfsUrl: ipfsUrl,
           type: fileType,
           isMinted: false,
           filename: fileName, // Save original filename from desktop
+          user:{
+            connect:{
+
+              walletAddress: address
+            }
+          }
         
       });
       console.log("Saved file to database", data);

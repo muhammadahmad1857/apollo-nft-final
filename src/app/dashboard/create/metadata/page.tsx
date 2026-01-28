@@ -96,8 +96,13 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
             type: ".json",
             ipfsUrl: metadataIpfsUrl,
             isMinted: false,
-            wallet_id: address,
             filename: metadataFileName, // Save the filename (name-title.json)
+            user:{
+              connect:{
+                walletAddress: address
+              }
+            }
+            
         })
         
 
