@@ -73,37 +73,37 @@ export default function MintSingleNFTPage() {
   return (
     <div className="max-w-4xl mx-auto mt-10 px-4 w-full">
       <div className="mb-10 text-center">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-transparent bg-clip-text inline-block drop-shadow-lg">
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-black dark:text-white inline-block drop-shadow-lg animate-fade-in">
           Mint NFTs
         </h1>
-        <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="mt-4 text-lg text-gray-500 dark:text-gray-300 max-w-2xl mx-auto animate-fade-in delay-100">
           Effortlessly mint your unique NFT with custom metadata and royalty settings. Upload your file, preview your NFT, and set your royalty percentage with a sleek slider.
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
         {/* Preview Section */}
         <div className="flex flex-col items-center gap-6">
-          <div className="w-full aspect-square max-w-xs relative border-2 border-primary/30 rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br from-white via-gray-50 to-gray-100">
+          <div className="w-full aspect-square max-w-xs relative border-2 border-cyan-400/60 dark:border-cyan-300/40 rounded-2xl overflow-hidden shadow-xl bg-white dark:bg-black transition-all duration-300 animate-fade-in">
             {isLoadingPreview ? (
               <span className="flex items-center justify-center h-full w-full text-lg animate-pulse">Loading preview...</span>
             ) : previewUrl ? (
-              <Image src={previewUrl} alt="preview" fill className="object-contain" />
+              <Image src={previewUrl} alt="preview" fill className="object-contain transition-transform duration-500 hover:scale-105" />
             ) : (
-              <span className="flex items-center justify-center h-full w-full text-muted-foreground">No preview</span>
+              <span className="flex items-center justify-center h-full w-full text-gray-400 dark:text-gray-600">No preview</span>
             )}
           </div>
           {metaJson && (
-            <div className="w-full bg-muted/40 rounded-xl p-4 border text-left">
+            <div className="w-full bg-gray-50 dark:bg-gray-900/60 rounded-xl p-4 border border-cyan-100 dark:border-cyan-900 text-left animate-fade-in delay-200">
               <JsonWithIpfsImages data={metaJson} />
             </div>
           )}
         </div>
 
         {/* Form Section */}
-        <div className="flex flex-col gap-8 w-full">
+        <div className="flex flex-col gap-8 w-full animate-fade-in delay-150">
           <div className="flex items-center gap-3 mb-2">
-            <SparklesIcon className="w-7 h-7 text-primary" />
-            <h2 className="text-2xl font-bold">Mint Single NFT</h2>
+            <SparklesIcon className="w-7 h-7 text-cyan-500 dark:text-cyan-300 animate-sparkle" />
+            <h2 className="text-2xl font-bold text-black dark:text-white">Mint Single NFT</h2>
           </div>
           <FileSelectInput walletId={address || ""} onChange={handleFileChange} />
 
@@ -111,7 +111,7 @@ export default function MintSingleNFTPage() {
           <div className="flex flex-col gap-2">
             <label htmlFor="royalty-slider" className="font-medium text-sm flex justify-between">
               <span>Royalty Percentage</span>
-              <span className="font-semibold text-primary">{(royaltyBps / 100).toFixed(2)}%</span>
+              <span className="font-semibold text-cyan-600 dark:text-cyan-300">{(royaltyBps / 100).toFixed(2)}%</span>
             </label>
             <div className="flex items-center gap-3">
               <input
@@ -122,19 +122,26 @@ export default function MintSingleNFTPage() {
                 step={10}
                 value={royaltyBps}
                 onChange={e => setRoyaltyBps(Number(e.target.value))}
-                className="w-full accent-primary h-2 rounded-lg appearance-none bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                className="w-full accent-cyan-500 h-2 rounded-lg appearance-none bg-gray-200 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
+                style={{ boxShadow: '0 0 0 2px #06b6d4' }}
               />
-              <span className="w-12 text-right text-xs text-muted-foreground">{royaltyBps} bps</span>
+              <span className="w-12 text-right text-xs text-gray-500 dark:text-gray-400">{royaltyBps} bps</span>
             </div>
-            <span className="text-xs text-muted-foreground">Set the royalty for secondary sales (0-10%).</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">Set the royalty for secondary sales (0-10%).</span>
           </div>
 
           <Button
             onClick={handleMint}
             disabled={!selectedFile || isBusy || isMinting}
-            className="mt-4 py-3 text-base font-semibold rounded-xl shadow-md bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 transition-all"
+            className="mt-4 py-3 text-base font-semibold rounded-xl shadow-md bg-cyan-600 hover:bg-cyan-700 text-white dark:bg-cyan-500 dark:hover:bg-cyan-400 transition-all duration-200 animate-fade-in delay-200"
+            style={{ letterSpacing: 1 }}
           >
-            {isBusy || isMinting ? "Minting..." : "Mint NFT"}
+            {isBusy || isMinting ? (
+              <span className="flex items-center gap-2 animate-pulse">
+                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                Minting...
+              </span>
+            ) : "Mint NFT"}
           </Button>
         </div>
       </div>
@@ -148,10 +155,12 @@ export default function MintSingleNFTPage() {
 
 
 
+
+import React, { useState } from "react";
+
 function JsonWithIpfsImages({ data }: { data: any }) {
   const [hoveredIpfs, setHoveredIpfs] = useState<string | null>(null);
 
-  // Helper to render JSON recursively with hover events
   function renderJson(val: any): React.ReactNode {
     if (typeof val !== "object" || val === null) {
       if (typeof val === "string" && isIpfsUrl(val)) {
@@ -165,10 +174,10 @@ function JsonWithIpfsImages({ data }: { data: any }) {
             onMouseLeave={() => setHoveredIpfs(null)}
             style={{ position: "relative" }}
           >
-            <span className="text-xs break-all underline decoration-dotted decoration-primary/60 group-hover:text-primary transition-colors">
+            <span className="text-xs break-all underline decoration-dotted decoration-cyan-400/60 group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors">
               {val}
             </span>
-            <Image src={imgUrl} alt="ipfs" width={32} height={32} className="rounded shadow" />
+            <Image src={imgUrl} alt="ipfs" width={32} height={32} className="rounded shadow transition-transform duration-300 group-hover:scale-110" />
           </span>
         );
       }
@@ -194,17 +203,16 @@ function JsonWithIpfsImages({ data }: { data: any }) {
     );
   }
 
-  // If there is a hovered IPFS, show preview at the top
   return (
     <div className="relative">
       {hoveredIpfs && (
-        <div className="mb-4 flex justify-center">
-          <div className="rounded-xl border shadow-lg bg-white p-2 max-w-xs">
-            <Image src={hoveredIpfs} alt="ipfs preview" width={200} height={200} className="object-contain rounded" />
+        <div className="mb-4 flex justify-center animate-fade-in-fast">
+          <div className="rounded-xl border shadow-lg bg-white dark:bg-black p-2 max-w-xs transition-all duration-300 scale-100 opacity-100">
+            <Image src={hoveredIpfs} alt="ipfs preview" width={200} height={200} className="object-contain rounded transition-transform duration-300" />
           </div>
         </div>
       )}
-      <div className="text-xs font-mono bg-muted/30 rounded p-2 overflow-x-auto border">
+      <div className="text-xs font-mono bg-gray-100 dark:bg-gray-900 rounded p-2 overflow-x-auto border border-cyan-100 dark:border-cyan-900 transition-colors duration-300">
         {renderJson(data)}
       </div>
     </div>

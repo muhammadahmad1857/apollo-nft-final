@@ -14,15 +14,15 @@ export async function POST() {
         keyname: `Signed Upload JWT - ${Date.now()}`, // unique name
         permissions: {
           admin: true, // for scoped key
-          endpoints: {
-            pinning: {
-              pinFileToIPFS: true,
-              pinJSONToIPFS: true,
-            },
-            data: {
-              pinList: true,
-            },
-          },
+          // endpoints: {
+          //   pinning: {
+          //     pinFileToIPFS: true,
+          //     pinJSONToIPFS: true,
+          //   },
+          //   data: {
+          //     pinList: true,
+          //   },
+          // },
         },
         maxUses: 1,
       }),
@@ -34,7 +34,7 @@ export async function POST() {
     // Fallback: const url = "https://api.pinata.cloud/users/generateApiKey";
     console.log("Request URL:", url);
     const jwtResponse = await fetch(url, options);
-
+    console.log("Raw response:", jwtResponse);
     console.log("Response status:", jwtResponse.status);
     console.log("Response headers:", Object.fromEntries(jwtResponse.headers));
 
