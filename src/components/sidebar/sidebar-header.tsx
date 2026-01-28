@@ -4,7 +4,7 @@ import { SidebarTrigger, useSidebar } from '../ui/sidebar'
 import Logo from '../Logo'
 import { Separator } from '@radix-ui/react-separator'
 import ThemeToggle from '../themeToggle'
-import  ConnectButton from '@/components/ConnectButton'
+import  {CustomConnectButton} from '@/components/ConnectButton'
 
 const SidebarHeader = () => {
     const {state} = useSidebar()
@@ -24,7 +24,7 @@ const SidebarHeader = () => {
                   
                     {/* Theme toggle */}
                   <ThemeToggle />
-                  <ConnectButton />
+                  <CustomConnectButton />
                   </div>
                 </div>
               </header>
