@@ -52,6 +52,7 @@ export function MetadataForm({
   const uploadCoverImage = async (file: File) => {
     try {
  // 1️⃣ Get signed URL from your server
+ setIsUploadingCover(true);
     const signedRes = await fetch("/api/pinata/signed-upload-url", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

@@ -254,7 +254,7 @@ export default function FileDetailPage() {
                 ? "You don't have permission to view this file"
                 : "File not found"}
             </p>
-            <Button onClick={() => router.push("/files")}>
+            <Button onClick={() => router.push("/dashboard/files")}>
               Go to My Files
             </Button>
           </div>

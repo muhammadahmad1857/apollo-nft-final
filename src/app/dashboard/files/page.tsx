@@ -175,7 +175,7 @@ export default function FilesPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push(`/files/${file.id}`)}
+                        onClick={() => router.push(`/dashboard/files/${file.id}`)}
                         className="gap-2"
                       >
                         <Eye className="h-4 w-4" />
