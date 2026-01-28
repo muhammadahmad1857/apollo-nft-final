@@ -1,60 +1,97 @@
-"use server"
-import db from '@/lib/prisma';
-import { Prisma, File } from '@prisma/client';
+"use server";
 
-// --- CREATE ---
-export async function createFile(data: Prisma.FileCreateInput): Promise<File> {
-  return db.file.create({ data });
-}
+import { db } from "@/lib/prisma";
+import {
+  FileCreateInput,
+  FileUpdateInput,
+  FileModel as PrismaFile,
+  
+} from "@/generated/prisma/models";
 
-// --- READ ---
-// Find all files by wallet ID
-export async function getFilesByWallet(walletId: string, minted?: boolean): Promise<File[]> {
-  return db.file.findMany({
-    where: {
-      wallet_id: walletId,
-      ...(minted !== undefined ? { isMinted: minted } : {}),
-    },
-    select: {
-      id: true,
-      ipfsUrl: true,
-      filename: true,
-      type: true,
-      isMinted: true,
-    },
-    orderBy: { createdAt: 'desc' },
+/* ----------------------------------------
+   CREATE
+---------------------------------------- */
+export async function createFile(
+  data: FileCreateInput
+): Promise<PrismaFile> {
+  return db.file.create({
+    data,
   });
 }
 
-// Find a single file by ID
-export async function getFileById(id: number): Promise<File | null> {
-  return db.file.findUnique({ where: { id } });
+/* ----------------------------------------
+   READ
+---------------------------------------- */
+
+// Get all files by wallet
+export async function getFilesByWallet(
+  walletId: string,
+  minted?: boolean
+): Promise<PrismaFile[]> {
+  return db.file.findMany({
+    where: {
+      walletId,
+      ...(minted !== undefined ? { isMinted: minted } : {}),
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 }
 
-// --- UPDATE ---
-// Update file by ID
-export async function updateFile(id: number, data: Prisma.FileUpdateInput): Promise<File> {
+// Get single file by ID
+export async function getFileById(
+  id: string
+): Promise<PrismaFile | null> {
+  return db.file.findUnique({
+    where: { id },
+  });
+}
+
+/* ----------------------------------------
+   UPDATE
+---------------------------------------- */
+
+// Update one file
+export async function updateFile(
+  id: string,
+  data: FileUpdateInput
+): Promise<PrismaFile> {
   return db.file.update({
     where: { id },
     data,
   });
 }
 
-// Update multiple files by wallet ID
-export async function updateFilesByWallet(walletId: string, data: Prisma.FileUpdateInput): Promise<Prisma.BatchPayload> {
+// Update all files for a wallet
+export async function updateFilesByWallet(
+  walletId: string,
+  data: FileUpdateInput
+): Promise<{ count: number }> {
   return db.file.updateMany({
-    where: { wallet_id: walletId },
+    where: { walletId },
     data,
   });
 }
 
-// --- DELETE ---
-// Delete file by ID
-export async function deleteFile(id: number): Promise<File> {
-  return db.file.delete({ where: { id } });
+/* ----------------------------------------
+   DELETE
+---------------------------------------- */
+
+// Delete single file
+export async function deleteFile(
+  id: string
+): Promise<PrismaFile> {
+  return db.file.delete({
+    where: { id },
+  });
 }
 
-// Delete multiple files by wallet ID
-export async function deleteFilesByWallet(walletId: string): Promise<Prisma.BatchPayload> {
-  return db.file.deleteMany({ where: { wallet_id: walletId } });
+// Delete all files for a wallet
+export async function deleteFilesByWallet(
+  walletId: string
+): Promise<{ count: number }> {
+  return db.file.deleteMany({
+    where: { walletId },
+  });
 }

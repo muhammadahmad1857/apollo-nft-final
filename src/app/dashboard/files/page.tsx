@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 
 import type { FileData } from "@/types";
-import { getFilesByWallet } from "@/lib/prismaFile"; // <-- our CRUD helper
+import { getFilesByWallet } from "@/actions/files"; // <-- our CRUD helper
 
 export default function FilesPage() {
   const { address, isConnected } = useAccount();
@@ -46,7 +46,7 @@ export default function FilesPage() {
         const mappedFiles: FileData[] = dbFiles.map((f) => ({
           id: f.id.toString(),
           created_at: f.createdAt.toISOString(),
-          wallet_id: f.wallet_id,
+          wallet_id: f.walletId,
           ipfsUrl: f.ipfsUrl,
           type: f.type,
           isMinted: f.isMinted,

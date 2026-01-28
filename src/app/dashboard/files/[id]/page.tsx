@@ -25,15 +25,7 @@ import { toast } from "sonner";
 import { getFileById } from "@/actions/files"; // <-- Our generic CRUD helper
 
 
-interface FileData {
-  id: string;
-  created_at: string;
-  wallet_id: string;
-  ipfsUrl: string;
-  type: string;
-  isMinted: boolean;
-  filename?: string | null;
-}
+import type { FileModel as FileData } from "@/generated/prisma/models";
 
 interface MetadataContent {
   name?: string;
@@ -89,10 +81,10 @@ export default function FileDetailPage() {
 
         // const fileData = data[0];
         // Dummy data for development
-        const fileData: FileData = await getFileById(fileId);
-
+        const fileData: FileData | null = await getFileById(fileId);
+        if(!fileData) return;
         // Security check - wallet ownership
-        if (fileData.wallet_id.toLowerCase() !== address.toLowerCase()) {
+        if (fileData.walletId.toLowerCase() !== address.toLowerCase()) {
           setUnauthorized(true);
           setLoading(false);
           return;
@@ -510,7 +502,7 @@ export default function FileDetailPage() {
                   <span>Created At</span>
                 </div>
                 <p className="text-zinc-900 dark:text-zinc-100 font-medium">
-                  {new Date(file.created_at).toLocaleString()}
+                  {new Date(file.createdAt).toLocaleString()}
                 </p>
               </div>
 
@@ -520,7 +512,7 @@ export default function FileDetailPage() {
                   <span>Wallet Address</span>
                 </div>
                 <p className="text-zinc-900 dark:text-zinc-100 font-mono text-sm break-all">
-                  {file.wallet_id}
+                  {file.walletId}
                 </p>
               </div>
 

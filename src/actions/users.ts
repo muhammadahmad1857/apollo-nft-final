@@ -1,51 +1,94 @@
-"use server"
-import {db} from '@/lib/prisma'; // your prisma client
-import { Prisma, User } from '@prisma/client';
+"use server";
 
-// --- CREATE ---
-export async function createUser(data: Prisma.UserCreateInput): Promise<User> {
-  return db.user.upsert({ where: { walletAddress: data.walletAddress }, update: data, create: data });
+import { db } from "@/lib/prisma";
+import {
+  UserCreateInput,
+  UserUpdateInput,
+  UserModel as PrismaUser,
+} from "@/generated/prisma/models";
+
+/* ----------------------------------------
+   CREATE / UPSERT (by wallet)
+---------------------------------------- */
+export async function createUser(
+  data: UserCreateInput
+): Promise<PrismaUser> {
+  return db.user.upsert({
+    where: { walletAddress: data.walletAddress },
+    update: data,
+    create: data,
+  });
 }
 
-// --- READ ---
-export async function getUserById(id: number): Promise<User | null> {
-  return db.user.findUnique({ where: { id } });
+/* ----------------------------------------
+   READ
+---------------------------------------- */
+
+// Get user by ID
+export async function getUserById(
+  id: number
+): Promise<PrismaUser | null> {
+  return db.user.findUnique({
+    where: { id },
+  });
 }
 
-export async function getUserByWallet(walletAddress: string): Promise<User | null> {
-  return db.user.findUnique({ where: { walletAddress } });
+// Get user by wallet address
+export async function getUserByWallet(
+  walletAddress: string
+): Promise<PrismaUser | null> {
+  return db.user.findUnique({
+    where: { walletAddress },
+  });
 }
 
-export async function getAllUsers(take?: number, skip?: number): Promise<User[]> {
-  return db.user.findMany({ take, skip, orderBy: { createdAt: 'desc' } });
+// Get all users (pagination supported)
+export async function getAllUsers(
+  take?: number,
+  skip?: number
+): Promise<PrismaUser[]> {
+  return db.user.findMany({
+    take,
+    skip,
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 }
 
-// --- UPDATE ---
+/* ----------------------------------------
+   UPDATE
+---------------------------------------- */
+
+// Update user by ID
 export async function updateUser(
   id: number,
-  data: Prisma.UserUpdateInput
-): Promise<User> {
+  data: UserUpdateInput
+): Promise<PrismaUser> {
   return db.user.update({
     where: { id },
     data,
   });
 }
 
+// Update user by wallet address
 export async function updateUserByWallet(
   walletAddress: string,
-  data: Prisma.UserUpdateInput
-): Promise<User> {
+  data: UserUpdateInput
+): Promise<PrismaUser> {
   return db.user.update({
     where: { walletAddress },
     data,
   });
 }
 
-// --- UPSERT ---
+/* ----------------------------------------
+   UPSERT (explicit)
+---------------------------------------- */
 export async function upsertUser(
   walletAddress: string,
-  data: Prisma.UserCreateInput & Prisma.UserUpdateInput
-): Promise<User> {
+  data: UserCreateInput & UserUpdateInput
+): Promise<PrismaUser> {
   return db.user.upsert({
     where: { walletAddress },
     create: data,
@@ -53,11 +96,24 @@ export async function upsertUser(
   });
 }
 
-// --- DELETE ---
-export async function deleteUser(id: number): Promise<User> {
-  return db.user.delete({ where: { id } });
+/* ----------------------------------------
+   DELETE
+---------------------------------------- */
+
+// Delete user by ID
+export async function deleteUser(
+  id: number
+): Promise<PrismaUser> {
+  return db.user.delete({
+    where: { id },
+  });
 }
 
-export async function deleteUserByWallet(walletAddress: string): Promise<User> {
-  return db.user.delete({ where: { walletAddress } });
+// Delete user by wallet address
+export async function deleteUserByWallet(
+  walletAddress: string
+): Promise<PrismaUser> {
+  return db.user.delete({
+    where: { walletAddress },
+  });
 }
