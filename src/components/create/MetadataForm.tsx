@@ -57,9 +57,10 @@ export function MetadataForm({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ filename: file.name }),
     });
-
+    
     if (!signedRes.ok) throw new Error("Failed to get signed URL");
     const { data } = await signedRes.json();
+    console.log("signed response",data)
       const formData = new FormData();
       formData.append("file", file);
 // 3️⃣ Upload directly to Pinata

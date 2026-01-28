@@ -46,7 +46,7 @@ export default function CreatePage() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: 0.1 }}
-                onClick={() => handleNavigate("/create/upload")}
+                onClick={() => handleNavigate("/dashboard/create/upload")}
                 className="group relative cursor-pointer rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 p-8 hover:border-cyan-500 dark:hover:border-cyan-500 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/20"
               >
                 <div className="flex flex-col items-center text-center space-y-4">
@@ -74,7 +74,7 @@ export default function CreatePage() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: 0.2 }}
-                onClick={() => handleNavigate("/create/metadata")}
+                onClick={() => handleNavigate("/dashboard/create/metadata")}
                 className="group relative cursor-pointer rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 p-8 hover:border-cyan-500 dark:hover:border-cyan-500 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/20"
               >
                 <div className="flex flex-col items-center text-center space-y-4">

@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
       date: Math.floor(Date.now() / 1000),
       expires,
       max_file_size: maxFileSize,
-      allow_mime_types: ["audio/mpeg", "audio/wav", "video/mp4"],
+      allow_mime_types: ["audio/mpeg", "audio/wav", "video/mp4","image/*"],
       filename,
       keyvalues: { uploadedBy: "nextjs-client" },
     };

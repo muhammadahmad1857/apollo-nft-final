@@ -83,16 +83,27 @@ const data = {
         },
         {
           title: "Batch Minting",
-          url: "/dashboard/batch-minting",
+          url: "/dashboard/batch-mint-nft",
         },
        
       ],
     },
+
     {
       title: "Files",
       url: "/dashboard/files",
       icon: Files,
-     
+     items: [
+        {
+          title: "Create New",
+          url: "/dashboard/create",
+        },
+        {
+          title: "View Existing",
+          url: "/dashboard/files",
+        },
+       
+      ],
     },
     {
       title: "MarketPlace",
