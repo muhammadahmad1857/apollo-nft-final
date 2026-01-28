@@ -1,50 +1,42 @@
+import { useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import {createUser} from "@/actions/users"
-export type Account = {
-  address: string;
-  balanceDecimals?: string;
-  balanceFormatted?: string;
-  balanceSymbol?: string;
-  displayBalance?: string;
-  displayName: string;
-  ensAvatar?: string;
-  ensName?: string;
-  hasPendingTransactions: boolean;
-};
-
+import { useAccount, useEnsName, useEnsAvatar } from 'wagmi';
+import { createUser, getUserByWallet } from '@/actions/users';
 
 export const CustomConnectButton = () => {
+  const { address, isConnected } = useAccount();
+  const { data: ensName } = useEnsName({ address });
+  const { data: ensAvatar } = useEnsAvatar({ universalResolverAddress: address });
 
-  // // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // const saveUser = async (account: any) => {
-  //   try {
-  //     await fetch('/api/users', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({
-  //         address: account.address,
-  //         name: account.displayName || account.ensName || 'Unnamed',
-  //         avatar: account?.ensAvatar || null,
-  //       }),
-  //     });
-  //   } catch (err) {
-  //     console.error('Failed to save user', err);
-  //   }
-  // };
+  useEffect(() => {
+    const registerUser = async () => {
+      if (!address) return;
+
+      try {
+        // 1️⃣ Check if user already exists
+        const existingUser = await getUserByWallet(address);
+        if (existingUser) return; // already exists, do nothing
+
+        // 2️⃣ Create user with ENS info
+        await createUser({
+          walletAddress: address,
+          name: ensName || 'Unnamed',
+          avatarUrl: ensAvatar || null,
+        });
+      } catch (err) {
+        console.error('Failed to create user', err);
+      }
+    };
+
+    if (isConnected) registerUser();
+  }, [isConnected, address, ensName, ensAvatar]);
 
   return (
     <ConnectButton.Custom>
       {({ account, chain, openAccountModal, openChainModal, openConnectModal, authenticationStatus, mounted }) => {
         const ready = mounted && authenticationStatus !== 'loading';
-        const connected = ready && account && chain && (!authenticationStatus || authenticationStatus === 'authenticated');
-
-        // Perform saving once connected
-        if (connected && account) createUser({
-          walletAddress:account.address,
-          name:account.displayName || account.ensName || 'Unnamed',
-          avatarUrl:account?.ensAvatar || null,
-
-        });
+        const connected =
+          ready && account && chain && (!authenticationStatus || authenticationStatus === 'authenticated');
 
         return (
           <div
@@ -65,7 +57,16 @@ export const CustomConnectButton = () => {
               <div style={{ display: 'flex', gap: 12 }}>
                 <button onClick={openChainModal} style={{ display: 'flex', alignItems: 'center' }} type="button">
                   {chain.hasIcon && (
-                    <div style={{ background: chain.iconBackground, width: 12, height: 12, borderRadius: 999, overflow: 'hidden', marginRight: 4 }}>
+                    <div
+                      style={{
+                        background: chain.iconBackground,
+                        width: 12,
+                        height: 12,
+                        borderRadius: 999,
+                        overflow: 'hidden',
+                        marginRight: 4,
+                      }}
+                    >
                       {chain.iconUrl && <img alt={chain.name ?? 'Chain icon'} src={chain.iconUrl} style={{ width: 12, height: 12 }} />}
                     </div>
                   )}
