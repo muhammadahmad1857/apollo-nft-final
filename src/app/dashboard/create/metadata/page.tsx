@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { db } from "@/lib/prisma";
+import { createFile } from "@/actions/files";
 
 export default function MetadataPage() {
   const { address, isConnected } = useAccount();
@@ -92,14 +92,13 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
       const metadataIpfsUrl = `ipfs://${metadataJson.IpfsHash}`;
 
       // Save metadata to Supabase
-      const data = await db.file
-            .create({data:{
+      const data = await createFile({
             type: ".json",
             ipfsUrl: metadataIpfsUrl,
             isMinted: false,
             wallet_id: address,
             filename: metadataFileName, // Save the filename (name-title.json)
-        }})
+        })
         
 
       if (!data) throw new Error("Failed to save metadata to database");

@@ -7,7 +7,7 @@ import { Moon, Sun, Menu } from 'lucide-react'
 import { motion } from 'framer-motion'
 import MobileSidebar from './sidebar/mobile-sidebar'
 import Logo from './Logo'
-
+import {CustomConnectButton} from "./ConnectButton"
 export default function Header() {
   const { resolvedTheme:theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -84,6 +84,7 @@ export default function Header() {
             >
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </motion.button>
+            <CustomConnectButton/>
           </div>
         </div>
       </header>

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { db } from "@/lib/prisma";
+import { createFile } from "@/actions/files";
 
 export default function UploadPage() {
   const { address, isConnected } = useAccount();
@@ -50,14 +50,14 @@ export default function UploadPage() {
     //   if (error) {
     //     throw error;
     //   }
-    const data = await db.file.create({
-        data: {
+    const data = await createFile({
+        
           wallet_id: address,
           ipfsUrl: ipfsUrl,
           type: fileType,
           isMinted: false,
           filename: fileName, // Save original filename from desktop
-        },
+        
       });
       console.log("Saved file to database", data);
 

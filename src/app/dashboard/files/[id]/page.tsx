@@ -22,6 +22,8 @@ import {
   Download,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getFileById } from "@/actions/files"; // <-- Our generic CRUD helper
+
 
 interface FileData {
   id: string;
@@ -87,15 +89,8 @@ export default function FileDetailPage() {
 
         // const fileData = data[0];
         // Dummy data for development
-        const fileData: FileData = {
-            id: fileId,
-            created_at: new Date().toISOString(),
-            wallet_id: address,
-            ipfsUrl: "ipfs://dummy1",
-            type: ".mp3",
-            isMinted: false,
-            filename: "track1.mp3",
-            };
+        const fileData: FileData = await getFileById(fileId);
+
         // Security check - wallet ownership
         if (fileData.wallet_id.toLowerCase() !== address.toLowerCase()) {
           setUnauthorized(true);

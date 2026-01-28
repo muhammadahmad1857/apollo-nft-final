@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 
 import type { FileData } from "@/types";
+import { getFilesByWallet } from "@/lib/prismaFile"; // <-- our CRUD helper
 
 export default function FilesPage() {
   const { address, isConnected } = useAccount();
@@ -30,38 +31,42 @@ export default function FilesPage() {
   useEffect(() => {
     const fetchFiles = async () => {
       if (!address) {
+        setFiles([]);
         setLoading(false);
         return;
       }
 
       setLoading(true);
-      // Dummy data for development
-      const dummyFiles: FileData[] = [
-        {
-          id: "1",
-          created_at: new Date().toISOString(),
-          wallet_id: address,
-          ipfsUrl: "ipfs://dummy1",
-          type: ".mp3",
-          isMinted: false,
-          filename: "track1.mp3",
-        },
-        {
-          id: "2",
-          created_at: new Date().toISOString(),
-          wallet_id: address,
-          ipfsUrl: "ipfs://dummy2",
-          type: ".png",
-          isMinted: true,
-          filename: "cover1.png",
-        },
-      ];
-      setFiles(dummyFiles);
-      setLoading(false);
+
+      try {
+        // Fetch all files for this wallet (non-minted first, or all if you prefer)
+        const dbFiles = await getFilesByWallet(address);
+
+        // Map to FileData type if needed
+        const mappedFiles: FileData[] = dbFiles.map((f) => ({
+          id: f.id.toString(),
+          created_at: f.createdAt.toISOString(),
+          wallet_id: f.wallet_id,
+          ipfsUrl: f.ipfsUrl,
+          type: f.type,
+          isMinted: f.isMinted,
+          filename: f.filename,
+        }));
+
+        setFiles(mappedFiles);
+      } catch (err) {
+        console.error("Failed to fetch files:", err);
+        setFiles([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     if (isConnected) {
       fetchFiles();
+    } else {
+      setFiles([]);
+      setLoading(false);
     }
   }, [address, isConnected]);
 
@@ -72,26 +77,26 @@ export default function FilesPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <div className="mx-auto max-w-7xl px-6 py-12">
-        
-       <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="text-center px-6"
-    >
-      <h1 className="text-3xl font-semibold relative inline-block">
-        My Files
         <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: "100%" }}
-          transition={{ duration: 0.7, delay: 0.3 }}
-          className="absolute bottom-0 left-0 h-0.5 bg-linear-to-r from-cyan-400 to-blue-500"
-        />
-      </h1>
-      <p className="mt-4 text-zinc-600 dark:text-zinc-400">
-        Browse and manage your audio files
-      </p>
-    </motion.div>
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center px-6"
+        >
+          <h1 className="text-3xl font-semibold relative inline-block">
+            My Files
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: "100%" }}
+              transition={{ duration: 0.7, delay: 0.3 }}
+              className="absolute bottom-0 left-0 h-0.5 bg-linear-to-r from-cyan-400 to-blue-500"
+            />
+          </h1>
+          <p className="mt-4 text-zinc-600 dark:text-zinc-400">
+            Browse and manage your audio files
+          </p>
+        </motion.div>
+
         {!isConnected ? (
           <div className="flex items-center justify-center h-96">
             <div className="text-center">

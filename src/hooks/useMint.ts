@@ -3,7 +3,8 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagm
 import { toast } from "sonner";
 import type { BaseError } from "wagmi";
 import type { Abi } from "abitype";
-import { db } from "@/lib/prisma";
+
+import { getFilesByWallet, updateFile } from "@/actions/files"; // our CRUD helpers
 
 interface UseMintContractProps {
   contractAddress: `0x${string}`;
@@ -20,6 +21,7 @@ export function useMintContract({ contractAddress, abi }: UseMintContractProps) 
   const { isLoading: isConfirming, isSuccess, isError: txError, error: txReceiptError } =
     useWaitForTransactionReceipt({ hash: txHash });
 
+  // --- Update mint status for given URIs using our generic helpers ---
   const updateMintStatus = useCallback(
     async (fileIpfsUrl: string | string[]) => {
       if (!address) return;
@@ -27,22 +29,13 @@ export function useMintContract({ contractAddress, abi }: UseMintContractProps) 
 
       for (const uri of uris) {
         try {
-          const file = await db.file.findFirst({
-  where: {
-    ipfsUrl: uri,
-    walletId: address,
-  },
-  select: {
-    id: true,
-  },
-});
+          // Use helper to get files by wallet & URI
+          const files = await getFilesByWallet(address, false);
+          const file = files.find((f) => f.ipfsUrl === uri);
 
           if (!file?.id) continue;
 
-          await db.file.update({
-            where: { id: file.id },
-            data: { isMinted: true },
-          });
+          await updateFile(file.id, { isMinted: true });
         } catch (err) {
           console.error("Error updating mint status:", err);
         }
@@ -51,6 +44,7 @@ export function useMintContract({ contractAddress, abi }: UseMintContractProps) 
     [address]
   );
 
+  // --- Mint function ---
   const mint = useCallback(
     async ({
       tokenURIs,
@@ -84,16 +78,17 @@ export function useMintContract({ contractAddress, abi }: UseMintContractProps) 
           args: isBatch
             ? [urisArray[0], quantity, royaltyBps] // batchMint uses first URI + quantity
             : [urisArray[0], royaltyBps],
-          value: BigInt(0), // or handle MINT_PRICE * quantity if you pass it
+          value: BigInt(0), // handle MINT_PRICE * quantity if needed
         });
       } catch (err) {
         console.error(err);
+        setIsBusy(false);
       }
     },
     [abi, contractAddress, isConnected, writeContract]
   );
 
-  // Handle toast notifications
+  // --- Handle toast notifications ---
   const handleToasts = () => {
     // Write errors
     if (writeError) {
@@ -108,7 +103,8 @@ export function useMintContract({ contractAddress, abi }: UseMintContractProps) 
 
     if (isSuccess && toastIdRef.current) {
       toast.success("Mint successful 🎉", { id: toastIdRef.current });
-      updateMintStatus(writeError ? [] : txHash); // optionally pass URIs
+      // Update mint status using our helper
+      updateMintStatus(writeError ? [] : txHash);
       toastIdRef.current = null;
       setIsBusy(false);
     }
