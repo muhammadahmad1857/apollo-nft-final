@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -146,7 +147,6 @@ export default function MintSingleNFTPage() {
 ======================= */
 
 
-import React, { useState } from "react";
 
 function JsonWithIpfsImages({ data }: { data: any }) {
   const [hoveredIpfs, setHoveredIpfs] = useState<string | null>(null);
