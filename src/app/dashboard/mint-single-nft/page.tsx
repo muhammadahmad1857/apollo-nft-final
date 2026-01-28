@@ -91,7 +91,7 @@ export default function MintSingleNFTPage() {
             <SparklesIcon className="w-7 h-7 text-cyan-500 dark:text-cyan-300 animate-sparkle" />
             <h2 className="text-2xl font-bold text-black dark:text-white">Mint Single NFT</h2>
           </div>
-          <FileSelectInput walletId={address || ""} onChange={handleFileChange} />
+          <FileSelectInput walletId={address || ""} onChange={handleFileChange} fileExtensions={[".json"]} />
 
           {/* Royalty Slider */}
           <div className="flex flex-col gap-2">

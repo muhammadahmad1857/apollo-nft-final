@@ -120,7 +120,7 @@ const uploadToPinata = async (file: File) => {
     const ipfsUrl = `ipfs://${ipfsHash}`;
     console.log(ipfsHash,ipfsUrl)
     setUploadProgress(100);
-    onUploadComplete(ipfsUrl, file.name.split(".").pop()||"" , file.name);
+    onUploadComplete(ipfsUrl, `.${file.name.split(".").pop()}`||"" , file.name);
     toast.success("File uploaded successfully!");
   } catch (err) {
     console.error("Upload error:", err);
