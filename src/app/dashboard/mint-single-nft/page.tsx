@@ -42,7 +42,9 @@ export default function MintSingleNFTPage() {
     try {
       const url = `${PINATA_GATEWAY}${ipfsUrl.replace(/^ipfs\//, "")}`;
       const res = await fetch(url);
+      console.log("Fetched metadata from:", url); 
       const meta = await res.json();
+      console.log("Metadata:", meta);
 
       setMetaJson(meta);
       setMetaName(meta.name || "");
