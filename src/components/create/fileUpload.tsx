@@ -94,7 +94,7 @@ const uploadToPinata = async (file: File) => {
     setUploadProgress(0);
 
     // 1️⃣ Get signed URL from your server
-    const signedRes = await fetch("/api/pinata/signed-url", {
+    const signedRes = await fetch("/api/pinata/signed-upload-url", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ filename: file.name }),

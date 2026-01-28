@@ -106,7 +106,7 @@ export function useMintContract({
           args: isBatch
             ? [urisArray[0], quantity, royaltyBps]
             : [urisArray[0], royaltyBps],
-          value: BigInt(0),
+          value: !isBatch ? BigInt(0.1 * 1e18):BigInt(0.1 * 1e18) * BigInt(quantity),
         });
       } catch (err) {
         console.error(err);
