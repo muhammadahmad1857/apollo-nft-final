@@ -47,7 +47,7 @@ export default function TokenDetailsPage() {
           <div className="flex flex-col gap-2">
             <div className="bg-blue-50 rounded-xl p-4 shadow-inner">
               <div className="text-xs text-gray-500">Name</div>
-              <div className="text-lg font-bold text-blue-900">{token.name || "-"}</div>
+              <div className="text-lg font-bold text-blue-900">{token.tokenId || "-"}</div>
             </div>
             <div className="bg-blue-50 rounded-xl p-4 shadow-inner">
               <div className="text-xs text-gray-500">Owner</div>
