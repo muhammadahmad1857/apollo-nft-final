@@ -153,11 +153,6 @@ export default function MintSingleNFTPage() {
    Helper Components
 ======================= */
 
-
-
-
-import React, { useState } from "react";
-
 function JsonWithIpfsImages({ data }: { data: any }) {
   const [hoveredIpfs, setHoveredIpfs] = useState<string | null>(null);
 
