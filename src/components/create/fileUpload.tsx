@@ -28,66 +28,109 @@ export function FileUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const acceptedTypes = [".mp3", ".wav", ".mp4"];
+  // const uploadToPinata = async (file: File) => {
+  //   try {
+  //     setIsUploading(true);
+  //     setUploadProgress(0);
+
+  //     // Get signed JWT
+  //     const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
+  //     console.log("JWT", jwtRes);
+  //     if (!jwtRes.ok) {
+  //       throw new Error("Failed to get upload token");
+  //     }
+  //     const { JWT } = await jwtRes.json();
+  //   //   const JWT =
+  //   //     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiIwZjYzNTg1Yy0yMTI3LTRlMjctOTI3NC1kOTE5MDUxMDgxNmEiLCJlbWFpbCI6ImFobWVkamF3YWQxODU3QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaW5fcG9saWN5Ijp7InJlZ2lvbnMiOlt7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6IkZSQTEifSx7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6Ik5ZQzEifV0sInZlcnNpb24iOjF9LCJtZmFfZW5hYmxlZCI6ZmFsc2UsInN0YXR1cyI6IkFDVElWRSJ9LCJhdXRoZW50aWNhdGlvblR5cGUiOiJzY29wZWRLZXkiLCJzY29wZWRLZXlLZXkiOiI0MjNjM2Q2NzU1Mzk2NzBmYmI5NiIsInNjb3BlZEtleVNlY3JldCI6ImU4YmZiOTlkNTA4ZGUwNTQ0NjI0MjBhZDNmZjU1OGViMzZjNzJjNjFhNWMwODc1ZWFiMjQ2YWQxZWE4NGJiMGMiLCJleHAiOjE3OTk1MTk3OTR9.tkrNj23347LGFDzEKiv2J-i0kntPOiDdPtyWns8Ge5Q";
+  //     // console.log("JWT", JWT);
+  //     // Prepare form data
+  //     const formData = new FormData();
+  //     formData.append("file", file);
+  //     console.log("Form Data", formData);
+  //     // Upload to Pinata
+  //     const uploadRes = await fetch(
+  //       "https://api.pinata.cloud/pinning/pinFileToIPFS",
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           Authorization: `Bearer ${JWT}`,
+  //         },
+  //         body: formData,
+  //       }
+  //     );
+  //     console.log("uploadRes", uploadRes);
+  //     if (!uploadRes.ok) {
+  //       const error = await uploadRes.text();
+  //       throw new Error(error || "Upload failed");
+  //     }
+  //     const json = await uploadRes.json();
+  //     console.log("uploadRes.json()", json);
+  //     const ipfsHash = json.IpfsHash;
+  //     const ipfsUrl = `ipfs://${ipfsHash}`;
+
+  //     // Determine file type
+  //     const fileExtension = file.name.toLowerCase().endsWith(".mp4")
+  //       ? ".mp4"
+  //       : file.name.toLowerCase().endsWith(".wav")
+  //       ? ".wav"
+  //       : ".mp3";
+
+  //     setUploadProgress(100);
+  //     onUploadComplete(ipfsUrl, fileExtension, file.name);
+  //     toast.success("File uploaded successfully!");
+  //   } catch (error) {
+  //     console.log("Upload error:", error);
+  //     toast.error(
+  //       error instanceof Error ? error.message : "Failed to upload file"
+  //     );
+  //   } finally {
+  //     setIsUploading(false);
+  //     setUploadProgress(0);
+  //   }
+  // };
+
   const uploadToPinata = async (file: File) => {
-    try {
-      setIsUploading(true);
-      setUploadProgress(0);
+  try {
+    setIsUploading(true);
+    setUploadProgress(0);
 
-      // Get signed JWT
-      const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
-      console.log("JWT", jwtRes);
-      if (!jwtRes.ok) {
-        throw new Error("Failed to get upload token");
-      }
-      const { JWT } = await jwtRes.json();
-    //   const JWT =
-    //     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiIwZjYzNTg1Yy0yMTI3LTRlMjctOTI3NC1kOTE5MDUxMDgxNmEiLCJlbWFpbCI6ImFobWVkamF3YWQxODU3QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaW5fcG9saWN5Ijp7InJlZ2lvbnMiOlt7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6IkZSQTEifSx7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6Ik5ZQzEifV0sInZlcnNpb24iOjF9LCJtZmFfZW5hYmxlZCI6ZmFsc2UsInN0YXR1cyI6IkFDVElWRSJ9LCJhdXRoZW50aWNhdGlvblR5cGUiOiJzY29wZWRLZXkiLCJzY29wZWRLZXlLZXkiOiI0MjNjM2Q2NzU1Mzk2NzBmYmI5NiIsInNjb3BlZEtleVNlY3JldCI6ImU4YmZiOTlkNTA4ZGUwNTQ0NjI0MjBhZDNmZjU1OGViMzZjNzJjNjFhNWMwODc1ZWFiMjQ2YWQxZWE4NGJiMGMiLCJleHAiOjE3OTk1MTk3OTR9.tkrNj23347LGFDzEKiv2J-i0kntPOiDdPtyWns8Ge5Q";
-      // console.log("JWT", JWT);
-      // Prepare form data
-      const formData = new FormData();
-      formData.append("file", file);
-      console.log("Form Data", formData);
-      // Upload to Pinata
-      const uploadRes = await fetch(
-        "https://api.pinata.cloud/pinning/pinFileToIPFS",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${JWT}`,
-          },
-          body: formData,
-        }
-      );
-      console.log("uploadRes", uploadRes);
-      if (!uploadRes.ok) {
-        const error = await uploadRes.text();
-        throw new Error(error || "Upload failed");
-      }
-      const json = await uploadRes.json();
-      console.log("uploadRes.json()", json);
-      const ipfsHash = json.IpfsHash;
-      const ipfsUrl = `ipfs://${ipfsHash}`;
+    const formData = new FormData();
+    formData.append("file", file);
 
-      // Determine file type
-      const fileExtension = file.name.toLowerCase().endsWith(".mp4")
-        ? ".mp4"
-        : file.name.toLowerCase().endsWith(".wav")
-        ? ".wav"
-        : ".mp3";
+    const uploadRes = await fetch("/api/pinata/upload", {
+      method: "POST",
+      body: formData,
+    });
 
-      setUploadProgress(100);
-      onUploadComplete(ipfsUrl, fileExtension, file.name);
-      toast.success("File uploaded successfully!");
-    } catch (error) {
-      console.log("Upload error:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to upload file"
-      );
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
+    if (!uploadRes.ok) {
+      const err = await uploadRes.json();
+      throw new Error(err.error || "Upload failed");
     }
-  };
+
+    const json = await uploadRes.json();
+    console.log("Pinata response:", json);
+
+    const ipfsHash = json.IpfsHash;
+    const ipfsUrl = `ipfs://${ipfsHash}`;
+
+    // Determine file type
+    const fileExtension = file.name.toLowerCase().endsWith(".mp4")
+      ? ".mp4"
+      : file.name.toLowerCase().endsWith(".wav")
+      ? ".wav"
+      : ".mp3";
+
+    setUploadProgress(100);
+    onUploadComplete(ipfsUrl, fileExtension, file.name);
+    toast.success("File uploaded successfully!");
+  } catch (error) {
+    console.error("Upload error:", error);
+    toast.error(error instanceof Error ? error.message : "Failed to upload file");
+  } finally {
+    setIsUploading(false);
+    setUploadProgress(0);
+  }
+};
 
   const handleFile = useCallback(
     (file: File) => {
