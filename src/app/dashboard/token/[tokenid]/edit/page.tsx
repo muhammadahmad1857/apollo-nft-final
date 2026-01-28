@@ -1,14 +1,14 @@
-
+'use client'
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
+import { useParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import type { NFTModel as PrismaNFT, NFTUpdateInput } from "@/generated/prisma/models";
 import { getNFTById, updateNFT } from "@/actions/nft";
 
 
 export default function EditRoyaltyPage() {
-  const router = useRouter();
-  const { tokenid } = router.query;
+  const params = useParams();
+  const { tokenid } = params;
   const { address } = useAccount();
   const [royalty, setRoyalty] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);

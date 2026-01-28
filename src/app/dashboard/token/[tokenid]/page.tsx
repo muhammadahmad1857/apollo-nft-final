@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
+import { useParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import Link from "next/link";
 import type { NFTModel as PrismaNFT } from "@/generated/prisma/models";
@@ -8,8 +8,8 @@ import { getNFTById } from "@/actions/nft";
 
 
 export default function TokenDetailsPage() {
-  const router = useRouter();
-  const { tokenid } = router.query;
+  const params = useParams  ();
+  const { tokenid } = params;
   const { address } = useAccount();
   const [token, setToken] = useState<PrismaNFT | null>(null);
   const [loading, setLoading] = useState(true);
