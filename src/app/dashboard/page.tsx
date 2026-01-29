@@ -4,24 +4,36 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { categories, nfts, user } from "@/data/dashboard";
+import { categories } from "@/data/dashboard";
+import { getUserByWallet } from "@/actions/users";
+import { getNFTsByOwner } from "@/actions/nft";
 import { Avatar } from "@radix-ui/react-avatar";
 import { Filter, CheckCircle, Music, Image, Video, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogTrigger } from "@/components/ui/dialog";
 import {NFTCard} from "@/components/nft-card";
 import { AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export default function Page() {
-  
+  const [user, setUser] = React.useState<any>(null);
+  const [nfts, setNfts] = React.useState<any[]>([]);
   const [search, setSearch] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState("All");
-  const [filters, setFilters] = React.useState({
-    minted: false,
-    music: false,
-    photos: false,
-    videos: false,
-  });
+  const [filters, setFilters] = React.useState({ minted: false, music: false, photos: false, videos: false });
   const [filterDialogOpen, setFilterDialogOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    async function fetchData() {
+      // TODO: Replace with actual wallet address from auth/session
+      const walletAddress = typeof window !== "undefined" ? window.localStorage.getItem("walletAddress") || "" : "";
+      if (!walletAddress) return;
+      const userData = await getUserByWallet(walletAddress);
+      setUser(userData);
+      if (userData) {
+        const nftsData = await getNFTsByOwner(userData.id);
+        setNfts(nftsData);
+      }
+    }
+    fetchData();
+  }, []);
 
   const filteredNFTs = nfts.filter((nft) => {
     if (selectedCategory !== "All" && nft.category !== selectedCategory) return false;
@@ -29,9 +41,13 @@ export default function Page() {
     if (filters.music && nft.category !== "Music") return false;
     if (filters.photos && nft.category !== "Photos") return false;
     if (filters.videos && nft.category !== "Videos") return false;
-    if (!nft.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (!nft.title?.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  if (!user) {
+    return <div className="flex justify-center items-center min-h-[40vh] text-muted-foreground">Loading user...</div>;
+  }
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-4 md:p-8">
@@ -39,40 +55,11 @@ export default function Page() {
       <div className="w-full lg:w-1/4 flex flex-col gap-6">
         {/* User Card */}
         <Card className="flex flex-col items-center p-6 gap-3">
-<Avatar className="size-24 mb-2">
-                <AvatarImage src={user.avatar as string} alt={user.name} />
-                <AvatarFallback className="rounded-lg">{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar> 
-                       <div className="text-xl font-bold">{user.name}</div>
-          <div className="text-muted-foreground">{user.username}</div>
-          <div className="text-sm text-center text-muted-foreground">{user.bio}</div>
-          <div className="flex gap-6 text-center">
-            <div>
-              <div className="font-bold">{user.posts}</div>
-              <div className="text-xs text-muted-foreground">Posts</div>
-            </div>
-            <div>
-              <div className="font-bold">{user.followers.toLocaleString()}</div>
-              <div className="text-xs text-muted-foreground">Followers</div>
-            </div>
-            <div>
-              <div className="font-bold">{user.following}</div>
-              <div className="text-xs text-muted-foreground">Following</div>
-            </div>
-          </div>
-          {/* Stats: show here on mobile only */}
-          <div className="block lg:hidden w-full mt-4">
-            <Card className="p-4">
-              <div className="flex justify-between text-sm">
-                <span className="font-semibold">Stats</span>
-                <span className="text-muted-foreground">$APOLLO</span>
-              </div>
-              <div className="text-2xl font-bold">
-                {user.apollo} <span className="text-base">$APOLLO</span>
-              </div>
-              <div className="text-xs text-muted-foreground">{user.address}</div>
-            </Card>
-          </div>
+          <AvatarImage src={user.avatarUrl || "/default-avatar.png"} alt={user.name} className="size-24 mb-2 rounded-full" />
+          <AvatarFallback className="rounded-lg">{user.name?.slice(0, 2).toUpperCase()}</AvatarFallback>
+          <div className="text-xl font-bold">{user.name}</div>
+          <div className="text-muted-foreground">{user.walletAddress}</div>
+          <div className="text-sm text-center text-muted-foreground">{user.email}</div>
           <Button size="sm" className="w-full mt-4">Edit Profile</Button>
         </Card>
         {/* Stats: show here on desktop only */}
@@ -198,9 +185,9 @@ export default function Page() {
           ) : (
             filteredNFTs.map((nft, i) => (
               <NFTCard
-                key={i}
+                key={nft.id || i}
                 nft={nft}
-                owner={i % 2 === 0}
+                owner={true}
                 onEditRoyalty={() => alert(`Edit royalty for ${nft.title}`)}
                 onBuy={() => alert(`Buy ${nft.title}`)}
                 onShare={() => alert(`Share ${nft.title}`)}
