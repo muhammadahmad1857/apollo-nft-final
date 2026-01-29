@@ -8,7 +8,6 @@ interface NFTCardProps {
     id: number;
     tokenId: number;
     title: string;
-    category: string;
     likes: number;
     image: string;
     minted: boolean;
