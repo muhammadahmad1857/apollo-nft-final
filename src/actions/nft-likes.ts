@@ -48,9 +48,17 @@ export async function toggleNFTLike(nftId: number, userId: number): Promise<{ li
     await deleteNFTLike(nftId, userId);
     return { liked: false };
   } else {
-    await createNFTLike({ nft:{
+    await createNFTLike({ 
+      nft:{
       connect: { id: nftId },
-    }, {userId} });
+    }, 
+    user: 
+    { 
+      connect: { 
+        id: userId
+       } 
+      } 
+    });
     return { liked: true };
   }
 }
