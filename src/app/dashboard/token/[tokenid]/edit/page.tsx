@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import type { NFTModel as PrismaNFT, NFTUpdateInput } from "@/generated/prisma/models";
-import { getNFTById, updateNFT } from "@/actions/nft";
+import { getNFTByTokenId, updateNFT } from "@/actions/nft";
 
 
 export default function EditRoyaltyPage() {
@@ -19,7 +19,7 @@ export default function EditRoyaltyPage() {
   useEffect(() => {
     if (!tokenid) return;
     setLoading(true);
-    getNFTById(Number(tokenid))
+    getNFTByTokenId(Number(tokenid))
       .then((nft) => {
         setToken(nft);
         setRoyalty(nft?.royaltyBps ?? 0);
