@@ -1,6 +1,6 @@
 
 
-
+"use client"
 import { useState, useEffect, FormEvent } from "react";
 import { useParams } from "next/navigation";
 import { useAccount } from "wagmi";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useNFT, useAuction, useUpdateNFT } from "@/hooks/useNft";
 import { useListNFT, useCancelListing, useListing } from "@/hooks/useMarketplace";
+import { useUpdateRoyalty } from "@/hooks/useUpdateRoyalty";
+import { marketplaceAddress } from "@/lib/wagmi/contracts";
 import { toast } from "sonner";
 import * as Tooltip from "@/components/ui/tooltip";
 import Link from "next/link";
@@ -18,7 +20,8 @@ import { PinataJSON } from "@/types";
 export default function EditRoyaltyPage() {
   const params = useParams();
   const { tokenid } = params;
-  const { address } = useAccount();
+  // const { address } = useAccount();
+    const { updateRoyalty, isPending: isRoyaltyPending } = useUpdateRoyalty();
   const { data: token, isLoading: loading, error: nftError } = useNFT(tokenid ? Number(Array.isArray(tokenid) ? tokenid[0] : tokenid) : undefined);
   const { data: auction } = useAuction(token?.id);
   const updateNFTMutation = useUpdateNFT();
@@ -103,6 +106,22 @@ export default function EditRoyaltyPage() {
   const handleStartAuction = () => {
     // TODO: Implement start auction modal/flow
     alert("Start Auction modal coming soon!");
+  };
+
+  // On-chain royalty update handler
+  const handleUpdateRoyaltyOnChain = async () => {
+    if (!token?.tokenId) {
+      toast.error("Missing tokenId");
+      return;
+    }
+    try {
+      // Use the correct NFT contract address here. Replace marketplaceAddress with your NFT contract address if needed.
+      await updateRoyalty(marketplaceAddress as `0x${string}`, BigInt(token.tokenId), BigInt(royalty));
+      toast.success("Royalty updated on-chain!", { style: { background: '#06b6d4', color: '#fff' } });
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error("Failed to update royalty on-chain", { description: error?.message || undefined, style: { background: '#e11d48', color: '#fff' } });
+    }
   };
 
 
@@ -228,6 +247,9 @@ export default function EditRoyaltyPage() {
           )}
           <Button type="submit" disabled={updateNFTMutation.isPending} className="mt-2 bg-cyan-600 hover:bg-cyan-700 text-white">
             {updateNFTMutation.isPending ? "Updating..." : "Update NFT"}
+          </Button>
+          <Button type="button" onClick={handleUpdateRoyaltyOnChain} disabled={isRoyaltyPending} className="mt-2 bg-cyan-700 hover:bg-cyan-800 text-white">
+            {isRoyaltyPending ? "Updating On-Chain..." : "Update Royalty On-Chain"}
           </Button>
         </form>
         <div className="w-full px-6 pb-6 flex flex-col gap-2">
