@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useNFT, useAuction, useUpdateNFT } from "@/hooks/useNft";
+import { toast } from "sonner";
+import * as Tooltip from "@/components/ui/tooltip";
 
 
 
@@ -51,7 +53,14 @@ export default function EditRoyaltyPage() {
     updateNFTMutation.mutate(
       { id: token.id, data: { royaltyBps: royalty, isListed } },
       {
-        onSuccess: () => setSuccess("NFT updated successfully."),
+        onSuccess: () => {
+          setSuccess("NFT updated successfully.");
+          toast.success("NFT updated successfully!", { style: { background: '#06b6d4', color: '#fff' } });
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onError: (err: any) => {
+          toast.error("Failed to update NFT", { description: err?.message || undefined, style: { background: '#e11d48', color: '#fff' } });
+        }
       }
     );
   };
@@ -69,12 +78,15 @@ export default function EditRoyaltyPage() {
   // Get identifier from tokenJson (name field)
   const identifier = tokenJson?.name || "-";
   const pinataImage = tokenJson?.image || null;
+  const ipfsUrl = token?.tokenUri?.startsWith("ipfs://") ? `https://ipfs.io/ipfs/${token.tokenUri.replace("ipfs://", "")}` : null;
+  const cover = tokenJson?.cover as string | undefined;
+  const media = tokenJson?.media as string | undefined;
 
   return (
     <div className="flex justify-center items-center min-h-[80vh] bg-background">
       <Card className="w-full max-w-md border shadow-sm flex flex-col items-center p-0">
         <CardHeader className="w-full border-b pb-4 flex flex-col items-center">
-          <CardTitle className="text-2xl font-semibold text-center w-full">Edit {identifier}</CardTitle>
+          <CardTitle className="text-2xl font-semibold text-center w-full text-cyan-600 dark:text-cyan-400">Edit {identifier}</CardTitle>
           <CardDescription className="text-xs mt-1 text-muted-foreground text-center w-full">Token #{token.tokenId}</CardDescription>
         </CardHeader>
         {pinataImage && (
@@ -109,15 +121,59 @@ export default function EditRoyaltyPage() {
           </div>
           <div className="flex flex-col gap-2 border-b pb-4">
             <Label>Token URI</Label>
-            <div className="text-xs font-mono break-all select-all border rounded-md px-3 py-2 bg-muted text-foreground">{token.tokenUri}</div>
+            <div className="flex items-center gap-2">
+              <div className="text-xs font-mono break-all select-all border rounded-md px-3 py-2 bg-muted text-foreground">{token.tokenUri}</div>
+              {ipfsUrl && (
+                <a href={ipfsUrl} target="_blank" rel="noopener noreferrer" className="text-cyan-600 underline text-xs ml-2">IPFS</a>
+              )}
+            </div>
           </div>
-          <Button type="submit" disabled={updateNFTMutation.isPending} className="mt-2">{updateNFTMutation.isPending ? "Updating..." : "Update NFT"}</Button>
+          {cover && (
+            <div className="flex flex-col gap-2 border-b pb-4">
+              <Label>Cover</Label>
+              <Tooltip.TooltipProvider>
+                <Tooltip.Tooltip>
+                  <Tooltip.TooltipTrigger asChild>
+                    <span className="text-xs underline text-cyan-600 cursor-pointer">Hover to preview</span>
+                  </Tooltip.TooltipTrigger>
+                  <Tooltip.TooltipContent sideOffset={8}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={cover} alt="Cover Preview" className="max-h-40 max-w-xs rounded-md border" />
+                  </Tooltip.TooltipContent>
+                </Tooltip.Tooltip>
+              </Tooltip.TooltipProvider>
+            </div>
+          )}
+          {media && (
+            <div className="flex flex-col gap-2 border-b pb-4">
+              <Label>Media</Label>
+              <Tooltip.TooltipProvider>
+                <Tooltip.Tooltip>
+                  <Tooltip.TooltipTrigger asChild>
+                    <span className="text-xs underline text-cyan-600 cursor-pointer">Hover to preview</span>
+                  </Tooltip.TooltipTrigger>
+                  <Tooltip.TooltipContent sideOffset={8}>
+                    {media.endsWith('.mp3') || media.endsWith('.wav') ? (
+                      <audio src={media} controls className="max-w-xs" />
+                    ) : media.endsWith('.mp4') || media.endsWith('.webm') ? (
+                      <video src={media} controls className="max-h-40 max-w-xs rounded-md border" />
+                    ) : (
+                      <span>Unsupported media</span>
+                    )}
+                  </Tooltip.TooltipContent>
+                </Tooltip.Tooltip>
+              </Tooltip.TooltipProvider>
+            </div>
+          )}
+          <Button type="submit" disabled={updateNFTMutation.isPending} className="mt-2 bg-cyan-600 hover:bg-cyan-700 text-white">
+            {updateNFTMutation.isPending ? "Updating..." : "Update NFT"}
+          </Button>
         </form>
         <div className="w-full px-6 pb-6 flex flex-col gap-2">
-          <Button onClick={handleStartAuction} disabled={!!auction} variant="secondary" className="w-full">
+          <Button onClick={handleStartAuction} disabled={!!auction} variant="secondary" className="w-full border-cyan-600 text-cyan-700 dark:text-cyan-400">
             {auction ? "Auction Already Started" : "Start Auction"}
           </Button>
-          {success && <div className="mt-2 text-green-600 text-center font-semibold">{success}</div>}
+          {success && <div className="mt-2 text-cyan-600 text-center font-semibold">{success}</div>}
         </div>
       </Card>
     </div>

@@ -31,3 +31,11 @@ export interface MetadataFormValues {
   coverImageUrl?: string;
   musicTrackUrl: string;
 }
+
+export interface PinataJSON{
+  name:string,
+  description:string,
+  cover?:string,
+  media:string,
+  title:string
+}
