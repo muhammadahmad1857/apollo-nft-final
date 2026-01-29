@@ -6,7 +6,6 @@ import Image from "next/image";
 interface NFTCardProps {
   nft: {
     title: string;
-    category: string;
     likes: number;
     image: string;
     minted: boolean;

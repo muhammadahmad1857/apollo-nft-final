@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/prisma";
-import type { NFTModel as PrismaNFT, NFTCreateInput, NFTUpdateInput } from "@/generated/prisma/models";
+import type { NFTModel as PrismaNFT, NFTCreateInput, NFTUpdateInput,UserModel } from "@/generated/prisma/models";
 
 /* --------------------
    CREATE
@@ -16,6 +16,15 @@ export async function createNFT(data: NFTCreateInput): Promise<PrismaNFT> {
 export async function getNFTById(id: number): Promise<PrismaNFT | null> {
   return db.nFT.findUnique({ where: { id } });
 }
+
+
+export async function getAllNFTs(): Promise<(PrismaNFT & { creator: UserModel|null })[]> {
+  return db.nFT.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { creator: true }, // nested relation
+  });
+}
+
 
 export async function getNFTByTokenId(tokenId: number): Promise<PrismaNFT | null> {
   return db.nFT.findUnique({ where: { tokenId } });
