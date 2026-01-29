@@ -1,86 +1,59 @@
 'use client'
 
 
-import { useEffect, useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useAccount } from "wagmi";
-import type { NFTModel as PrismaNFT, NFTUpdateInput, AuctionModel } from "@/generated/prisma/models";
-import { getNFTByTokenId, updateNFT } from "@/actions/nft";
-import { getAuctionByNFT } from "@/actions/auction";
-import { Card, CardHeader, CardTitle, CardDescription, CardAction } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useNFT, useAuction, useUpdateNFT } from "@/hooks/useNft";
 
 
 
 export default function EditRoyaltyPage() {
   const params = useParams();
   const { tokenid } = params;
-  const { address } = useAccount();
-  const [royalty, setRoyalty] = useState<number | null>(null);
+  useAccount();
+  const { data: token, isLoading: loading, error: nftError } = useNFT(tokenid ? Number(tokenid) : undefined);
+  const { data: auction } = useAuction(token?.id);
+  const updateNFTMutation = useUpdateNFT();
+  const [royalty, setRoyalty] = useState<number>(500);
   const [isListed, setIsListed] = useState<boolean>(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [token, setToken] = useState<PrismaNFT | null>(null);
-  const [auction, setAuction] = useState<AuctionModel | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [tokenJson, setTokenJson] = useState<any>(null);
 
   useEffect(() => {
-    if (!tokenid) return;
-    setLoading(true);
-    (async () => {
-      try {
-        const nft = await getNFTByTokenId(Number(tokenid));
-        setToken(nft);
-        setRoyalty(nft?.royaltyBps ?? 0);
-        setIsListed(nft?.isListed ?? false);
-        setError("");
-        if (nft) {
-          setAuction(await getAuctionByNFT(nft.id));
-          // Fetch tokenUri JSON (IPFS)
-          if (nft.tokenUri && nft.tokenUri.startsWith("ipfs://")) {
-            const url = `https://ipfs.io/ipfs/${nft.tokenUri.replace("ipfs://", "")}`;
-            try {
-              const res = await fetch(url);
-              if (res.ok) {
-                setTokenJson(await res.json());
-              } else {
-                setTokenJson(null);
-              }
-            } catch {
-              setTokenJson(null);
-            }
-          } else {
-            setTokenJson(null);
-          }
-        }
-      } catch {
-        setError("Failed to fetch token details.");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [tokenid]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    setLoading(true);
-    try {
-      if (!token || royalty === null) throw new Error("No token loaded");
-      const data: NFTUpdateInput = { royaltyBps: royalty, isListed };
-      await updateNFT(token.id, data);
-      setSuccess("NFT updated successfully.");
-    } catch (err) {
-      setError("Failed to update NFT.");
-    } finally {
-      setLoading(false);
+    if (!token) return;
+    // Only set state if values are different to avoid cascading renders
+    setRoyalty(r => (token.royaltyBps !== undefined && token.royaltyBps !== r ? token.royaltyBps : r));
+    setIsListed(l => (token.isListed !== undefined && token.isListed !== l ? token.isListed : l));
+    // Fetch tokenUri JSON (IPFS)
+    if (token.tokenUri && token.tokenUri.startsWith("ipfs://")) {
+      const url = `https://ipfs.io/ipfs/${token.tokenUri.replace("ipfs://", "")}`;
+      fetch(url)
+        .then(res => res.ok ? res.json() : null)
+        .then(json => setTokenJson(json))
+        .catch(() => setTokenJson(null));
+    } else {
+      setTokenJson(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token?.tokenUri]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccess("");
+    if (!token) return;
+    updateNFTMutation.mutate(
+      { id: token.id, data: { royaltyBps: royalty, isListed } },
+      {
+        onSuccess: () => setSuccess("NFT updated successfully."),
+      }
+    );
   };
 
   const handleStartAuction = () => {
@@ -90,43 +63,57 @@ export default function EditRoyaltyPage() {
 
 
   if (loading) return <div className="flex justify-center items-center min-h-[40vh]"><span className="text-muted-foreground">Loading...</span></div>;
-  if (error) return <div className="p-8 text-center text-destructive">{error}</div>;
+  if (nftError) return <div className="p-8 text-center text-destructive">{nftError.message}</div>;
   if (!token) return null;
 
   // Get identifier from tokenJson (name field)
   const identifier = tokenJson?.name || "-";
+  const pinataImage = tokenJson?.image || null;
 
   return (
     <div className="flex justify-center items-center min-h-[80vh] bg-background">
-      <Card className="w-full max-w-lg border shadow-sm">
-        <CardHeader className="border-b pb-4">
-          <CardTitle className="text-2xl font-semibold">Edit {identifier}</CardTitle>
-          <CardDescription className="text-xs mt-1 text-muted-foreground">Token #{token.tokenId}</CardDescription>
+      <Card className="w-full max-w-md border shadow-sm flex flex-col items-center p-0">
+        <CardHeader className="w-full border-b pb-4 flex flex-col items-center">
+          <CardTitle className="text-2xl font-semibold text-center w-full">Edit {identifier}</CardTitle>
+          <CardDescription className="text-xs mt-1 text-muted-foreground text-center w-full">Token #{token.tokenId}</CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6 px-6 py-6">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="royalty">Royalty (bps)</Label>
-            <Input
-              id="royalty"
-              type="number"
-              value={royalty ?? ""}
-              min={0}
-              max={1000}
-              onChange={e => setRoyalty(Number(e.target.value))}
-              required
-            />
+        {pinataImage && (
+          <div className="w-full flex justify-center py-4 border-b">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={pinataImage} alt="Pinata Preview" className="max-h-48 rounded-md object-contain border bg-muted" style={{maxWidth:'100%'}} />
           </div>
-          <div className="flex flex-col gap-2">
+        )}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full px-6 py-6">
+          <div className="flex flex-col gap-2 border-b pb-4">
+            <Label htmlFor="royalty">Royalty (bps)</Label>
+            <div className="flex items-center gap-3">
+              <input
+                id="royalty"
+                type="range"
+                min={0}
+                max={1000}
+                step={10}
+                value={royalty}
+                onChange={e => setRoyalty(Number(e.target.value))}
+                className="w-full accent-cyan-500 h-2 rounded-lg appearance-none bg-gray-200 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
+                style={{ boxShadow: '0 0 0 2px #06b6d4' }}
+              />
+              <span className="w-12 text-right text-xs text-gray-500 dark:text-gray-400">{royalty} bps</span>
+              <span className="font-semibold text-cyan-600 dark:text-cyan-300">{(royalty / 100).toFixed(2)}%</span>
+            </div>
+            <span className="text-xs text-gray-400 dark:text-gray-500">Set the royalty for secondary sales (0-10%).</span>
+          </div>
+          <div className="flex flex-col gap-2 border-b pb-4">
             <Label htmlFor="isListed">Listed</Label>
             <Switch id="isListed" checked={isListed} onCheckedChange={setIsListed} />
           </div>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 border-b pb-4">
             <Label>Token URI</Label>
             <div className="text-xs font-mono break-all select-all border rounded-md px-3 py-2 bg-muted text-foreground">{token.tokenUri}</div>
           </div>
-          <Button type="submit" disabled={loading} className="mt-2">Update NFT</Button>
+          <Button type="submit" disabled={updateNFTMutation.isPending} className="mt-2">{updateNFTMutation.isPending ? "Updating..." : "Update NFT"}</Button>
         </form>
-        <div className="px-6 pb-6">
+        <div className="w-full px-6 pb-6 flex flex-col gap-2">
           <Button onClick={handleStartAuction} disabled={!!auction} variant="secondary" className="w-full">
             {auction ? "Auction Already Started" : "Start Auction"}
           </Button>
