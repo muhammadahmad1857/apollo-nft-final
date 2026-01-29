@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import Link from "next/link";
 import type { NFTModel as PrismaNFT } from "@/generated/prisma/models";
-import { getNFTById } from "@/actions/nft";
+import {  getNFTByTokenId } from "@/actions/nft";
 
 
 export default function TokenDetailsPage() {
@@ -14,11 +14,11 @@ export default function TokenDetailsPage() {
   const [token, setToken] = useState<PrismaNFT | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+console.log("TokenDetailsPage render with tokenid:", tokenid, "and address:", address);
   useEffect(() => {
     if (!tokenid) return;
     setLoading(true);
-    getNFTById(Number(tokenid))
+    getNFTByTokenId(Number(tokenid))
       .then((nft) => {
         setToken(nft);
         setError("");
@@ -32,7 +32,7 @@ export default function TokenDetailsPage() {
 
   if (loading) return <div className="flex justify-center items-center min-h-[40vh]"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
-  if (!token) return null;
+  if (!token) return <div className="p-8 text-center text-gray-500">No token data available.</div>;
 
   return (
     <div className="flex justify-center items-center min-h-[80vh] bg-gradient-to-br from-blue-50 to-purple-100">
