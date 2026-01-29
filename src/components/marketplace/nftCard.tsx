@@ -11,6 +11,7 @@ import { useBuyNFT } from "@/hooks/useMarketplace";
 import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { useUser } from "@/hooks/useUser";
+import { toast } from "sonner";
 
 export interface NFTCardProps {
   title: string;
@@ -34,11 +35,12 @@ const NFTCard = ({ title, cover, media, tokenId, name, description, showBuyButto
     try {
       // For demo, price is not passed. In real use, pass correct price.
       await buyNFT(BigInt(tokenId), BigInt(0));
-      // Optionally refresh or show success
+      toast.success("NFT purchased successfully!");
       router.refresh();
     } catch (e) {
       // Handle error
-      alert("Buy failed");
+      console.error("error in buying",e)
+        toast.error("Failed to purchase NFT.");
     }
   };
 

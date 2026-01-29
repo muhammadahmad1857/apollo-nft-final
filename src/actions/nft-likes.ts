@@ -50,7 +50,8 @@ export async function toggleNFTLike(nftId: number, userId: number): Promise<{ li
   } else {
     await createNFTLike({ 
       nft:{
-      connect: { id: nftId },
+      connect: { tokenId: nftId },
+
     }, 
     user: 
     { 
