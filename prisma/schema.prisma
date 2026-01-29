@@ -36,6 +36,9 @@ model NFT {
   id          Int       @id @default(autoincrement())
   tokenId     Int       @unique
   creatorId   Int
+  name String
+  title String
+  description String
   ownerId     Int
   tokenUri    String
   royaltyBps  Int

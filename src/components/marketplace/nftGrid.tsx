@@ -80,11 +80,11 @@ setMints(data as (PrismaNFT & { creator: UserModel })[]);
           <NFTCard
             key={nft.tokenId}
             tokenId={nft.tokenId}
-            title={nft.tokenUri}
-            description={nft.tokenUri}
+            title={nft.title}
+            description={nft.description}
             cover={undefined}
             media={nft.tokenUri}
-            name={nft.creator?.name || "Unknown"}
+            name={nft.name || "Unknown"}
             minted={true}
           />
         ))}

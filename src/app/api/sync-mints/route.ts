@@ -95,6 +95,9 @@ export async function GET() {
           where: { tokenId },
           update: { updatedAt: new Date() },
           create: {
+            name:meta.name,
+            title:meta.title,
+            description:meta.description,
             tokenId,
             tokenUri: uri,
             mintPrice: 0.1,
