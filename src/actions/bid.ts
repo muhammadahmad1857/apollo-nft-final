@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/prisma";
-import type { BidModel as PrismaBid, BidCreateInput } from "@/generated/prisma/models";
+import type { BidModel as PrismaBid, BidCreateInput, UserModel } from "@/generated/prisma/models";
 
 /* --------------------
    CREATE
@@ -15,6 +15,9 @@ export async function createBid(data: BidCreateInput): Promise<PrismaBid> {
 -------------------- */
 export async function getBidsByAuction(auctionId: number): Promise<PrismaBid[]> {
   return db.bid.findMany({ where: { auctionId }, orderBy: { amount: "desc" } });
+}
+export async function getBidsByAuctionWithUser(auctionId: number): Promise<(PrismaBid & { bidder: UserModel })[]> {
+  return db.bid.findMany({ where: { auctionId }, orderBy: { amount: "desc" }, include: { bidder: true } });
 }
 
 export async function getBidsByUser(userId: number): Promise<PrismaBid[]> {

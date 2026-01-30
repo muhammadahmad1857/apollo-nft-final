@@ -20,10 +20,9 @@ export default function Header() {
   if (!mounted) return null
 
   const navItems = [
-    { label: 'Marketplace', href: '#' },
-    { label: 'Artists', href: '#' },
-    { label: 'Docs', href: '#' },
-    { label: 'Royalties', href: '#' },
+    { label: 'Marketplace', href: '/marketplace' },
+    { label: 'Dashboard', href: '/dashboard' },
+    
   ]
 
   return (

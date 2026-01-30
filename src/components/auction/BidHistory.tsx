@@ -1,4 +1,9 @@
-export default function BidHistory({ bids }: { bids: any[] }) {
+import { getBidsByAuctionWithUser } from "@/actions/bid";
+import { BidModel, UserModel } from "@/generated/prisma/models";
+
+export default async function BidHistory({ auctionId }: { auctionId: number }) {
+    // Fetch bids for the given tokenId
+    const bids = await getBidsByAuctionWithUser(auctionId)
   return (
     <table className="w-full text-left bg-gray-900 rounded-xl overflow-hidden">
       <thead>
@@ -12,7 +17,7 @@ export default function BidHistory({ bids }: { bids: any[] }) {
         {bids.map(bid => (
           <tr key={bid.id} className="border-b border-gray-800">
             <td className="px-4 py-2 flex items-center gap-2">
-              <img src={bid.bidder?.avatarUrl} className="w-6 h-6 rounded-full" />
+              <img src={bid.bidder?.avatarUrl||""} className="w-6 h-6 rounded-full" />
               <span>{bid.bidder?.name}</span>
             </td>
             <td className="px-4 py-2 font-bold">{bid.amount} ETH</td>

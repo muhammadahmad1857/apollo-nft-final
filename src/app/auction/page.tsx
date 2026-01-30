@@ -4,18 +4,21 @@ import CreateAuctionButton from "@/components/auction/CreateAuctionButton";
 import { getActiveAuctions } from "@/actions/auction";
 import { getNFTById } from "@/actions/nft";
 import { getUserById } from "@/actions/users";
+import { AuctionModel, BidModel, NFTModel, UserModel } from "@/generated/prisma/models";
+
+export type ActiveAuctions = AuctionModel & { seller: UserModel,nft:NFTModel,highestBidder:UserModel | null,bids:BidModel[]}
 
 export default async function AuctionPage() {
-  const auctions = await getActiveAuctions();
-  // Fetch related NFT, seller, highest bidder for each auction
-  const auctionCards = await Promise.all(
-    auctions.map(async (auction) => {
-      const nft = await getNFTById(auction.nftId);
-      const seller = await getUserById(auction.sellerId);
-      const highestBidder = auction.highestBidderId ? await getUserById(auction.highestBidderId) : null;
-      return { auction, nft, seller, highestBidder };
-    })
-  );
+  const auctions:ActiveAuctions[] = await getActiveAuctions();
+//   // Fetch related NFT, seller, highest bidder for each auction
+//   const auctionCards = await Promise.all(
+//     auctions.map(async (auction) => {
+//       const nft = await getNFTById(auction.nftId);
+//       const seller = await getUserById(auction.sellerId);
+//       const highestBidder = auction.highestBidderId ? await getUserById(auction.highestBidderId) : null;
+//       return { auction, nft, seller, highestBidder };
+//     })
+//   );
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-black to-gray-900 text-white">
@@ -27,7 +30,7 @@ export default async function AuctionPage() {
           <CreateAuctionButton />
         </div>
       </section>
-      <AuctionGrid auctions={auctionCards} />
+      <AuctionGrid auctions={auctions} />
     </main>
   );
 }
