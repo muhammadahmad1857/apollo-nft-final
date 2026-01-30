@@ -112,7 +112,7 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
       // Redirect to file detail page
       if (data?.id) {
         setTimeout(() => {
-          router.push(`/files/${data.id}`);
+          router.push(`dashboard/files/${data.id}`);
         }, 1000);
       }
     } catch (error) {
