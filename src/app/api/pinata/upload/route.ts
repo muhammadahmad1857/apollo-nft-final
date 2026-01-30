@@ -1,7 +1,6 @@
-// pages/api/pin-cid.ts (Next.js API route example)
 import { NextApiRequest, NextApiResponse } from "next";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function POST(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { cid } = req.body;
 
