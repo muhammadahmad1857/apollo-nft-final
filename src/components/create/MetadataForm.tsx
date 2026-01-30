@@ -15,11 +15,13 @@ import type { MetadataFormValues } from "@/types";
 interface MetadataFormProps {
   onMetadataChange: (metadata: MetadataFormValues) => void;
   initialData?: MetadataFormValues;
+  setDisabled: (disabled: boolean) => void;
 }
 
 export function MetadataForm({
   onMetadataChange,
   initialData,
+  setDisabled,
 }: MetadataFormProps) {
   const { address } = useAccount();
   const [name, setName] = useState(initialData?.name || "");
@@ -53,6 +55,7 @@ export function MetadataForm({
     try {
  // 1️⃣ Get signed URL from your server
  setIsUploadingCover(true);
+ setDisabled(true)
     const signedRes = await fetch("/api/pinata/signed-upload-url", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -92,6 +95,8 @@ await fetch("/api/pinata/upload", {
       toast.error("Failed to upload cover image");
     } finally {
       setIsUploadingCover(false);
+       setDisabled(false)
+
     }
   };
 

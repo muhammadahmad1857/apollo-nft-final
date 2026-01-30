@@ -176,6 +176,7 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
               <MetadataForm
                 onMetadataChange={handleMetadataChange}
                 initialData={metadata}
+                setDisabled={setIsSaving}
               />
             </motion.div>
 
