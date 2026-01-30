@@ -150,7 +150,7 @@ export default function FilesPage() {
                     </TableCell>
                     <TableCell>
                       <a
-                        href={`https://process.env.NEXT_PUBLIC_GATEWAY_URL/ipfs/${file.ipfsUrl.replace(
+                        href={`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${file.ipfsUrl.replace(
                           "ipfs://",
                           ""
                         )}`}

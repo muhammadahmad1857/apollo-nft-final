@@ -97,7 +97,7 @@ export default function FileDetailPage() {
           try {
             const httpUrl = fileData.ipfsUrl.replace(
               "ipfs://",
-              "https://process.env.NEXT_PUBLIC_GATEWAY_URL/ipfs/"
+              `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`
             );
             const metadataRes = await fetch(httpUrl);
             if (metadataRes.ok) {
@@ -176,7 +176,7 @@ export default function FileDetailPage() {
   };
 
   const getIpfsGatewayUrl = (ipfsUrl: string) => {
-    return ipfsUrl.replace("ipfs://", "https://process.env.NEXT_PUBLIC_GATEWAY_URL/ipfs/");
+    return ipfsUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`);
   };
 
   const getFileIcon = (type: string) => {

@@ -10,7 +10,7 @@ import Image from "next/image";
 import { nftABIArray, nftAddress } from "@/lib/wagmi/contracts";
 import { SparklesIcon } from "lucide-react";
 
-const PINATA_GATEWAY = "https://process.env.NEXT_PUBLIC_GATEWAY_URL/ipfs/";
+const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 
 
 export default function MintSingleNFTPage() {
