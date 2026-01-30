@@ -14,6 +14,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar"
+import { truncateAddress } from "@/lib/truncate"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,7 +57,7 @@ export function NavUser({
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs">{user.address}</span>
+                <span className="truncate text-xs">{truncateAddress(user.address)}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -75,7 +76,7 @@ export function NavUser({
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs">{user.address}</span>
+                  <span className="truncate text-xs">{truncateAddress(user.address)}</span>
                 </div>
               </div>
             </DropdownMenuLabel>

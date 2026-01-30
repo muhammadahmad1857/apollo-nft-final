@@ -2,17 +2,20 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Share, Edit, ShoppingCart } from "lucide-react";
 import { NFTCard } from "@/components/nft-card";
 import { useUser } from "@/hooks/useUser"; // your wagmi-based hook
+import { truncateAddress } from "@/lib/truncate";
 import * as nftActions from "@/actions/nft"; // your server actions
 import { useAccount } from "wagmi";
 import { NFTLikeModel, NFTModel } from "@/generated/prisma/models";
 
 export default function Page() {
+  const router = useRouter();
   const {address} = useAccount()
   const { data: user,isLoading,error } = useUser(address||""); // gets current logged-in wallet
   const [nfts, setNFTs] = React.useState<(NFTModel & { likes?: NFTLikeModel[] })[]>([]);
@@ -56,8 +59,8 @@ export default function Page() {
             <AvatarFallback className="rounded-lg">{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div className="text-xl font-bold">{user.name}</div>
-          <div className="text-muted-foreground">{user.walletAddress}</div>
-          <Button size="sm" className="w-full mt-4">Edit Profile</Button>
+          <div className="text-muted-foreground">{truncateAddress(user.walletAddress)}</div>
+          <Button size="sm" className="w-full mt-4" onClick={() => router.push("/dashboard/edit-profile")}>Edit Profile</Button>
         </Card>
 
         {/* Stats */}
@@ -72,7 +75,7 @@ export default function Page() {
         {/* Minted filter */}
         <Card className="p-4">
           <div className="flex items-center justify-between">
-            <span>Show only minted</span>
+            <span>Show only listed</span>
             <input
               type="checkbox"
               checked={filterMinted}
