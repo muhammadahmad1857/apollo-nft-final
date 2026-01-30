@@ -26,14 +26,16 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import Logo from "../Logo"
+import { useUser } from "@/hooks/useUser"
+import { toast } from "sonner"
 
 // This is sample data.
 const data = {
-  user: {
-    name: "Wizard of Oz",
-    address: "0xGFC...6578",
-    avatar: "/artist-1.png",
-  },
+ user:{
+    name: "Loading",
+    avatarUrl:"",
+    address: "0x1234...abcd",
+ },
   teams: [
     {
       name: "Acme Inc",
@@ -116,28 +118,48 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const {state} = useSidebar()
+  const { data: user, isLoading, error } = useUser();
+  const [navUser, setNavUser] = React.useState<{ name: string; avatarUrl: string; address: string } | null>(null);
+
+  React.useEffect(() => {
+    if (error && !isLoading) {
+      toast.error("Error fetching user data: " + error.message);
+    }
+    if (!user && !isLoading) {
+      toast.error("User not found. Please complete your profile.");
+      setNavUser(null);
+    }
+    if (user && !isLoading) {
+      setNavUser({ name: user.name, avatarUrl: user.avatarUrl||"", address: user.walletAddress });
+    }
+  }, [user, isLoading, error]);
+
+  const { state } = useSidebar();
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         {/* <TeamSwitcher teams={data.teams} /> */}
         <SidebarMenuItem>
-                <SidebarMenuButton tooltip={"Toggle sidebar"} asChild>
-                
-              <SidebarTrigger className={`-ml-1 ${state === "expanded" ? "hidden" : "block"}`} />
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-        <Logo show={state === "expanded"} width={150}/>
-
+          <SidebarMenuButton tooltip={"Toggle sidebar"} asChild>
+            <SidebarTrigger className={`-ml-1 ${state === "expanded" ? "hidden" : "block"}`} />
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        <Logo show={state === "expanded"} width={150} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
         {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser
+          user={
+            navUser
+              ? { name: navUser.name, address: navUser.address, avatar: navUser.avatarUrl }
+              : { name: "Guest", address: "", avatar: "" }
+          }
+        />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }
