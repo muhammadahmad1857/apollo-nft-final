@@ -1,10 +1,10 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextRequest, NextResponse } from "next/server";
 
-export default async function POST(req: NextApiRequest, res: NextApiResponse) {
+export async function POST(req: NextRequest) {
   try {
-    const { cid } = req.body;
+    const { cid } = await req.json();
 
-    if (!cid) return res.status(400).json({ error: "CID is required" });
+    if (!cid) return NextResponse.json({ error: "CID is required" }, { status: 400 });
 
     const pinRes = await fetch("https://api.pinata.cloud/pinning/pinByHash", {
       method: "POST",
@@ -20,11 +20,11 @@ export default async function POST(req: NextApiRequest, res: NextApiResponse) {
 
     const data = await pinRes.json();
 
-    if (!pinRes.ok) return res.status(pinRes.status).json(data);
+    if (!pinRes.ok) return NextResponse.json(data, { status: pinRes.status });
 
-    res.status(200).json({ success: true, data });
+    return NextResponse.json({ success: true, data });
   } catch (err) {
     console.error("Pin CID error:", err);
-    res.status(500).json({ error: "Failed to pin CID" });
+    return NextResponse.json({ error: "Failed to pin CID" }, { status: 500 });
   }
 }
