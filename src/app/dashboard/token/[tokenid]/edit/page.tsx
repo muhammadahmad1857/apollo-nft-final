@@ -65,7 +65,7 @@ export default function EditRoyaltyPage() {
     });
 
     if (token.tokenUri?.startsWith("ipfs://")) {
-      const url = `https://gateway.pinata.cloud/ipfs/${token.tokenUri.replace(
+      const url = `https://process.env.NEXT_PUBLIC_GATEWAY_URL/ipfs/${token.tokenUri.replace(
         "ipfs://",
         ""
       )}`;

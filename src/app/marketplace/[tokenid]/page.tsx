@@ -70,7 +70,7 @@ const detectMediaType = async (url: string) => {
       args: [BigInt(tokenId)],
     })) as string;
 
-    const httpUri = uri.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/");
+    const httpUri = uri.replace("ipfs://", "https://process.env.NEXT_PUBLIC_GATEWAY_URL/ipfs/");
     const res = await fetch(httpUri, { next: { revalidate: 60 } });
 
     if (res.ok) {
@@ -91,7 +91,7 @@ const detectMediaType = async (url: string) => {
 
     // Simple media type detection (extension based)
     const mediaUrl = (metadata?.media || "")
-      .replace("ipfs://", "https://gateway.pinata.cloud/ipfs/");
+      .replace("ipfs://", "https://process.env.NEXT_PUBLIC_GATEWAY_URL/ipfs/");
     if (mediaUrl) {
         console.log("Detecting media type for url",mediaUrl)
       detectMediaType(mediaUrl)
@@ -106,9 +106,9 @@ const detectMediaType = async (url: string) => {
   const description = metadata.description || "No description provided";
   const artist = metadata.name || "Anonymous";
   const cover = (metadata.image || metadata.cover || "")
-    .replace("ipfs://", "https://gateway.pinata.cloud/ipfs/");
+    .replace("ipfs://", "https://process.env.NEXT_PUBLIC_GATEWAY_URL/ipfs/");
   const media = (metadata.media || "")
-    .replace("ipfs://", "https://gateway.pinata.cloud/ipfs/");
+    .replace("ipfs://", "https://process.env.NEXT_PUBLIC_GATEWAY_URL/ipfs/");
 
   return (
     <main className="min-h-screen py-12 px-4 md:px-8 lg:px-16">

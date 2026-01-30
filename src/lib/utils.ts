@@ -33,14 +33,14 @@ const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "").toLowe
 //       args: [BigInt(tokenId)],
 //     })) as string;
 
-//     const httpUri = uri.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/");
+//     const httpUri = uri.replace("ipfs://", "https://process.env.NEXT_PUBLIC_GATEWAY_URL/ipfs/");
 //     const res = await fetch(httpUri, { next: { revalidate: 60 } });
 //     if (!res.ok) throw new Error("Metadata fetch failed");
 
 //     const data = await res.json();
 
 //     const image = (data.image || data.cover || "")
-//       .replace("ipfs://", "https://gateway.pinata.cloud/ipfs/")
+//       .replace("ipfs://", "https://process.env.NEXT_PUBLIC_GATEWAY_URL/ipfs/")
 //       .trim();
 
 //     return {
