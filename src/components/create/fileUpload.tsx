@@ -109,6 +109,7 @@ const uploadToPinata = async (file: File) => {
     // Object.entries(fields).forEach(([key, value]) => formData.append(key, value as string));
     formData.append("file", file);
     setUploadProgress(50)
+   
 
     // 3️⃣ Upload directly to Pinata
     const uploadRes = await fetch(data, { method: "POST", body: formData });
