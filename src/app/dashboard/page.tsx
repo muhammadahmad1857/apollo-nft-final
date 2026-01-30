@@ -52,7 +52,7 @@ export default function Page() {
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-4 md:p-8">
       {/* LEFT SIDEBAR */}
-      <div className="w-full lg:w-1/4 flex flex-col gap-6">
+      <div className="max-w-full lg:w-1/4 flex flex-col gap-6">
         <Card className="flex flex-col items-center p-6 gap-3">
           <Avatar className="size-24 mb-2">
             <AvatarImage src={user.avatarUrl ?? ""} alt={user.name} />

@@ -104,7 +104,7 @@ export default function EditProfilePage() {
         if (!uploadRes.ok) throw new Error("Pinata upload failed");
         const uploadResJson = await uploadRes.json();
         const ipfsHash = uploadResJson?.data.cid;
-        uploadedUrl = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
+        uploadedUrl = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${ipfsHash}`;
         setUploadProgress(75);
         await fetch("/api/pinata/upload", {
           method: "POST",

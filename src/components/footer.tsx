@@ -1,5 +1,6 @@
 'use client'
 
+import Link from "next/link";
 import Logo from "./Logo";
 import { Twitter, Mail } from "lucide-react";
 
@@ -16,7 +17,6 @@ export default function Footer() {
         <div className="flex-1 min-w-[220px]">
           <div className="flex items-center gap-2 mb-2">
             <Logo width={110} height={50} />
-            <span className="text-2xl font-bold">apollonft</span>
           </div>
           <p className="text-sm mb-4">
             Redefining the boundaries of blockchain technology and decentralized finance.
@@ -44,9 +44,9 @@ export default function Footer() {
         <div className="flex-1 min-w-[180px]">
           <h3 className="font-bold text-lg mb-2">Quick Links</h3>
           <ul className="space-y-2">
-            <li><a href="/" className="hover:underline">Home</a></li>
-            <li><a href="/marketplace" className="hover:underline">Marketplace</a></li>
-            <li><a href="/dashboard" className="hover:underline">Dashboard</a></li>
+            <li><Link href="/" className="hover:underline">Home</Link></li>
+            <li><Link href="/marketplace" className="hover:underline">Marketplace</Link></li>
+            <li><Link href="/dashboard" className="hover:underline">Dashboard</Link></li>
           </ul>
         </div>
 
