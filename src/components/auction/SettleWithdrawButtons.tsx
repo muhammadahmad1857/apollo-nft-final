@@ -1,3 +1,4 @@
+"use client"
 import { useAccount } from "wagmi";
 import { useAuction } from "@/hooks/useAuction";
 

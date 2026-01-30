@@ -1,3 +1,4 @@
+"use client"
 import { useAuction } from "@/hooks/useAuction";
 import { useState } from "react";
 

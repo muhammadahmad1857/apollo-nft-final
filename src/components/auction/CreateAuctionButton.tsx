@@ -1,3 +1,4 @@
+"use client"
 import { useAccount } from "wagmi";
 import Link from "next/link";
 
