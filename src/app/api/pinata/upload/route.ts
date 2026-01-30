@@ -1,40 +1,31 @@
-import { NextRequest, NextResponse } from "next/server";
-import FormData from "form-data";
-import fetch from "node-fetch";
+// pages/api/pin-cid.ts (Next.js API route example)
+import { NextApiRequest, NextApiResponse } from "next";
 
-export const POST = async (req: NextRequest) => {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
+    const { cid } = req.body;
 
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
-    }
+    if (!cid) return res.status(400).json({ error: "CID is required" });
 
-    // Convert browser File to Node.js Buffer
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const pinataForm = new FormData();
-    pinataForm.append("file", buffer, file.name);
-    pinataForm.append(
-      "pinataMetadata",
-      JSON.stringify({ name: file.name })
-    );
-
-    const res = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+    const pinRes = await fetch("https://api.pinata.cloud/pinning/pinByHash", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.PINATA_JWT}`, // JWT from env
-        // DO NOT set Content-Type manually
+        Authorization: `Bearer ${process.env.PINATA_JWT}`,
+        "Content-Type": "application/json",
       },
-      body: pinataForm,
+      body: JSON.stringify({
+        hashToPin: cid,
+        options: { cidVersion: 1 },
+      }),
     });
 
-    const data = await res.json();
-    return NextResponse.json(data);
+    const data = await pinRes.json();
+
+    if (!pinRes.ok) return res.status(pinRes.status).json(data);
+
+    res.status(200).json({ success: true, data });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Pinata upload failed" }, { status: 500 });
+    console.error("Pin CID error:", err);
+    res.status(500).json({ error: "Failed to pin CID" });
   }
-};
+}

@@ -73,7 +73,11 @@ export function MetadataForm({
 
       const ipfsHash = uploadResJson.cid;
       const ipfsUrl = `ipfs://${ipfsHash}`;
-
+await fetch("/api/pin-cid", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ cid: ipfsHash }),
+});
        onMetadataChange({
                 name,
                 title,

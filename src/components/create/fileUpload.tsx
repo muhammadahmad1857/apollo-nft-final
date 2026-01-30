@@ -118,6 +118,12 @@ const uploadToPinata = async (file: File) => {
 
     const ipfsHash = uploadResJson?.data.cid; // usually included in fields
     const ipfsUrl = `ipfs://${ipfsHash}`;
+    setUploadProgress(75)
+    await fetch("/api/pin-cid", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ cid: ipfsHash }),
+});
     console.log(ipfsHash,ipfsUrl)
     setUploadProgress(100);
     onUploadComplete(ipfsUrl, `.${file.name.split(".").pop()}`||"" , file.name);
