@@ -1,4 +1,4 @@
-// hooks/useAuction.ts
+"use client"
 import { useState, useRef, useCallback } from "react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { toast } from "sonner";
