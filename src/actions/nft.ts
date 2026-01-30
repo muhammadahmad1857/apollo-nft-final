@@ -20,6 +20,9 @@ export async function getNFTById(id: number): Promise<PrismaNFT | null> {
 
 export async function getAllNFTs(): Promise<(PrismaNFT & { creator: UserModel|null })[]> {
   return db.nFT.findMany({
+    where:{
+        isListed:true
+    },
     orderBy: { createdAt: "desc" },
     include: { creator: true }, // nested relation
   });
