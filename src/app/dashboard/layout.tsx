@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import React, { useEffect } from 'react'
 import { toast } from 'sonner'
 import { useAccount } from 'wagmi'
-
+import Footer from '@/components/footer'
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const {address,isConnected,isConnecting,isReconnecting} = useAccount()
   const router = useRouter();
@@ -46,6 +46,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                   </div>
                 </header> */}
       {children}
+      <Footer/>
       </SidebarInset>
     </SidebarProvider>
 
