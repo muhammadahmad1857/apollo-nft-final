@@ -38,6 +38,7 @@ model NFT {
   creatorId   Int
   name String
   title String
+  imageUrl String
   description String
   ownerId     Int
   tokenUri    String

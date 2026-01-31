@@ -12,7 +12,7 @@ const socialLinks = [
 export default function Footer() {
   return (
     <footer className="bg-background text-primary py-10 px-4 border-t border-border">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-8">
+      <div className="max-w-full mx-auto flex flex-col md:flex-row justify-between gap-8">
         {/* Logo and Description */}
         <div className="flex-1 min-w-[220px]">
           <div className="flex items-center gap-2 mb-2">

@@ -105,7 +105,9 @@ export async function GET() {
             isListed: false,
             creatorId: creator.id,
             ownerId: creator.id,
+            imageUrl: meta.cover || "",
           },
+
         });
         console.log(`[SYNC-MINTS] NFT upserted for tokenId ${tokenId}`);
 

@@ -82,10 +82,11 @@ setMints(data as (PrismaNFT & { creator: UserModel })[]);
             tokenId={nft.tokenId}
             title={nft.title}
             description={nft.description}
-            cover={undefined}
-            media={nft.tokenUri}
+            cover={nft.imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
+            media={nft.tokenUri.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
             name={nft.name || "Unknown"}
             minted={true}
+            showBuyButton={true}
           />
         ))}
       </div>
