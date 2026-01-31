@@ -12,53 +12,35 @@ import { useUser } from "@/hooks/useUser"; // your wagmi-based hook
 import { truncateAddress } from "@/lib/truncate";
 import * as nftActions from "@/actions/nft"; // your server actions
 import { useAccount } from "wagmi";
-import {
-  AuctionModel,
-  NFTLikeModel,
-  NFTModel,
-  UserModel,
-} from "@/generated/prisma/models";
+import { AuctionModel, NFTLikeModel, NFTModel, UserModel } from "@/generated/prisma/models";
 
 export default function Page() {
   const router = useRouter();
-  const { address } = useAccount();
-  const { data: user, isLoading, error } = useUser(address || ""); // gets current logged-in wallet
-  const [nfts, setNFTs] = React.useState<
-    (NFTModel & {
-      likes?: NFTLikeModel[];
-      auction?: AuctionModel | null;
-      owner?: UserModel;
-    })[]
-  >([]);
+  const {address} = useAccount()
+  const { data: user,isLoading,error } = useUser(address||""); // gets current logged-in wallet
+  const [nfts, setNFTs] = React.useState<(NFTModel & { likes?: NFTLikeModel[],auction?: AuctionModel|null, owner?: UserModel })[]>([]);
   const [search, setSearch] = React.useState("");
   const [filterMinted, setFilterMinted] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    // wait until we have both address and user.id
-    if (!address || !user?.id || isLoading) return;
-  
-    let mounted = true;
-  
+    if (!address) return;
+
     async function fetchNFTs() {
       setLoading(true);
       try {
-        const ownedNFTs = await nftActions.getNFTsByOwner(user.id, true);
-        if (mounted) setNFTs(ownedNFTs);
+        const ownedNFTs = await nftActions.getNFTsByOwner(user!.id,true);
+        setNFTs(ownedNFTs);
       } catch (err) {
         console.error(err);
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     }
-  
+
     fetchNFTs();
-  
-    return () => {
-      mounted = false; // cancel state update if component unmounts
-    };
-  }, [address, user?.id, isLoading]); // depends on address, user.id, isLoading
-  
+  }, [address, user.id]);
+
   const filteredNFTs = nfts.filter((nft) => {
     if (filterMinted && !nft.isListed) return false;
     if (!nft.title.toLowerCase().includes(search.toLowerCase())) return false;
@@ -74,21 +56,11 @@ export default function Page() {
         <Card className="flex flex-col items-center p-6 gap-3">
           <Avatar className="size-24 mb-2">
             <AvatarImage src={user.avatarUrl ?? ""} alt={user.name} />
-            <AvatarFallback className="rounded-lg">
-              {user.name.slice(0, 2).toUpperCase()}
-            </AvatarFallback>
+            <AvatarFallback className="rounded-lg">{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div className="text-xl font-bold">{user.name}</div>
-          <div className="text-muted-foreground">
-            {truncateAddress(user.walletAddress)}
-          </div>
-          <Button
-            size="sm"
-            className="w-full mt-4"
-            onClick={() => router.push("/dashboard/edit-profile")}
-          >
-            Edit Profile
-          </Button>
+          <div className="text-muted-foreground">{truncateAddress(user.walletAddress)}</div>
+          <Button size="sm" className="w-full mt-4" onClick={() => router.push("/dashboard/edit-profile")}>Edit Profile</Button>
         </Card>
 
         {/* Stats */}
@@ -125,9 +97,7 @@ export default function Page() {
         {loading ? (
           <div>Loading NFTs...</div>
         ) : filteredNFTs.length === 0 ? (
-          <div className="text-center text-muted-foreground">
-            No NFTs found.
-          </div>
+          <div className="text-center text-muted-foreground">No NFTs found.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredNFTs.map((nft) => (
@@ -136,17 +106,14 @@ export default function Page() {
                 nft={{
                   title: nft.title,
                   likes: nft.likes?.length ?? 0,
-                  image: nft.imageUrl.replace(
-                    "ipfs://",
-                    `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`
-                  ),
+                  image: nft.imageUrl.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_PINATA_GATEWAY}/ipfs/`),
                   minted: nft.isListed,
                   id: nft.id,
                   tokenId: nft.tokenId,
-                  isApproved:
-                    nft.auction || nft.owner?.approvedAuction ? true : false,
+                  isApproved: nft.auction || nft.owner?.approvedAuction ? true : false,
                 }}
                 owner={nft.ownerId === user.id}
+                
               />
             ))}
           </div>
