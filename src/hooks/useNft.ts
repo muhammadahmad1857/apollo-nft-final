@@ -29,6 +29,7 @@ export function useAuction(nftId?: number) {
 export function useUpdateNFT() {
   const queryClient = useQueryClient();
   return useMutation({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
       return await updateNFT(id, data);
     },

@@ -16,7 +16,7 @@ import { useParams } from "next/navigation";
 
 export default function TokenDetailsPage() {
   const { tokenid } = useParams();
-  const { data: token, isLoading: loading, error: nftError } = useNFT(tokenid ? Number(tokenid) : undefined);
+  const { data: token, isLoading: loading, error: nftError } = useNFT(Number(tokenid));
   const { data: auction } = useAuction(token?.id);
   console.log("Token data:", token);
   console.log("TokenID:", tokenid);
