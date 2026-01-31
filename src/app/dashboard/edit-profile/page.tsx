@@ -19,8 +19,8 @@ export default function EditProfilePage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  if (!user) return <div className="p-8">Connect your wallet to edit your profile.</div>;
-
+  if (!user)
+    return <div className="p-8">Connect your wallet to edit your profile.</div>;
 
   // Pinata upload logic (from FileUpload)
   const uploadToPinata = async (file: File) => {
@@ -28,7 +28,7 @@ export default function EditProfilePage() {
       setIsUploading(true);
       setUploadProgress(0);
 
-    // Get signed JWT
+      // Get signed JWT
       const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
       console.log("JWT", jwtRes);
       if (!jwtRes.ok) {
@@ -38,29 +38,28 @@ export default function EditProfilePage() {
       setUploadProgress(33);
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("network","public")
-      console.log("")
-      setUploadProgress(50)
+      formData.append("network", "public");
+      console.log("");
+      setUploadProgress(50);
       // Upload to Pinata
-      const uploadRes = await fetch(
-        "https://uploads.pinata.cloud/v3/files",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${JWT}`,
-          },
-          body: formData,
-        }
-      );
+      const uploadRes = await fetch("https://uploads.pinata.cloud/v3/files", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${JWT}`,
+        },
+        body: formData,
+      });
       console.log("uploadRes", uploadRes);
       if (!uploadRes.ok) {
         const error = await uploadRes.text();
         throw new Error(error || "Upload failed");
       }
-      setUploadProgress(77)
+      setUploadProgress(77);
       const json = await uploadRes.json();
       console.log("uploadRes.json()", json);
-      setAvatarUrl(`https://${process.env.NEXT_PUBLIC_PINATA_GATEWAY}/ipfs/${json.data.cid}`);
+      setAvatarUrl(
+        `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${json.data.cid}`
+      );
       setUploadProgress(100);
       toast.success("Image uploaded successfully!");
     } catch (err) {
@@ -85,7 +84,7 @@ export default function EditProfilePage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    
+
     try {
       await updateUserByWallet(address!, {
         name,
@@ -124,7 +123,9 @@ export default function EditProfilePage() {
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
-              <div className="text-xs text-zinc-500 mt-1 text-center">Uploading image...</div>
+              <div className="text-xs text-zinc-500 mt-1 text-center">
+                Uploading image...
+              </div>
             </div>
           )}
         </div>
@@ -132,13 +133,21 @@ export default function EditProfilePage() {
           <label className="block mb-1 font-medium">Name</label>
           <Input
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
             required
           />
         </div>
-        <Button type="submit" disabled={isSaving || isUploading} className="w-full">
-          {isSaving ? "Saving..." : isUploading ? "Uploading..." : "Save Changes"}
+        <Button
+          type="submit"
+          disabled={isSaving || isUploading}
+          className="w-full"
+        >
+          {isSaving
+            ? "Saving..."
+            : isUploading
+            ? "Uploading..."
+            : "Save Changes"}
         </Button>
       </form>
     </div>
