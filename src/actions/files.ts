@@ -49,10 +49,12 @@ export async function getFileById(
 }
 
 export async function getFileTypeByIPFS(ipfs: string): Promise<string | null> {
+  console.log("IPFS we are getting",ipfs)
   const file = await db.file.findFirst({
     where: { ipfsUrl: ipfs },
     select: { type: true }, // only fetch the "type" field
   });
+  console.log("Result we're getting",file)
 
   return file?.type || null;
 }
