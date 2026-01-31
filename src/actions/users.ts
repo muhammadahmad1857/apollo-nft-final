@@ -122,6 +122,6 @@ export async function deleteUserByWallet(
 export async function approveAuctionUser(userId: number) {
   return db.user.update({
     where: { id: userId },
-    data: { auctionApproved: true },
+    data: { approvedAuction: true },
   });
 }

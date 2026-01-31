@@ -134,7 +134,7 @@ export default function UserDetailsPage() {
         </Button>
 
         {/* Approve for Auction */}
-        {!user.auctionApproved && (
+        {!user.approvedAuction && (
           <Button
             onClick={handleApproveAuction}
             disabled={isApproving || isApprovePending || isApproveConfirming}
@@ -146,7 +146,7 @@ export default function UserDetailsPage() {
           </Button>
         )}
 
-        {user.auctionApproved && (
+        {user.approvedAuction && (
           <div className="text-green-600 font-semibold text-center">
             ✅ Approved for auctions
           </div>
