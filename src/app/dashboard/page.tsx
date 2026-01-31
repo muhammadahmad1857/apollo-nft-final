@@ -35,10 +35,11 @@ export default function Page() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    if (!address  && !user &&!isLoading) return; // wait for user id
-
+    // wait until we have both address and user.id
+    if (!address || !user?.id || isLoading) return;
+  
     let mounted = true;
-
+  
     async function fetchNFTs() {
       setLoading(true);
       try {
@@ -50,14 +51,14 @@ export default function Page() {
         if (mounted) setLoading(false);
       }
     }
-
+  
     fetchNFTs();
-
+  
     return () => {
       mounted = false; // cancel state update if component unmounts
     };
-  }, []); // only depends on address and user.id
-
+  }, [address, user?.id, isLoading]); // depends on address, user.id, isLoading
+  
   const filteredNFTs = nfts.filter((nft) => {
     if (filterMinted && !nft.isListed) return false;
     if (!nft.title.toLowerCase().includes(search.toLowerCase())) return false;
