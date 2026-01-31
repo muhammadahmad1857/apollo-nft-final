@@ -70,12 +70,13 @@ export function CreateAuctionButton({
       );
       setTxHash(txHashResult);
       toast.info("Transaction sent! Waiting for confirmation...");
-      console.log("TX HASH", txHashResult);
+      console.log("TX HASH", txHashResult,isReceiptSuccess);
       // 2️⃣ Wait for blockchain confirmation
       // Wait until receipt is loaded and successful
       await new Promise<void>((resolve, reject) => {
         const checkReceipt = () => {
-          if (isReceiptSuccess) {
+          console.log("isReceiptSuccess",isReceiptSuccess)
+          if (!isReceiptLoading && isReceiptSuccess) {
             resolve();
           } else if (receiptError) {
             reject(receiptError);
