@@ -122,7 +122,7 @@ export function CreateAuctionButton({
         <DialogHeader>
           <DialogTitle>Create Auction</DialogTitle>
         </DialogHeader>
-        {!user?.approvedAuction ? (
+        {!user ?<p>Loading user...</p>:!user?.approvedAuction ? (
           <ApproveAuctionButton userId={user.id} />
         ) : (
           <div className="space-y-4 mt-2">
