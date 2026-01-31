@@ -46,15 +46,14 @@ export default function MintSuccessDialog({
               </p>
 
               <div className="flex gap-3 mt-4 w-full">
-                <Link href="/dashboard" className="w-full">
-                  <Button className="w-full bg-cyan-600 hover:bg-cyan-700">
+                <Link href="/dashboard" className="flex-1">
+                  <Button className=" bg-cyan-600 hover:bg-cyan-700">
                     Go to Dashboard
                   </Button>
                 </Link>
 
                 <Button
                   variant="outline"
-                  className="w-full"
                   onClick={onClose}
                 >
                   Close

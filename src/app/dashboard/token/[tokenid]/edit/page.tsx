@@ -134,7 +134,7 @@ useEffect(() => {
         id: token.id,
         data: {
           isListed,
-          mintPrice: priceEth ? Math.floor(Number(priceEth) * 1e18) : 0,
+          mintPrice: priceEth ? Math.floor(Number(priceEth)) : 0,
         },
       });
 
@@ -253,7 +253,7 @@ useEffect(() => {
                   {listing && listing[0] !== ZERO_ADDRESS && (
                     <p className="text-sm text-muted-foreground">
                       On-chain price:{" "}
-                      <strong>{Number(listing[1]) / 1e18} ETH</strong>
+                      <strong>{Number(listing[1])} Apollo</strong>
                     </p>
                   )}
 

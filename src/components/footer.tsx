@@ -1,21 +1,21 @@
-'use client'
+"use client";
 
 import Link from "next/link";
 import Logo from "./Logo";
 import { Twitter, Mail } from "lucide-react";
 
 const socialLinks = [
-  { icon: Twitter, href: "#", label: "Twitter" },
+  { icon: Twitter, href: "https://twitter.com/apollonft", label: "Twitter" },
   { icon: Mail, href: "mailto:hello@apollonft.io", label: "Email" },
 ];
 
 export default function Footer() {
   return (
     <footer className="bg-background text-primary py-10 px-4 border-t border-border">
-      <div className="max-w-full mx-auto flex flex-col md:flex-row justify-between gap-8">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-10 md:gap-16 flex-wrap">
         {/* Logo and Description */}
         <div className="flex-1 min-w-[220px]">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <Logo width={110} height={50} />
           </div>
           <p className="text-sm mb-4">
@@ -41,54 +41,69 @@ export default function Footer() {
         </div>
 
         {/* Quick Links */}
-        <div className="flex-1 min-w-[180px]">
-          <h3 className="font-bold text-lg mb-2">Quick Links</h3>
+        <div className="flex-1 min-w-[160px]">
+          <h3 className="font-bold text-lg mb-3">Quick Links</h3>
           <ul className="space-y-2">
-            <li><Link href="/" className="hover:underline">Home</Link></li>
-            <li><Link href="/marketplace" className="hover:underline">Marketplace</Link></li>
-            <li><Link href="/dashboard" className="hover:underline">Dashboard</Link></li>
+            <li>
+              <Link href="/" className="hover:underline">Home</Link>
+            </li>
+            <li>
+              <Link href="/marketplace" className="hover:underline">Marketplace</Link>
+            </li>
+            <li>
+              <Link href="/dashboard" className="hover:underline">Dashboard</Link>
+            </li>
+            <li>
+              <Link href="/faq" className="hover:underline">FAQ</Link>
+            </li>
+            <li>
+              <Link href="/contact" className="hover:underline">Contact</Link>
+            </li>
           </ul>
         </div>
 
         {/* Our Ecosystem */}
-        <div className="flex-1 min-w-[180px]">
-          <h3 className="font-bold text-lg mb-2">Our Ecosystem</h3>
+        <div className="flex-1 min-w-[160px]">
+          <h3 className="font-bold text-lg mb-3">Our Ecosystem</h3>
           <ul className="space-y-2">
-            <li>ZEUS Chain</li>
-            <li>ZEUSx.io</li>
-            <li>ShopwithCrypto</li>
-            <li>theAlley</li>
-            <li>BLAQpay</li>
-            <li>AmpleSWAP</li>
+            <li><Link href="https://zeuschain.io" className="hover:underline" target="_blank">ZEUS Chain</Link></li>
+            <li><Link href="https://zeusx.io" className="hover:underline" target="_blank">ZEUSx.io</Link></li>
+            <li><Link href="https://shopwithcrypto.io" className="hover:underline" target="_blank">ShopwithCrypto</Link></li>
+            <li><Link href="https://thealley.io" className="hover:underline" target="_blank">theAlley</Link></li>
+            <li><Link href="https://blaqpay.io" className="hover:underline" target="_blank">BLAQpay</Link></li>
+            <li><Link href="https://ampleswap.com" className="hover:underline" target="_blank">AmpleSWAP</Link></li>
           </ul>
         </div>
 
         {/* Company */}
-        <div className="flex-1 min-w-[180px]">
-          <h3 className="font-bold text-lg mb-2">Company</h3>
+        <div className="flex-1 min-w-[160px]">
+          <h3 className="font-bold text-lg mb-3">Company</h3>
           <ul className="space-y-2">
-            <li>apollonft, Inc.</li>
-            <li>hello@apollonft.io</li>
-            <li>610-621-4804</li>
+            <li><Link href="#" className="hover:underline">apollonft, Inc.</Link></li>
+            <li><a href="mailto:hello@apollonft.io" className="hover:underline">hello@apollonft.io</a></li>
+            <li><a href="tel:+16106214804" className="hover:underline">610-621-4804</a></li>
+            <li><Link href="/privacy" className="hover:underline">Privacy Policy</Link></li>
+            <li><Link href="/terms" className="hover:underline">Terms of Service</Link></li>
           </ul>
         </div>
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-gray-800 mt-8 pt-4 text-center text-xs">
-        © 2026 Apollo Cash · Powered by apollonft, Inc. All rights reserved.
-        <br />
-        <span className="block mt-2">
-          apollonft, Inc. is registered with FINCEN as an MSB (Money Service Business). The BSA ID registration number awarded by FINCEN is 31000313564202 and is used for
-          <a href="https://ShopwithCrypto.io" className="text-blue-400 hover:underline mx-1">ShopwithCrypto.io</a>,
-          <a href="https://DinewithCrypto.io" className="text-blue-400 hover:underline mx-1">DinewithCrypto.io</a>,
-          <a href="https://ZEUSEenergy.io" className="text-blue-400 hover:underline mx-1">ZEUSEenergy.io</a>,
-          <a href="https://BitNotify.io" className="text-blue-400 hover:underline mx-1">BitNotify.io</a>,
-          <a href="https://Ampleswap.com" className="text-blue-400 hover:underline mx-1">Ampleswap.com</a>,
-          <a href="https://ZEUSChainScan.io" className="text-blue-400 hover:underline mx-1">ZEUSChainScan.io</a>,
-          <a href="https://Apolloscan.io" className="text-blue-400 hover:underline mx-1">Apolloscan.io</a>,
-          <a href="https://BLAQpay.io" className="text-blue-400 hover:underline mx-1">BLAQpay.io</a> and
-          <a href="https://ZXUSD.io" className="text-blue-400 hover:underline mx-1">ZXUSD.io</a>.
+      <div className="border-t border-gray-800 mt-8 pt-4 text-center text-xs space-y-2 md:space-y-0 md:flex md:flex-col md:items-center">
+        <span>© 2026 Apollo Cash · Powered by apollonft, Inc. All rights reserved.</span>
+        <span>
+          apollonft, Inc. is registered with FINCEN as an MSB (Money Service Business). BSA ID: 31000313564202
+        </span>
+        <span className="flex flex-wrap justify-center gap-1">
+          <Link href="https://shopwithcrypto.io" target="_blank" className="text-blue-400 hover:underline">ShopwithCrypto.io</Link>,
+          <Link href="https://dinewithcrypto.io" target="_blank" className="text-blue-400 hover:underline">DinewithCrypto.io</Link>,
+          <Link href="https://zeuseenergy.io" target="_blank" className="text-blue-400 hover:underline">ZEUSEenergy.io</Link>,
+          <Link href="https://bitnotify.io" target="_blank" className="text-blue-400 hover:underline">BitNotify.io</Link>,
+          <Link href="https://ampleswap.com" target="_blank" className="text-blue-400 hover:underline">AmpleSwap.com</Link>,
+          <Link href="https://zeuschainscan.io" target="_blank" className="text-blue-400 hover:underline">ZEUSChainScan.io</Link>,
+          <Link href="https://apolloscan.io" target="_blank" className="text-blue-400 hover:underline">Apolloscan.io</Link>,
+          <Link href="https://blaqpay.io" target="_blank" className="text-blue-400 hover:underline">BLAQpay.io</Link>,
+          <Link href="https://zxusd.io" target="_blank" className="text-blue-400 hover:underline">ZXUSD.io</Link>
         </span>
       </div>
     </footer>
