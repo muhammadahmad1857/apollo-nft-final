@@ -24,6 +24,9 @@ export default function EditRoyaltyPage() {
   const { data: token, isLoading: loading, error: nftError } = useNFT(
     tokenid ? Number(Array.isArray(tokenid) ? tokenid[0] : tokenid) : undefined
   );
+  console.log("Token data:", token);
+  console.log("TokenID:", tokenid);
+  
   const updateNFTMutation = useUpdateNFT();
 
   const [royalty, setRoyalty] = useState(500);

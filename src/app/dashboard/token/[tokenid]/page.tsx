@@ -18,6 +18,9 @@ export default function TokenDetailsPage() {
   const { tokenid } = useParams();
   const { data: token, isLoading: loading, error: nftError } = useNFT(tokenid ? Number(tokenid) : undefined);
   const { data: auction } = useAuction(token?.id);
+  console.log("Token data:", token);
+  console.log("TokenID:", tokenid);
+  console.log("Auction data:", auction);
   // Likes and creator fetched with react-query for caching
   const { data: likes = [] } = useQuery({
     queryKey: ["nft-likes", token?.id],
