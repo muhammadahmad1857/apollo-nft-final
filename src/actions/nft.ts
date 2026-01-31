@@ -33,6 +33,8 @@ export async function getNFTByTokenId(tokenId: number): Promise<PrismaNFT | null
   return db.nFT.findUnique({ where: { tokenId } });
 }
 
+
+
 export async function getNFTsByCreator(creatorId: number): Promise<PrismaNFT[]> {
   return db.nFT.findMany({ where: { creatorId }, orderBy: { createdAt: "desc" } });
 }

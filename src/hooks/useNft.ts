@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getNFTByTokenId, updateNFT } from "@/actions/nft";
+import { getNFTById, updateNFT } from "@/actions/nft";
 import { getAuctionByNFT } from "@/actions/auction";
 
 export function useNFT(tokenid?: number) {
@@ -8,7 +8,7 @@ export function useNFT(tokenid?: number) {
     enabled: !!tokenid,
     queryFn: async () => {
       if (!tokenid) return null;
-      return await getNFTByTokenId(tokenid);
+      return await getNFTById(tokenid);
     },
     staleTime: 1000 * 60 * 5, // 5 min
   });
