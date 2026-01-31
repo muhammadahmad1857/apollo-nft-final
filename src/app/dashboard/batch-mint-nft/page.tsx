@@ -23,13 +23,12 @@ export default function BatchMintNFTPage() {
     if (!selectedFiles.length) return;
     setIsMinting(true);
 
-   const success= await mint({ tokenURIs: selectedFiles, quantity: selectedFiles.length, royaltyBps, isBatch: true });
+   await mint({ tokenURIs: selectedFiles, quantity: selectedFiles.length, royaltyBps, isBatch: true });
    
     setIsMinting(false);
     
-  if (success) {
     setShowSuccess(true);
-  }
+  
   };
 
   handleToasts();

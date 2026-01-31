@@ -15,9 +15,7 @@ import {nftABIArray as abi,nftAddress as contractAddress} from "@/lib/wagmi/cont
 export function useMintContract() {
   const { address, isConnected } = useAccount();
   const toastIdRef = useRef<string | number | null>(null);
-  const resolveRef = useRef<((v: boolean) => void) | null>(null);
-  const rejectRef = useRef<((v: boolean) => void) | null>(null);
-  
+
   // Track URIs that were actually minted
   const mintedUrisRef = useRef<string[]>([]);
 
@@ -63,55 +61,6 @@ export function useMintContract() {
   /* ----------------------------------------
      Mint function
   ---------------------------------------- */
-  // const mint = useCallback(
-  //   async ({
-  //     tokenURIs,
-  //     quantity = 1,
-  //     royaltyBps = 0,
-  //     isBatch = false,
-  //   }: {
-  //     tokenURIs: string | string[];
-  //     quantity?: number;
-  //     royaltyBps?: number;
-  //     isBatch?: boolean;
-  //   }) => {
-  //     if (!isConnected) {
-  //       toast.error("Connect your wallet first");
-  //       return;
-  //     }
-
-  //     const urisArray = Array.isArray(tokenURIs)
-  //       ? tokenURIs
-  //       : [tokenURIs];
-
-  //     if (!urisArray.length) {
-  //       toast.error("No token URI provided");
-  //       return;
-  //     }
-
-  //     // Store URIs so we can update DB after success
-  //     mintedUrisRef.current = urisArray;
-
-  //     setIsBusy(true);
-
-  //     try {
-  //       writeContract({
-  //         address: contractAddress,
-  //         abi,
-  //         functionName: isBatch ? "batchMint" : "mint",
-  //         args: isBatch
-  //           ? [urisArray[0], quantity, royaltyBps]
-  //           : [urisArray[0], royaltyBps],
-  //         value: !isBatch ? BigInt(0.1 * 1e18):BigInt(0.1 * 1e18) * BigInt(quantity),
-  //       });
-  //     } catch (err) {
-  //       console.error(err);
-  //       setIsBusy(false);
-  //     }
-  //   },
-  //   [abi, contractAddress, isConnected, writeContract]
-  // );
-
   const mint = useCallback(
     async ({
       tokenURIs,
@@ -123,50 +72,43 @@ export function useMintContract() {
       quantity?: number;
       royaltyBps?: number;
       isBatch?: boolean;
-    }): Promise<boolean> => {
+    }) => {
       if (!isConnected) {
         toast.error("Connect your wallet first");
-        return false;
+        return;
       }
-  
+
       const urisArray = Array.isArray(tokenURIs)
         ? tokenURIs
         : [tokenURIs];
-  
+
       if (!urisArray.length) {
         toast.error("No token URI provided");
-        return false;
+        return;
       }
-  
+
+      // Store URIs so we can update DB after success
       mintedUrisRef.current = urisArray;
+
       setIsBusy(true);
-  
-      return new Promise<boolean>((resolve, reject) => {
-        resolveRef.current = resolve;
-        rejectRef.current = reject;
-  
-        try {
-          writeContract({
-            address: contractAddress,
-            abi,
-            functionName: isBatch ? "batchMint" : "mint",
-            args: isBatch
-              ? [urisArray[0], quantity, royaltyBps]
-              : [urisArray[0], royaltyBps],
-            value: !isBatch
-              ? BigInt(0.1 * 1e18)
-              : BigInt(0.1 * 1e18) * BigInt(quantity),
-          });
-        } catch (err) {
-          console.error(err);
-          setIsBusy(false);
-          reject(false);
-        }
-      });
+
+      try {
+        writeContract({
+          address: contractAddress,
+          abi,
+          functionName: isBatch ? "batchMint" : "mint",
+          args: isBatch
+            ? [urisArray[0], quantity, royaltyBps]
+            : [urisArray[0], royaltyBps],
+          value: !isBatch ? BigInt(0.1 * 1e18):BigInt(0.1 * 1e18) * BigInt(quantity),
+        });
+      } catch (err) {
+        console.error(err);
+        setIsBusy(false);
+      }
     },
     [abi, contractAddress, isConnected, writeContract]
   );
-   
 
   /* ----------------------------------------
      Toast + transaction lifecycle
@@ -192,43 +134,24 @@ export function useMintContract() {
     }
 
     // Tx success
-    // if (isSuccess && toastIdRef.current) {
-    //   fetch('/api/sync-mints', {
-    //   method: 'GET',
-    //   // headers: {
-    //   //   'x-sync-secret': process.env.NEXT_PUBLIC_SYNC_SECRET || 'dev-secret' // use public for simplicity or env
-    //   // }
-    // }).catch(() => {});
-    //   toast.success("NFT minted successfully 🎉", {
-    //     id: toastIdRef.current,
-    //   });
-
-    //   if (mintedUrisRef.current.length) {
-    //     updateMintStatus(mintedUrisRef.current);
-    //   }
-
-    //   toastIdRef.current = null;
-    //   setIsBusy(false);
-    // }
     if (isSuccess && toastIdRef.current) {
-      fetch("/api/sync-mints").catch(() => {});
-    
+      fetch('/api/sync-mints', {
+      method: 'GET',
+      // headers: {
+      //   'x-sync-secret': process.env.NEXT_PUBLIC_SYNC_SECRET || 'dev-secret' // use public for simplicity or env
+      // }
+    }).catch(() => {});
       toast.success("NFT minted successfully 🎉", {
         id: toastIdRef.current,
       });
-    
+
       if (mintedUrisRef.current.length) {
         updateMintStatus(mintedUrisRef.current);
       }
-    
-      resolveRef.current?.(true);
-      resolveRef.current = null;
-      rejectRef.current = null;
-    
+
       toastIdRef.current = null;
       setIsBusy(false);
     }
-    
 
     // Tx failed
     if (txError && toastIdRef.current) {
@@ -240,12 +163,8 @@ export function useMintContract() {
         id: toastIdRef.current,
       });
 
-      rejectRef.current?.(false);
-      resolveRef.current = null;
-      rejectRef.current = null;
-    
       toastIdRef.current = null;
-      setIsBusy(false);    
+      setIsBusy(false);
     }
   }, [
     isConfirming,

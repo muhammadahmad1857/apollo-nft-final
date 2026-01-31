@@ -70,9 +70,8 @@ export default function MintSingleNFTPage() {
     const success = await mint({ tokenURIs: selectedFile, royaltyBps, });
     setIsMinting(false);
     
-  if (success) {
     setShowSuccess(true);
-  }
+  
   };
 
   handleToasts();
