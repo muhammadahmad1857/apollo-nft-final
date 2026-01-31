@@ -22,6 +22,7 @@ export default function Header() {
   const navItems = [
     { label: 'Marketplace', href: '/marketplace' },
     { label: 'Dashboard', href: '/dashboard' },
+    {label:"Auction",href:"/auction"}
     
   ]
 

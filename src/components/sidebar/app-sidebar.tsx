@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   
   ShoppingCart,
+  User,
 } from "lucide-react"
 
 import { NavMain } from "@/components/sidebar/nav-main"
@@ -110,9 +111,25 @@ const data = {
     },
     {
       title: "MarketPlace",
-      url: "/dashboard/marketplace",
+      url: "/marketplace",
       icon: ShoppingCart,
       
+    },
+    {
+      title: "User Settings",
+      url: "/dashboard/user",
+      icon: User,
+     items: [
+        {
+          title: "Settings",
+          url: "/dashboard/user-details",
+        },
+        {
+          title: "Edit profile",
+          url: "/dashboard/edit-profile",
+        },
+       
+      ],
     },
   ],
 

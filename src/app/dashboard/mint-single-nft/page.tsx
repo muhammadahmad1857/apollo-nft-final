@@ -135,17 +135,13 @@ export default function MintSingleNFTPage() {
           <div className="w-full aspect-square max-w-xs relative border-2 border-cyan-400/60 dark:border-cyan-300/40 rounded-2xl overflow-hidden shadow-xl bg-white dark:bg-black transition-all duration-300 animate-fade-in">
             {isLoadingPreview ? (
               <span className="flex items-center justify-center h-full w-full text-lg animate-pulse">Loading preview...</span>
-            ) : previewUrl ? (
-              <Image src={previewUrl} alt="preview" fill className="object-contain transition-transform duration-500 hover:scale-105" />
+            ) : metaJson ? (
+              <JsonWithIpfsImages data={metaJson} />
             ) : (
               <span className="flex items-center justify-center h-full w-full text-gray-400 dark:text-gray-600">No preview</span>
             )}
           </div>
-          {metaJson && (
-            <div className="w-full bg-gray-50 dark:bg-gray-900/60 rounded-xl p-4 border border-cyan-100 dark:border-cyan-900 text-left animate-fade-in delay-200">
-              <JsonWithIpfsImages data={metaJson} />
-            </div>
-          )}
+         
         </div>
       </div>
     </div>
