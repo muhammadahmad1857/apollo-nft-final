@@ -39,7 +39,7 @@ export default function Page() {
     }
 
     fetchNFTs();
-  }, [address, user.id]);
+  }, [address, user?.id]);
 
   const filteredNFTs = nfts.filter((nft) => {
     if (filterMinted && !nft.isListed) return false;
