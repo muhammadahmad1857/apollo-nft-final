@@ -12,6 +12,7 @@ import { useAccount } from "wagmi";
 import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
 import { transferOwnership } from "@/actions/nft";
+import { getFileTypeByIPFS } from "@/actions/files";
 
 export interface NFTCardProps {
   title: string;
@@ -62,7 +63,7 @@ const NFTCard = ({
     router.push(`/dashboard/token/${tokenId}/edit`);
   };
 
-  const [mediaType, setMediaType] = useState<"audio" | "video" | "unknown">("unknown");
+  const [mediaType, setMediaType] = useState<string>("unknown");
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
 
@@ -74,24 +75,13 @@ const NFTCard = ({
     )
     const detect = async () => {
       try {
-        const res = await fetch(media, { method: "HEAD" });
-        if (!res.ok) throw new Error();
-        const type = res.headers.get("content-type")?.toLowerCase() ?? "";
-        console.log("headers:",res.headers)
-        console.log("headers:",type)
-        if (type.startsWith("audio/")) return "audio";
-        if (type.startsWith("video/")) return "video";
-
-        const ext = media.split(".").pop()?.toLowerCase();
-        if (["mp3", "wav", "ogg", "m4a", "aac"].includes(ext ?? "")) return "audio";
-        if (["mp4", "webm", "ogg", "mov"].includes(ext ?? "")) return "video";
-        console.log("Media type is video")
-        return "unknown";
-      } catch {
-        const ext = media.split(".").pop()?.toLowerCase();
-        if (["mp3", "wav", "ogg", "m4a", "aac"].includes(ext ?? "")) return "audio";
-        if (["mp4", "webm", "ogg", "mov"].includes(ext ?? "")) return "video";
-        return "unknown";
+        let type = await getFileTypeByIPFS(media.replace(`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`,"ipfs://"))
+        if(!type) type = "unknown"
+        return type
+      }
+      catch(e){
+        toast.error("Error in getting file type")
+        return "unkown"
       }
     };
 
@@ -152,8 +142,8 @@ const NFTCard = ({
           )}
 
           {/* Media player / play button */}
-          {media && mediaType !== "unknown" ? (
-            mediaType === "audio" ? (
+          {media && mediaType !== "unknown" && mediaType !== ".json"? (
+            mediaType === ".wav"||mediaType ===".mp3" ? (
               <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-lg p-3 mb-4">
                 <audio controls className="w-full h-9" controlsList="nodownload">
                   <source src={media} type="audio/mpeg" />
