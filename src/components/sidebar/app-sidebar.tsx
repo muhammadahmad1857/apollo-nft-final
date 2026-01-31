@@ -28,6 +28,7 @@ import {
 import Logo from "../Logo"
 import { useUser } from "@/hooks/useUser"
 import { toast } from "sonner"
+import { useAccount } from "wagmi"
 
 // This is sample data.
 const data = {
@@ -118,7 +119,8 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { data: user, isLoading, error } = useUser();
+  const {address} = useAccount()
+  const { data: user, isLoading, error } = useUser(address||"");
   const [navUser, setNavUser] = React.useState<{ name: string; avatarUrl: string; address: string } | null>(null);
 
   React.useEffect(() => {

@@ -86,7 +86,7 @@ export function MetadataForm({
       }
       const json = await uploadRes.json();
       console.log("uploadRes.json()", json);
-      const ipfsHash = json.IpfsHash;
+      const ipfsHash = json.data.cid;
       const ipfsUrl = `ipfs://${ipfsHash}`;
    
       
