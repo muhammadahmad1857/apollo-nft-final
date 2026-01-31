@@ -24,23 +24,29 @@ export default function Page() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    if (!address) return;
-
+    if (!address || !user?.id) return; // wait for user id
+  
+    let mounted = true;
+  
     async function fetchNFTs() {
       setLoading(true);
       try {
-        const ownedNFTs = await nftActions.getNFTsByOwner(user!.id,true);
-        setNFTs(ownedNFTs);
+        const ownedNFTs = await nftActions.getNFTsByOwner(user.id, true);
+        if (mounted) setNFTs(ownedNFTs);
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     }
-
+  
     fetchNFTs();
-  }, [address, user]);
-
+  
+    return () => {
+      mounted = false; // cancel state update if component unmounts
+    };
+  }, [address, user?.id]); // only depends on address and user.id
+  
   const filteredNFTs = nfts.filter((nft) => {
     if (filterMinted && !nft.isListed) return false;
     if (!nft.title.toLowerCase().includes(search.toLowerCase())) return false;
