@@ -24,6 +24,7 @@ import {
 import { useUpdateRoyalty } from "@/hooks/useUpdateRoyalty";
 import { marketplaceAddress } from "@/lib/wagmi/contracts";
 import { PinataJSON } from "@/types";
+import { ApproveMarketButton } from "@/components/marketplace/marketplaceApproveButton"; // Market approve button
 
 export default function EditRoyaltyPage() {
   const { tokenid } = useParams();
@@ -36,10 +37,10 @@ export default function EditRoyaltyPage() {
 
   const { listNFT } = useListNFT();
   const { cancelListing, isPending: cancelPending } = useCancelListing();
-  const { data: listing, refetch } = useListing(BigInt(tokenId))as {
+  const { data: listing, refetch } = useListing(BigInt(tokenId)) as {
     data?: [string, string];
     refetch: () => void;
-  };;
+  };
 
   const [royalty, setRoyalty] = useState(500);
   const [isListed, setIsListed] = useState(false);
@@ -54,9 +55,7 @@ export default function EditRoyaltyPage() {
 
     setRoyalty(token.royaltyBps ?? 500);
     setIsListed(token.isListed ?? false);
-    setPriceEth(
-      token.mintPrice ? (Number(token.mintPrice)).toString() : ""
-    );
+    setPriceEth(token.mintPrice ? Number(token.mintPrice).toString() : "");
 
     if (token.tokenUri?.startsWith("ipfs://")) {
       fetch(
@@ -76,15 +75,11 @@ export default function EditRoyaltyPage() {
   const hasRoyaltyChanged = royalty !== token?.royaltyBps;
   const hasListingChanged =
     isListed !== token?.isListed ||
-    priceEth !==
-      (token?.mintPrice
-        ? (Number(token.mintPrice)).toString()
-        : "");
+    priceEth !== (token?.mintPrice ? Number(token.mintPrice).toString() : "");
 
   /** -------------------------------
    * Handlers
    -------------------------------- */
-
   async function handleSaveRoyalty() {
     if (!token || !hasRoyaltyChanged) return;
 
@@ -161,7 +156,10 @@ export default function EditRoyaltyPage() {
         <CardHeader className="flex flex-row gap-4 items-center bg-muted/50">
           {meta?.cover && (
             <img
-              src={meta.cover.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
+              src={meta.cover.replace(
+                "ipfs://",
+                `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`
+              )}
               alt=""
               className="w-20 h-20 rounded-lg object-cover"
             />
@@ -215,37 +213,47 @@ export default function EditRoyaltyPage() {
 
             {/* MARKETPLACE TAB */}
             <TabsContent value="marketplace" className="space-y-6">
-              <div className="flex items-center justify-between">
-                <Label>List on marketplace</Label>
-                <Switch checked={isListed} onCheckedChange={setIsListed} />
-              </div>
+              {/* Render ApproveMarketButton if not approved */}
+              {!token.approvedMarket ? (
+                <ApproveMarketButton
+                  userId={token.id}
+                  onSuccess={() => refetch()}
+                />
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <Label>List on marketplace</Label>
+                    <Switch checked={isListed} onCheckedChange={setIsListed} />
+                  </div>
 
-              {isListed && (
-                <div>
-                  <Label>Price (Apollo)</Label>
-                  <Input
-                    type="number"
-                    value={priceEth}
-                    onChange={(e) => setPriceEth(e.target.value)}
-                    placeholder="0.05"
-                  />
-                </div>
+                  {isListed && (
+                    <div>
+                      <Label>Price (Apollo)</Label>
+                      <Input
+                        type="number"
+                        value={priceEth}
+                        onChange={(e) => setPriceEth(e.target.value)}
+                        placeholder="0.05"
+                      />
+                    </div>
+                  )}
+
+                  {listing && listing[0] !== ZERO_ADDRESS && (
+                    <p className="text-sm text-muted-foreground">
+                      On-chain price:{" "}
+                      <strong>{Number(listing[1]) / 1e18} ETH</strong>
+                    </p>
+                  )}
+
+                  <Button
+                    className="w-full"
+                    disabled={cancelPending || updateNFT.isPending}
+                    onClick={handleSaveListing}
+                  >
+                    Save Marketplace
+                  </Button>
+                </>
               )}
-
-              {listing && listing[0] !== ZERO_ADDRESS && (
-                <p className="text-sm text-muted-foreground">
-                  On-chain price:{" "}
-                  <strong>{Number(listing[1]) / 1e18} ETH</strong>
-                </p>
-              )}
-
-              <Button
-                className="w-full"
-                disabled={cancelPending || updateNFT.isPending}
-                onClick={handleSaveListing}
-              >
-                Save Marketplace
-              </Button>
             </TabsContent>
           </Tabs>
         </CardContent>

@@ -16,6 +16,7 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   approvedAuction Boolean @default(false)
+  approvedMarket Boolean @default(false)
 
   // NFTs
   nftsCreated   NFT[]     @relation("CreatorNFTs")

@@ -125,3 +125,10 @@ export async function approveAuctionUser(userId: number) {
     data: { approvedAuction: true },
   });
 }
+
+export async function approveMarketUser(userId: number) {
+  return db.user.update({
+    where: { id: userId },
+    data: { approvedMarket: true },
+  });
+}
