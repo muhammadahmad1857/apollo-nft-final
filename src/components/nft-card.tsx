@@ -16,6 +16,7 @@ interface NFTCardProps {
     likes: number;
     image: string;
     minted: boolean;
+    isApproved: boolean;
     tokenId: number;
   };
   owner?: boolean;
@@ -80,7 +81,7 @@ export function NFTCard({ nft, owner = true, onEditRoyalty, onBuy, onShare }: NF
           >
             <Edit /> Edit Royalty
           </Button>
-          <CreateAuctionButton tokenId={BigInt(nft.tokenId)}/>
+          <CreateAuctionButton disabled={nft.isApproved} tokenId={BigInt(nft.tokenId)}/>
           </div>
         ) : (
           <Button

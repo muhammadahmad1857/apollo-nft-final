@@ -14,9 +14,10 @@ import { createAuction as createAuctionInDB } from "@/actions/auction"; // your 
 
 interface CreateAuctionButtonProps {
   tokenId: bigint;
+  disabled:boolean
 }
 
-export function CreateAuctionButton({ tokenId }: CreateAuctionButtonProps) {
+export function CreateAuctionButton({ tokenId,disabled }: CreateAuctionButtonProps) {
   const { address } = useAccount();
   const { createAuction: createAuctionOnChain, isPending } = useCreateAuction();
   const router = useRouter();
@@ -92,7 +93,7 @@ export function CreateAuctionButton({ tokenId }: CreateAuctionButtonProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Create Auction</Button>
+        <Button disabled={disabled}>Create Auction</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>

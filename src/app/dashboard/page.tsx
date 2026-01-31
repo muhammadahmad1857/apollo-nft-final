@@ -12,13 +12,13 @@ import { useUser } from "@/hooks/useUser"; // your wagmi-based hook
 import { truncateAddress } from "@/lib/truncate";
 import * as nftActions from "@/actions/nft"; // your server actions
 import { useAccount } from "wagmi";
-import { NFTLikeModel, NFTModel } from "@/generated/prisma/models";
+import { AuctionModel, NFTLikeModel, NFTModel, UserModel } from "@/generated/prisma/models";
 
 export default function Page() {
   const router = useRouter();
   const {address} = useAccount()
   const { data: user,isLoading,error } = useUser(address||""); // gets current logged-in wallet
-  const [nfts, setNFTs] = React.useState<(NFTModel & { likes?: NFTLikeModel[] })[]>([]);
+  const [nfts, setNFTs] = React.useState<(NFTModel & { likes?: NFTLikeModel[],auction?: AuctionModel|null, owner?: UserModel })[]>([]);
   const [search, setSearch] = React.useState("");
   const [filterMinted, setFilterMinted] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
@@ -29,7 +29,7 @@ export default function Page() {
     async function fetchNFTs() {
       setLoading(true);
       try {
-        const ownedNFTs = await nftActions.getNFTsByOwner(user!.id);
+        const ownedNFTs = await nftActions.getNFTsByOwner(user!.id,true);
         setNFTs(ownedNFTs);
       } catch (err) {
         console.error(err);
@@ -109,7 +109,8 @@ export default function Page() {
                   image: nft.tokenUri,
                   minted: nft.isListed,
                   id: nft.id,
-                  tokenId: nft.tokenId
+                  tokenId: nft.tokenId,
+                  isApproved: nft.auction || nft.owner?.approvedAuction ? true : false,
                 }}
                 owner={nft.ownerId === user.id}
                 
