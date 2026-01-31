@@ -10,6 +10,7 @@ import Image from "next/image";
 import { nftABIArray, nftAddress } from "@/lib/wagmi/contracts";
 import { SparklesIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import MintSuccessDialog from "@/components/MintSuccess";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 
@@ -70,8 +71,9 @@ export default function MintSingleNFTPage() {
     const success = await mint({ tokenURIs: selectedFile, royaltyBps, });
     setIsMinting(false);
     
+  if (success) {
     setShowSuccess(true);
-  
+  }
   };
 
   handleToasts();
@@ -148,6 +150,10 @@ export default function MintSingleNFTPage() {
          
         </div>
       </div>
+      <MintSuccessDialog
+  open={showSuccess}
+  onClose={() => setShowSuccess(false)}
+/>
     </div>
   );
 }

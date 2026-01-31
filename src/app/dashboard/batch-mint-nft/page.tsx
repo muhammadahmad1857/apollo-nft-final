@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useMintContract } from "@/hooks/useMint";
 import { nftABIArray, nftAddress } from "@/lib/wagmi/contracts";
 import { SparklesIcon } from "lucide-react";
+import MintSuccessDialog from "@/components/MintSuccess";
 
 export default function BatchMintNFTPage() {
   const { address } = useAccount();
@@ -23,12 +24,13 @@ export default function BatchMintNFTPage() {
     if (!selectedFiles.length) return;
     setIsMinting(true);
 
-   await mint({ tokenURIs: selectedFiles, quantity: selectedFiles.length, royaltyBps, isBatch: true });
+   const success= await mint({ tokenURIs: selectedFiles, quantity: selectedFiles.length, royaltyBps, isBatch: true });
    
     setIsMinting(false);
     
+  if (success) {
     setShowSuccess(true);
-  
+  }
   };
 
   handleToasts();
@@ -98,6 +100,10 @@ export default function BatchMintNFTPage() {
           ) : "Batch Mint"}
         </Button>
       </div>
+      <MintSuccessDialog
+  open={showSuccess}
+  onClose={() => setShowSuccess(false)}
+/>
     </div>
   );
 }

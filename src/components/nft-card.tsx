@@ -32,7 +32,7 @@ export function NFTCard({ nft, owner = true, onEditRoyalty, onBuy, onShare }: NF
     if (onEditRoyalty) return onEditRoyalty();
     router.push(`/dashboard/token/${nft.id}/edit`);
   };
-
+  console.log(nft.image)
   const handleShare = () => {
     if (!nft.minted) {
       toast.info("List this NFT first to share");
