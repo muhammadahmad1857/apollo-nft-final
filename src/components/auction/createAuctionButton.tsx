@@ -41,12 +41,12 @@ export function CreateAuctionButton({ tokenId }: CreateAuctionButtonProps) {
 
     try {
       const durationSec = BigInt(Number(duration) * 3600); // hours → seconds
-
+    
       // 1️⃣ Call smart contract
       const txHashResult = await createAuctionOnChain(tokenId, durationSec, minBid);
       setTxHash(txHashResult);
       toast.info("Transaction sent! Waiting for confirmation...");
-
+        console.log("TX HASH", txHashResult);
       // 2️⃣ Wait for blockchain confirmation
       // Wait until receipt is loaded and successful
       await new Promise<void>((resolve, reject) => {
@@ -61,6 +61,7 @@ export function CreateAuctionButton({ tokenId }: CreateAuctionButtonProps) {
         };
         checkReceipt();
       });
+      console.log("Transaction confirmed on chain");
 
       // 3️⃣ Update DB
       await createAuctionInDB({
@@ -98,8 +99,8 @@ export function CreateAuctionButton({ tokenId }: CreateAuctionButtonProps) {
           <DialogTitle>Create Auction</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
-          <div className="flex flex-col">
-            <Label>Minimum Bid (ETH)</Label>
+          <div className="flex flex-col gap-2">
+            <Label >Minimum Bid (ETH)</Label>
             <Input
               type="number"
               placeholder="0.01"
@@ -107,7 +108,7 @@ export function CreateAuctionButton({ tokenId }: CreateAuctionButtonProps) {
               onChange={(e) => setMinBid(e.target.value)}
             />
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-2">
             <Label>Duration (hours)</Label>
             <Input
               type="number"

@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect, FormEvent, useMemo } from "react";
+import { useState, useEffect,  } from "react";
 import { useParams } from "next/navigation";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useNFT, useAuction, useUpdateNFT } from "@/hooks/useNft";
+import { useNFT,  useUpdateNFT } from "@/hooks/useNft";
 import { useListNFT, useCancelListing, useListing } from "@/hooks/useMarketplace";
 import { useUpdateRoyalty } from "@/hooks/useUpdateRoyalty";
 import { marketplaceAddress } from "@/lib/wagmi/contracts";
@@ -154,7 +154,7 @@ export default function EditRoyaltyPage() {
   if (nftError)
     return <div className="p-8 text-center text-red-500">{nftError.message}</div>;
 
-  if (!token) return null;
+  if (!token) return <div className="p-8 text-center">NFT not found</div>;
 
   const identifier = tokenJson?.name || "Unknown NFT";
   const cover = tokenJson?.cover;
