@@ -24,7 +24,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       <SidebarInset>
         <SidebarHeader/>
         
-    {(!isConnected && (isConnecting || isReconnecting))
+    {((isConnecting || isReconnecting))
     ?  children
     : <div className="min-h-[calc(100vh-64px)] grid items-center text-center">Connecting to your account...</div>}
       <Footer/>
