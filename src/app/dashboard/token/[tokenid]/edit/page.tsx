@@ -55,7 +55,7 @@ export default function EditRoyaltyPage() {
     setRoyalty(token.royaltyBps ?? 500);
     setIsListed(token.isListed ?? false);
     setPriceEth(
-      token.mintPrice ? (Number(token.mintPrice) / 1e18).toString() : ""
+      token.mintPrice ? (Number(token.mintPrice)).toString() : ""
     );
 
     if (token.tokenUri?.startsWith("ipfs://")) {
@@ -78,7 +78,7 @@ export default function EditRoyaltyPage() {
     isListed !== token?.isListed ||
     priceEth !==
       (token?.mintPrice
-        ? (Number(token.mintPrice) / 1e18).toString()
+        ? (Number(token.mintPrice)).toString()
         : "");
 
   /** -------------------------------
@@ -147,7 +147,7 @@ export default function EditRoyaltyPage() {
   if (!token) return <div className="text-center py-20">NFT not found</div>;
 
   return (
-    <div className="container max-w-2xl py-8">
+    <div className="container mx-auto max-w-2xl py-8">
       <Link
         href="/dashboard"
         className="inline-flex items-center gap-2 text-sm mb-4 text-muted-foreground hover:text-foreground"
@@ -161,7 +161,7 @@ export default function EditRoyaltyPage() {
         <CardHeader className="flex flex-row gap-4 items-center bg-muted/50">
           {meta?.cover && (
             <img
-              src={meta.cover}
+              src={meta.cover.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
               alt=""
               className="w-20 h-20 rounded-lg object-cover"
             />
@@ -222,7 +222,7 @@ export default function EditRoyaltyPage() {
 
               {isListed && (
                 <div>
-                  <Label>Price (ETH)</Label>
+                  <Label>Price (Apollo)</Label>
                   <Input
                     type="number"
                     value={priceEth}

@@ -87,6 +87,7 @@ setMints(data as (PrismaNFT & { creator: UserModel })[]);
             name={nft.name || "Unknown"}
             minted={true}
             showBuyButton={true}
+            mintPrice={nft.mintPrice}
           />
         ))}
       </div>

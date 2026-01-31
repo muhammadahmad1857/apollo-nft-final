@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -12,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
+import { transferOwnership } from "@/actions/nft";
 
 export interface NFTCardProps {
   title: string;
@@ -21,37 +21,52 @@ export interface NFTCardProps {
   media: string;
   minted: boolean;
   tokenId: number;
+  mintPrice?: number; // in wei
   showBuyButton?: boolean;
   showEditRoyaltyButton?: boolean;
 }
 
-const NFTCard = ({ title, cover, media, tokenId, name, description, showBuyButton, showEditRoyaltyButton }: NFTCardProps) => {
+const NFTCard = ({
+  title,
+  cover,
+  media,
+  tokenId,
+  name,
+  description,
+  mintPrice,
+  showBuyButton,
+  showEditRoyaltyButton,
+}: NFTCardProps) => {
   const { buyNFT, isPending } = useBuyNFT();
   const router = useRouter();
   const { address } = useAccount();
   const { data: user } = useUser(address);
-  console.log("cover",cover)
+
   const handleBuy = async () => {
+    if (!mintPrice) return toast.error("Mint price not available");
+
     try {
-      // For demo, price is not passed. In real use, pass correct price.
-      await buyNFT(BigInt(tokenId), BigInt(0));
+      await buyNFT(BigInt(tokenId), BigInt(mintPrice)); // use real price
+      if (user?.id) {
+        await transferOwnership(tokenId, user.id); // update DB
+      }
       toast.success("NFT purchased successfully!");
       router.refresh();
-    } catch (e) {
-      // Handle error
-      console.error("error in buying",e)
-        toast.error("Failed to purchase NFT.");
+    } catch (e: any) {
+      console.error("error in buying", e);
+      toast.error(e?.message || "Failed to purchase NFT.");
     }
   };
 
   const handleEditRoyalty = () => {
     router.push(`/dashboard/token/${tokenId}/edit`);
   };
+
   const [mediaType, setMediaType] = useState<"audio" | "video" | "unknown">("unknown");
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
 
-  // Media type detection
+  // Detect media type
   useEffect(() => {
     if (!media) return;
 
@@ -59,7 +74,6 @@ const NFTCard = ({ title, cover, media, tokenId, name, description, showBuyButto
       try {
         const res = await fetch(media, { method: "HEAD" });
         if (!res.ok) throw new Error();
-
         const type = res.headers.get("content-type")?.toLowerCase() ?? "";
         if (type.startsWith("audio/")) return "audio";
         if (type.startsWith("video/")) return "video";
@@ -121,12 +135,17 @@ const NFTCard = ({ title, cover, media, tokenId, name, description, showBuyButto
         {/* Content */}
         <div className="p-5">
           <h3 className="font-bold text-lg mb-1.5 truncate">{title}</h3>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 mb-3 min-h-[3rem]">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 mb-1 min-h-[3rem]">
             {description || "No description provided"}
           </p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-500 mb-4">
+          <p className="text-xs text-zinc-500 dark:text-zinc-500 mb-2">
             By <span className="font-medium text-zinc-700 dark:text-zinc-300">{name}</span> • #{tokenId}
           </p>
+          {mintPrice && (
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3">
+              Price: <span className="font-semibold">{(mintPrice).toFixed(4)} Apollo</span>
+            </p>
+          )}
 
           {/* Media player / play button */}
           {media && mediaType !== "unknown" ? (
@@ -160,7 +179,7 @@ const NFTCard = ({ title, cover, media, tokenId, name, description, showBuyButto
               <Share size={18} />
               <span className="text-sm font-medium">Share</span>
             </button>
-            {showBuyButton && (
+            {showBuyButton && mintPrice && (
               <button
                 onClick={handleBuy}
                 className="ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors"

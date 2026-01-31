@@ -106,7 +106,7 @@ export default function Page() {
                 nft={{
                   title: nft.title,
                   likes: nft.likes?.length ?? 0,
-                  image: nft.imageUrl.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_PINATA_GATEWAY}/ipfs/`),
+                  image: nft.imageUrl.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`),
                   minted: nft.isListed,
                   id: nft.id,
                   tokenId: nft.tokenId,

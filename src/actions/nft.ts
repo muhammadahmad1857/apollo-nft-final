@@ -61,6 +61,17 @@ export async function updateNFT(id: number, data: NFTUpdateInput): Promise<Prism
   return db.nFT.update({ where: { id }, data });
 }
 
+export async function transferOwnership(
+  tokenId: number,
+  newOwnerId: number
+): Promise<PrismaNFT> {
+  // Update the ownerId of the NFT
+  return db.nFT.update({
+    where: { tokenId },
+    data: { ownerId: newOwnerId },
+  });
+}
+
 /* --------------------
    DELETE
 -------------------- */

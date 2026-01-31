@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -15,30 +15,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAccount, useWaitForTransactionReceipt } from "wagmi";
-import { useCreateAuction } from "@/hooks/useAuction"; // your wagmi hook
-import { createAuction as createAuctionInDB } from "@/actions/auction"; // your server action
+import { useCreateAuction } from "@/hooks/useAuction";
+import { createAuction as createAuctionInDB } from "@/actions/auction";
 import { ApproveAuctionButton } from "./ApproveButton";
 import { useUser } from "@/hooks/useUser";
 
 interface CreateAuctionButtonProps {
   tokenId: bigint;
-  disabled: boolean;
+  disabled?: boolean;
 }
 
-export function CreateAuctionButton({
-  tokenId,
-  disabled,
-}: CreateAuctionButtonProps) {
+export function CreateAuctionButton({ tokenId, disabled = false }: CreateAuctionButtonProps) {
   const { address } = useAccount();
-  const { data: user, refetch,isLoading:isUserLoading } = useUser(address);
-  const { createAuction: createAuctionOnChain, isPending } = useCreateAuction();
+  const { data: user, refetch, isLoading: isUserLoading } = useUser(address || "");
+  const { createAuction: createAuctionOnChain, isPending: isTxPending } = useCreateAuction();
   const router = useRouter();
 
   const [open, setOpen] = useState(false);
   const [minBid, setMinBid] = useState("");
-  const [duration, setDuration] = useState(""); // in hours
-
+  const [duration, setDuration] = useState(""); // hours
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
+
+  const toastIdRef = useRef<string | number | null>(null);
+
   const {
     data: receipt,
     isSuccess: isReceiptSuccess,
@@ -47,61 +46,66 @@ export function CreateAuctionButton({
   } = useWaitForTransactionReceipt({
     hash: txHash,
   });
+
+  // Show error if user fetch failed
   useEffect(() => {
-    if(!isUserLoading && !user){
-      toast.error("Somethign went wrong while fetching the user.")
+    if (!isUserLoading && !user) {
+      toast.error("Something went wrong while fetching user.");
     }
-  
-  }, [user,isUserLoading])
-  
+  }, [user, isUserLoading]);
+
+  // Toast lifecycle for transaction confirmation
+  useEffect(() => {
+    if (txHash && isReceiptLoading && !toastIdRef.current) {
+      toastIdRef.current = toast.loading("Waiting for blockchain confirmation...");
+    }
+
+    if (isReceiptSuccess && toastIdRef.current) {
+      toast.success("Transaction confirmed on chain ✅", { id: toastIdRef.current });
+      toastIdRef.current = null;
+    }
+
+    if (receiptError && toastIdRef.current) {
+      toast.error(`Transaction failed: ${String(receiptError)}`, { id: toastIdRef.current });
+      toastIdRef.current = null;
+      setTxHash(undefined);
+    }
+  }, [isReceiptLoading, isReceiptSuccess, receiptError, txHash]);
 
   const handleCreateAuction = async () => {
     if (!address) return toast.error("Connect your wallet first");
     if (!minBid || !duration) return toast.error("Fill all fields");
 
     try {
-      const durationSec = BigInt(Number(duration) * 3600); // hours → seconds
+      const durationSec = BigInt(Number(duration) * 3600);
 
       // 1️⃣ Call smart contract
-      const txHashResult = await createAuctionOnChain(
-        tokenId,
-        durationSec,
-        minBid
-      );
-      setTxHash(txHashResult);
+      const tx = await createAuctionOnChain(tokenId, durationSec, minBid);
+      setTxHash(tx);
       toast.info("Transaction sent! Waiting for confirmation...");
-      console.log("TX HASH", txHashResult,isReceiptSuccess);
+
       // 2️⃣ Wait for blockchain confirmation
-      // Wait until receipt is loaded and successful
-      await new Promise<void>((resolve, reject) => {
-        const checkReceipt = () => {
-          console.log("isReceiptSuccess",isReceiptSuccess)
-          if (!isReceiptLoading && isReceiptSuccess) {
-            resolve();
-          } else if (receiptError) {
-            reject(receiptError);
-          } else {
-            setTimeout(checkReceipt, 1000);
-          }
-        };
-        checkReceipt();
-      });
-      console.log("Transaction confirmed on chain");
+      // Poll for receipt
+      let receiptConfirmed = false;
+      while (!receiptConfirmed) {
+        if (isReceiptSuccess) {
+          receiptConfirmed = true;
+          break;
+        }
+        if (receiptError) throw receiptError;
+        await new Promise((r) => setTimeout(r, 1000)); // 1 sec
+      }
 
       // 3️⃣ Update DB
       await createAuctionInDB({
-        nft: {
-          connect: { tokenId: Number(tokenId) },
-        },
-        seller: {
-          connect: { walletAddress: address },
-        },
+        nft: { connect: { tokenId: Number(tokenId) } },
+        seller: { connect: { walletAddress: address } },
         minBid: Number(minBid),
         startTime: new Date(),
         endTime: new Date(Date.now() + Number(durationSec) * 1000),
       });
 
-      toast.success("Auction created!");
+      toast.success("Auction created successfully! 🎉");
       setOpen(false);
       setTxHash(undefined);
 
@@ -117,18 +121,21 @@ export function CreateAuctionButton({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Create Auction</Button>
+        <Button disabled={disabled}>Create Auction</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Create Auction</DialogTitle>
         </DialogHeader>
-        {!user ?<p>Loading user...</p>:!user?.approvedAuction ? (
-          <ApproveAuctionButton userId={user.id} />
+
+        {!user ? (
+          <p>Loading user...</p>
+        ) : !user.approvedAuction ? (
+          <ApproveAuctionButton userId={user.id} onSuccess={() => refetch && refetch()} />
         ) : (
           <div className="space-y-4 mt-2">
             <div className="flex flex-col gap-2">
-              <Label>Minimum Bid (ETH)</Label>
+              <Label>Minimum Bid (Apollo)</Label>
               <Input
                 type="number"
                 placeholder="0.01"
@@ -147,10 +154,10 @@ export function CreateAuctionButton({
             </div>
             <Button
               onClick={handleCreateAuction}
-              disabled={isPending}
+              disabled={isTxPending || !minBid || !duration}
               className="w-full"
             >
-              {isPending ? "Creating..." : "Create Auction"}
+              {isTxPending ? "Creating..." : "Create Auction"}
             </Button>
           </div>
         )}
