@@ -56,31 +56,39 @@ export function MetadataForm({
  // 1️⃣ Get signed URL from your server
  setIsUploadingCover(true);
  setDisabled(true)
-    const signedRes = await fetch("/api/pinata/signed-upload-url", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ filename: file.name }),
-    });
     
-    if (!signedRes.ok) throw new Error("Failed to get signed URL");
-    const { data } = await signedRes.json();
-    console.log("signed response",data)
-      const formData = new FormData();
+    const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
+      console.log("JWT", jwtRes);
+      if (!jwtRes.ok) {
+        throw new Error("Failed to get upload token");
+      }
+      const { JWT } = await jwtRes.json();
+           const formData = new FormData();
       formData.append("file", file);
-// 3️⃣ Upload directly to Pinata
-    const uploadRes = await fetch(data, { method: "POST", body: formData });
-    if (!uploadRes.ok) throw new Error("Pinata upload failed");
-    const uploadResJson =  await uploadRes.json()
-    console.log("upload response",uploadResJson)
 
-
-      const ipfsHash = uploadResJson.cid;
+  
+      // Upload to Pinata
+      const uploadRes = await fetch(
+        "https://uploads.pinata.cloud/v3/files",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${JWT}`,
+          },
+          body: formData,
+        }
+      );
+      console.log("uploadRes", uploadRes);
+      if (!uploadRes.ok) {
+        const error = await uploadRes.text();
+        throw new Error(error || "Upload failed");
+      }
+      const json = await uploadRes.json();
+      console.log("uploadRes.json()", json);
+      const ipfsHash = json.IpfsHash;
       const ipfsUrl = `ipfs://${ipfsHash}`;
-await fetch("/api/pinata/upload", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ cid: ipfsHash }),
-});
+   
+ 
        onMetadataChange({
                 name,
                 title,

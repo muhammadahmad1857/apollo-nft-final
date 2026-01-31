@@ -122,14 +122,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [navUser, setNavUser] = React.useState<{ name: string; avatarUrl: string; address: string } | null>(null);
 
   React.useEffect(() => {
+    console.log("User data:", user, isLoading, error);
     if (error && !isLoading) {
       toast.error("Error fetching user data: " + error.message);
+      console.log("User data: in condition 1", user, isLoading, error);
     }
     if (!user && !isLoading) {
+      console.log("User data: in condition 2", user, isLoading, error);
       toast.error("User not found. Please complete your profile.");
       setNavUser(null);
     }
     if (user && !isLoading) {
+      console.log("User data: in condition 3", user, isLoading, error);
       setNavUser({ name: user.name, avatarUrl: user.avatarUrl||"", address: user.walletAddress });
     }
   }, [user, isLoading, error]);
