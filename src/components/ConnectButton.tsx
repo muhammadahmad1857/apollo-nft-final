@@ -15,6 +15,7 @@ export const CustomConnectButton = () => {
       try {
         // 1️⃣ Check if user already exists
         const existingUser = await getUserByWallet(address);
+        console.log('Existing user:', existingUser);
         if (existingUser) return; // already exists, do nothing
 
         // 2️⃣ Create user with ENS info

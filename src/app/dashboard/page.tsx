@@ -109,6 +109,7 @@ export default function Page() {
                   image: nft.tokenUri,
                   minted: nft.isListed,
                   id: nft.id,
+                  tokenId: nft.tokenId
                 }}
                 owner={nft.ownerId === user.id}
                 

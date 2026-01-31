@@ -7,6 +7,7 @@ import { Share, Edit, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { CreateAuctionButton } from "./auction/createAuctionButton";
 
 interface NFTCardProps {
   nft: {
@@ -15,6 +16,7 @@ interface NFTCardProps {
     likes: number;
     image: string;
     minted: boolean;
+    tokenId: number;
   };
   owner?: boolean;
   onEditRoyalty?: () => void;
@@ -69,6 +71,7 @@ export function NFTCard({ nft, owner = true, onEditRoyalty, onBuy, onShare }: NF
           <span>❤ {nft.likes}</span>
         </div>
         {owner ? (
+          <div className="flex flex-col gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -77,6 +80,8 @@ export function NFTCard({ nft, owner = true, onEditRoyalty, onBuy, onShare }: NF
           >
             <Edit /> Edit Royalty
           </Button>
+          <CreateAuctionButton tokenId={BigInt(nft.tokenId)}/>
+          </div>
         ) : (
           <Button
             variant="default"
