@@ -25,9 +25,13 @@ import { useUpdateRoyalty } from "@/hooks/useUpdateRoyalty";
 import { marketplaceAddress } from "@/lib/wagmi/contracts";
 import { PinataJSON } from "@/types";
 import { ApproveMarketButton } from "@/components/marketplace/marketplaceApproveButton"; // Market approve button
+import { useAccount } from "wagmi";
+import { useUser } from "@/hooks/useUser";
 
 export default function EditRoyaltyPage() {
   const { tokenid } = useParams();
+  const {address} = useAccount()
+  const { data: user, refetch:userRefetch, isLoading: isUserLoading } = useUser(address || "");
 
   const tokenId = Number(Array.isArray(tokenid) ? tokenid[0] : tokenid);
 
@@ -46,6 +50,12 @@ export default function EditRoyaltyPage() {
   const [isListed, setIsListed] = useState(false);
   const [priceEth, setPriceEth] = useState("");
   const [meta, setMeta] = useState<PinataJSON | null>(null);
+// Show error if user fetch failed
+useEffect(() => {
+  if (!isUserLoading && !user) {
+    toast.error("Something went wrong while fetching user.");
+  }
+}, [user, isUserLoading]); 
 
   /** -------------------------------
    * Init state
@@ -214,10 +224,12 @@ export default function EditRoyaltyPage() {
             {/* MARKETPLACE TAB */}
             <TabsContent value="marketplace" className="space-y-6">
               {/* Render ApproveMarketButton if not approved */}
-              {!token.approvedMarket ? (
+              {!user ? (
+          <p>Loading user...</p>
+        ) : !user.approvedAuction ? (
                 <ApproveMarketButton
-                  userId={token.id}
-                  onSuccess={() => refetch()}
+                  userId={user.id}
+                  onSuccess={() => userRefetch()}
                 />
               ) : (
                 <>
