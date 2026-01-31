@@ -35,7 +35,7 @@ export default function Page() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    if (!address || !user?.id) return; // wait for user id
+    if ((!address || !user) &&!isLoading) return; // wait for user id
 
     let mounted = true;
 
