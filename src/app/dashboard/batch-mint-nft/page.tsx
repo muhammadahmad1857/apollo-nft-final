@@ -14,17 +14,15 @@ export default function BatchMintNFTPage() {
   const [royaltyBps, setRoyaltyBps] = useState(500); // Default 5%
   const [isMinting, setIsMinting] = useState(false);
 
-  const { mint, handleToasts, isBusy } = useMintContract({
-    contractAddress: nftAddress,
-    abi: nftABIArray,
-  });
+  const { mint, handleToasts, isBusy } = useMintContract();
 
  
 
   const handleMint = async () => {
     if (!selectedFiles.length) return;
     setIsMinting(true);
-    await mint({ tokenURIs: selectedFiles, quantity: selectedFiles.length, royaltyBps, isBatch: true });
+
+    await mint({ tokenURIs: selectedFiles, quantity: selectedFiles.length, royaltyBps, isBatch: true,price:0.1 });
     setIsMinting(false);
   };
 

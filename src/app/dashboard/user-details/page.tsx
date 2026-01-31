@@ -29,7 +29,7 @@ export default function UserDetailsPage() {
     setIsApproving(true);
 
     try {
-      const tx = await approveForAllWrite({
+      const tx =  approveForAllWrite({
         address: nftAddress,
         abi: nftABIArray,
         functionName: "setApprovalForAll",

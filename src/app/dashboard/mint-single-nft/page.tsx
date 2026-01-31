@@ -9,6 +9,7 @@ import { useMintContract } from "@/hooks/useMint";
 import Image from "next/image";
 import { nftABIArray, nftAddress } from "@/lib/wagmi/contracts";
 import { SparklesIcon } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 
@@ -23,11 +24,9 @@ export default function MintSingleNFTPage() {
   const [isMinting, setIsMinting] = useState(false);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [metaJson, setMetaJson] = useState<any>(null);
-
-  const { mint, handleToasts, isBusy } = useMintContract({
-    contractAddress: nftAddress,
-    abi: nftABIArray,
-  });
+  const searchParams = useSearchParams()
+  const cid = searchParams.get("cid")
+  const { mint, handleToasts, isBusy } = useMintContract();
  
   const handleFileChange =  useCallback(async (ipfsUrl: string) => {
     setSelectedFile(ipfsUrl);
@@ -66,7 +65,7 @@ export default function MintSingleNFTPage() {
   const handleMint = async () => {
     if (!selectedFile) return;
     setIsMinting(true);
-    await mint({ tokenURIs: selectedFile, royaltyBps });
+    await mint({ tokenURIs: selectedFile, royaltyBps,price:0.1 });
     setIsMinting(false);
   };
 
@@ -91,7 +90,7 @@ export default function MintSingleNFTPage() {
             <SparklesIcon className="w-7 h-7 text-cyan-500 dark:text-cyan-300 animate-sparkle" />
             <h2 className="text-2xl font-bold text-black dark:text-white">Mint Single NFT</h2>
           </div>
-          <FileSelectInput walletId={address || ""} onChange={handleFileChange} fileExtensions={[".json"]} />
+          <FileSelectInput walletId={address || ""} file_id={`ipfs://${cid}`} onChange={handleFileChange} fileExtensions={[".json"]} />
 
           {/* Royalty Slider */}
           <div className="flex flex-col gap-2">

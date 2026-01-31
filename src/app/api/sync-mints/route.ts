@@ -100,11 +100,11 @@ export async function GET() {
             description:meta.description,
             tokenId,
             tokenUri: uri,
-            mintPrice: 0.1,
             royaltyBps,
             isListed: false,
             creatorId: creator.id,
             ownerId: creator.id,
+            mintPrice:meta.price,
             imageUrl: meta.cover || "",
           },
 

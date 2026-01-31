@@ -29,6 +29,7 @@ const MultiSelect = ({
   className,
   isLoading = false,
   maxSelections = 10,
+  
 }: MultiSelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

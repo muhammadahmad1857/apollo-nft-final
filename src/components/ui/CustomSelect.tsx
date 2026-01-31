@@ -18,7 +18,7 @@ interface CustomSelectProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
-  isLoading?: boolean;           // ← new prop
+  isLoading?: boolean; 
 }
 
 const CustomSelect = ({

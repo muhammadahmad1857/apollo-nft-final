@@ -73,7 +73,7 @@ export default function UploadPage() {
       // Redirect to file detail page
       if (data?.id) {
         setTimeout(() => {
-          router.push(`/dashboard/files/${data.id}`);
+          router.push(`/dashboard/create/metadata`);
         }, 1000);
        }
     } catch (error) {

@@ -14,10 +14,14 @@ import { createFile } from "@/actions/files";
 export default function MetadataPage() {
   const { address, isConnected } = useAccount();
   const router = useRouter();
+  const [createdFileId, setCreatedFileId] = useState<string | null>(null);
+const [showActions, setShowActions] = useState(false);
+
   const [metadata, setMetadata] = useState<{
     name: string;
     title: string;
     description: string;
+    price:number;
     coverImageUrl?: string;
     musicTrackUrl: string;
   }>({
@@ -25,6 +29,7 @@ export default function MetadataPage() {
     title: "",
     description: "",
     musicTrackUrl: "",
+    price:0
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -59,6 +64,7 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
         description: metadata.description,
         cover: metadata.coverImageUrl || null,
         media: metadata.musicTrackUrl,
+        price:metadata.price
       };
       console.log(metadataJSON)
 
@@ -110,11 +116,13 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
 
       toast.success("Metadata uploaded and saved to database!");
       // Redirect to file detail page
-      if (data?.id) {
-        setTimeout(() => {
-          router.push(`/dashboard/files/${data.id}`);
-        }, 1000);
-      }
+
+      toast.success("Metadata uploaded and saved!");
+
+      setCreatedFileId(data.ipfsUrl);
+      setShowActions(true); // show options instead of redirect
+
+      
     } catch (error) {
       console.log("Save error:", error);
       toast.error(
@@ -126,7 +134,7 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
   };
 
   const handleReset = () => {
-    setMetadata({ name: "", title: "", description: "", musicTrackUrl: "" });
+    setMetadata({ name: "", title: "", description: "", musicTrackUrl: "",price:0 });
     toast.info("Form reset");
   };
 
@@ -135,8 +143,47 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+
       <div className="mx-auto max-w-4xl px-6 py-12">
-        {isConnected ? (
+        {showActions && createdFileId && (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+  >
+    <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-[90%] max-w-md shadow-xl">
+      <h2 className="text-xl font-semibold mb-2 text-zinc-900 dark:text-zinc-100">
+        Metadata Created 🎉
+      </h2>
+      <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+        What do you want to do next?
+      </p>
+
+      <div className="flex gap-3">
+        <Button
+          className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
+          onClick={() =>
+            router.push(
+              `/dashboard/mint-single-nft?file_id=${createdFileId}`
+            )
+          }
+        >
+          Mint NFT
+        </Button>
+
+        <Button
+          variant="outline"
+          className="flex-1"
+          onClick={() => router.push("/dashboard/files")}
+        >
+          View Files
+        </Button>
+      </div>
+    </div>
+  </motion.div>
+)}
+
+        {(isConnected && !showActions && !createdFileId) ? (
           <>
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -163,7 +210,7 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
                 initial={{ width: 0 }}
                 animate={{ width: "100%" }}
                 transition={{ duration: 0.4, delay: 0.2 }}
-                className="mt-3 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500"
+                className="mt-3 h-0.5 bg-linear-to-r from-cyan-500 to-blue-500"
               />
             </motion.div>
 

@@ -30,6 +30,7 @@ export interface MetadataFormValues {
   description: string;
   coverImageUrl?: string;
   musicTrackUrl: string;
+  price:number
 }
 
 export interface PinataJSON{
@@ -38,4 +39,5 @@ export interface PinataJSON{
   cover?:string,
   media:string,
   title:string
+  price:number
 }

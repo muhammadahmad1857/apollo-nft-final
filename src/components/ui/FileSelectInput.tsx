@@ -12,22 +12,25 @@ interface FileSelectInputProps {
   fileExtensions?: string[];
   onChange: (ipfsUrl: string) => void;
   className?: string;
+  file_id?:string
 }
 
 const FileSelectInput = ({
+  file_id="",
   walletId,
   fileExtensions,
   onChange,
   className,
+  
 }: FileSelectInputProps) => {
   const [files, setFiles] = useState<FileFromDB[]>([]);
-  const [selectedFile, setSelectedFile] = useState<string>("");
+  const [selectedFile, setSelectedFile] = useState<string>(file_id);
   const [isLoading,setIsLoading] = useState(false)
   useEffect(() => {
     const fetchFiles = async () => {
       setIsLoading(true)
       try {
-        const allFiles = await await getFilesByWallet(walletId,false);
+        const allFiles =  await getFilesByWallet(walletId,false);
         let filteredFiles = allFiles;
         if (fileExtensions && fileExtensions.length > 0) {
           filteredFiles = allFiles.filter((file) =>
