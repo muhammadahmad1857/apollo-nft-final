@@ -158,7 +158,7 @@ const MultiSelect = ({
 
             <div className="border-t border-zinc-200 dark:border-zinc-700">
               <Link
-                href="/create/upload"
+                href="/dashboard/create/upload"
                 className="px-4 py-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center gap-2 text-primary text-sm"
                 onClick={() => setIsOpen(false)}
               >
