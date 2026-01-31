@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useAccount } from "wagmi";
 import FileSelectInput from "@/components/ui/FileSelectInput";
 import { Button } from "@/components/ui/button";
@@ -28,8 +28,8 @@ export default function MintSingleNFTPage() {
     contractAddress: nftAddress,
     abi: nftABIArray,
   });
-
-  const handleFileChange = async (ipfsUrl: string) => {
+ 
+  const handleFileChange =  useCallback(async (ipfsUrl: string) => {
     setSelectedFile(ipfsUrl);
     setPreviewUrl("");
     setMetaName("");
@@ -61,7 +61,7 @@ export default function MintSingleNFTPage() {
       setPreviewUrl("");
     }
     setIsLoadingPreview(false);
-  };
+  },[])
 
   const handleMint = async () => {
     if (!selectedFile) return;

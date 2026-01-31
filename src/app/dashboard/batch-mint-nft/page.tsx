@@ -19,9 +19,7 @@ export default function BatchMintNFTPage() {
     abi: nftABIArray,
   });
 
-  const handleFilesChange = (ipfsUrls: string[]) => {
-    setSelectedFiles(ipfsUrls);
-  };
+ 
 
   const handleMint = async () => {
     if (!selectedFiles.length) return;
@@ -47,7 +45,7 @@ export default function BatchMintNFTPage() {
           <SparklesIcon className="w-7 h-7 text-cyan-500 dark:text-cyan-300" />
           <h2 className="text-2xl font-bold text-black dark:text-white">Batch Mint NFTs</h2>
         </div>
-        <FileMultiSelectInput walletId={address || ""} onChange={handleFilesChange} maxSelections={20} fileExtensions={[".json"]}/>
+        <FileMultiSelectInput walletId={address || ""} onChange={setSelectedFiles} maxSelections={20} fileExtensions={[".json"]}/>
         <div className="flex flex-col gap-2">
           <label htmlFor="royalty-slider" className="font-medium text-sm flex justify-between">
             <span>Royalty Percentage</span>
