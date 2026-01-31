@@ -79,7 +79,7 @@ export function NFTCard({ nft, owner = true, onEditRoyalty, onBuy, onShare }: NF
             className="mt-2 flex items-center gap-2"
             onClick={handleEditRoyalty}
           >
-            <Edit /> Edit Royalty
+            <Edit /> Edit Listing
           </Button>
           <CreateAuctionButton disabled={nft.isApproved} tokenId={BigInt(nft.tokenId)}/>
           </div>
