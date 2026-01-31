@@ -40,7 +40,7 @@ export default function MintSingleNFTPage() {
 
     setIsLoadingPreview(true);
     try {
-      const url = `${PINATA_GATEWAY}${ipfsUrl.replace(/^ipfs\//, "")}`;
+      const url = `${PINATA_GATEWAY}${ipfsUrl.replace("ipfs://", "")}`;
       const res = await fetch(url);
       console.log("Fetched metadata from:", url); 
       const meta = await res.json();
@@ -51,9 +51,9 @@ export default function MintSingleNFTPage() {
       setMetaDesc(meta.description || "");
 
       if (meta.image) {
-        const imgUrl = meta.image.startsWith("ipfs://")
-          ? `${PINATA_GATEWAY}${meta.image.replace("ipfs://", "")}`
-          : meta.image;
+        const imgUrl = meta.cover.startsWith("ipfs://")
+          ? `${PINATA_GATEWAY}${meta.cover.replace("ipfs://", "")}`
+          : meta.cover;
         setPreviewUrl(imgUrl);
       }
     } catch {
