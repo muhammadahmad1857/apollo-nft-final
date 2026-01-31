@@ -87,23 +87,39 @@ export default function EditProfilePage() {
         setIsUploading(true);
         setUploadProgress(0);
         // 1️⃣ Get signed URL from your server
-        const signedRes = await fetch("/api/pinata/signed-upload-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filename: file.name }),
-        });
-        if (!signedRes.ok) throw new Error("Failed to get signed URL");
-        const { data } = await signedRes.json();
+         const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
+      console.log("JWT", jwtRes);
+      if (!jwtRes.ok) {
+        throw new Error("Failed to get upload token");
+      }
+      const { JWT } = await jwtRes.json();
         setUploadProgress(33);
         // 2️⃣ Prepare FormData for upload
         const formData = new FormData();
         formData.append("file", file);
+              formData.append("network","public")
+
         setUploadProgress(50);
         // 3️⃣ Upload directly to Pinata
-        const uploadRes = await fetch(data, { method: "POST", body: formData });
-        if (!uploadRes.ok) throw new Error("Pinata upload failed");
-        const uploadResJson = await uploadRes.json();
-        const ipfsHash = uploadResJson?.data.cid;
+         const uploadRes = await fetch(
+        "https://uploads.pinata.cloud/v3/files",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${JWT}`,
+          },
+          body: formData,
+        }
+      );
+      console.log("uploadRes", uploadRes);
+      if (!uploadRes.ok) {
+        const error = await uploadRes.text();
+        throw new Error(error || "Upload failed");
+      }
+      setUploadProgress(77)
+      const json = await uploadRes.json();
+      console.log("uploadRes.json()", json);
+        const ipfsHash = json?.data.cid;
         uploadedUrl = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${ipfsHash}`;
         setUploadProgress(75);
         await fetch("/api/pinata/upload", {
