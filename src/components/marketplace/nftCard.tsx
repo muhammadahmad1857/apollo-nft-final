@@ -30,7 +30,7 @@ const NFTCard = ({ title, cover, media, tokenId, name, description, showBuyButto
   const router = useRouter();
   const { address } = useAccount();
   const { data: user } = useUser(address);
-
+  console.log("cover",cover)
   const handleBuy = async () => {
     try {
       // For demo, price is not passed. In real use, pass correct price.

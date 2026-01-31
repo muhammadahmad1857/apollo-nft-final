@@ -17,6 +17,7 @@ export function useCreateAuction() {
         args: [tokenId, durationSec, parseEther(minBidEth)],
       });
       toast.info("Transaction sent. Waiting for confirmation...");
+      
       return tx;
     } catch (err: any) {
       toast.error(err?.message || "Failed to create auction");

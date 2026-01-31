@@ -117,3 +117,11 @@ export async function deleteUserByWallet(
     where: { walletAddress },
   });
 }
+
+
+export async function approveAuctionUser(userId: number) {
+  return db.user.update({
+    where: { id: userId },
+    data: { auctionApproved: true },
+  });
+}
