@@ -66,7 +66,7 @@ const NFTCard = ({
   const [mediaType, setMediaType] = useState<string>("unknown");
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-
+  const [realMedia,setRealMedia] = useState("")
   // Detect media type
   useEffect(() => {
     if (!media) return;
@@ -75,8 +75,11 @@ const NFTCard = ({
     )
     const detect = async () => {
       try {
-        let type = await getFileTypeByIPFS(media.replace(`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`,"ipfs://"))
+        const res = await fetch(media)
+        const json = await res.json()
+        let type = await getFileTypeByIPFS(json.media)
         console.log("type",type)
+        setRealMedia(json.media);
         if(!type) type = "unknown"
         return type
       }
@@ -143,7 +146,7 @@ const NFTCard = ({
           )}
 
           {/* Media player / play button */}
-          {media && mediaType !== "unknown" && mediaType !== ".json"? (
+          {realMedia && mediaType !== "unknown" && mediaType !== ".json"? (
             mediaType === ".wav"||mediaType ===".mp3" ? (
               <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-lg p-3 mb-4">
                 <audio controls className="w-full h-9" controlsList="nodownload">
@@ -213,7 +216,7 @@ const NFTCard = ({
               >
                 <X size={24} />
               </button>
-              <video controls autoPlay className="w-full rounded-xl shadow-2xl" src={media} />
+              <video controls autoPlay className="w-full rounded-xl shadow-2xl" src={realMedia.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)} />
             </div>
           </motion.div>
         )}
