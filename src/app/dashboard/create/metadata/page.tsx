@@ -21,7 +21,6 @@ const [showActions, setShowActions] = useState(false);
     name: string;
     title: string;
     description: string;
-    price:number;
     coverImageUrl?: string;
     musicTrackUrl: string;
   }>({
@@ -29,7 +28,6 @@ const [showActions, setShowActions] = useState(false);
     title: "",
     description: "",
     musicTrackUrl: "",
-    price:0
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -64,7 +62,6 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
         description: metadata.description,
         cover: metadata.coverImageUrl || null,
         media: metadata.musicTrackUrl,
-        price:metadata.price
       };
       console.log(metadataJSON)
 
@@ -134,7 +131,7 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
   };
 
   const handleReset = () => {
-    setMetadata({ name: "", title: "", description: "", musicTrackUrl: "",price:0 });
+    setMetadata({ name: "", title: "", description: "", musicTrackUrl: "" });
     toast.info("Form reset");
   };
 

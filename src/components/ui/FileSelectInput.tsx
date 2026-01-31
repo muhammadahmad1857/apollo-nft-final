@@ -27,6 +27,12 @@ const FileSelectInput = ({
   const [selectedFile, setSelectedFile] = useState<string>(file_id);
   const [isLoading,setIsLoading] = useState(false)
   useEffect(() => {
+    if (file_id) {
+      setSelectedFile(file_id);
+      onChange(file_id);
+    }
+  }, [file_id]);
+  useEffect(() => {
     const fetchFiles = async () => {
       setIsLoading(true)
       try {

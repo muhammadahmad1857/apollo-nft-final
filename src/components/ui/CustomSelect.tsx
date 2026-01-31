@@ -18,7 +18,7 @@ interface CustomSelectProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
-  isLoading?: boolean; 
+  isLoading?: boolean;
 }
 
 const CustomSelect = ({
@@ -61,8 +61,8 @@ const CustomSelect = ({
           {isLoading
             ? "Loading files..."
             : selectedOption
-              ? selectedOption.label
-              : placeholder}
+            ? selectedOption.label
+            : placeholder}
         </span>
 
         {isLoading ? (

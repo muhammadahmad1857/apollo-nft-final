@@ -24,6 +24,8 @@ export default function MintSingleNFTPage() {
   const [isMinting, setIsMinting] = useState(false);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [metaJson, setMetaJson] = useState<any>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+
   const searchParams = useSearchParams()
   const cid = searchParams.get("cid")
   const { mint, handleToasts, isBusy } = useMintContract();
@@ -65,8 +67,12 @@ export default function MintSingleNFTPage() {
   const handleMint = async () => {
     if (!selectedFile) return;
     setIsMinting(true);
-    await mint({ tokenURIs: selectedFile, royaltyBps,price:0.1 });
+    const success = await mint({ tokenURIs: selectedFile, royaltyBps, });
     setIsMinting(false);
+    
+  if (success) {
+    setShowSuccess(true);
+  }
   };
 
   handleToasts();

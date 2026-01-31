@@ -1,335 +1,257 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect,  } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { Card} from "@/components/ui/card";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
+
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useNFT,  useUpdateNFT } from "@/hooks/useNft";
-import { useListNFT, useCancelListing, useListing } from "@/hooks/useMarketplace";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+
+import { useNFT, useUpdateNFT } from "@/hooks/useNft";
+import {
+  useListNFT,
+  useCancelListing,
+  useListing,
+} from "@/hooks/useMarketplace";
 import { useUpdateRoyalty } from "@/hooks/useUpdateRoyalty";
 import { marketplaceAddress } from "@/lib/wagmi/contracts";
-import { toast } from "sonner";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { PinataJSON } from "@/types";
 
 export default function EditRoyaltyPage() {
-  const params = useParams();
-  const { tokenid } = params;
+  const { tokenid } = useParams();
 
-  const { updateRoyalty, isPending: isRoyaltyPending } = useUpdateRoyalty();
-  const { data: token, isLoading: loading, error: nftError } = useNFT(
-     Number(tokenid) 
-  );
-  console.log("Token data:", token);
-  console.log("TokenID:", tokenid);
+  const tokenId = Number(Array.isArray(tokenid) ? tokenid[0] : tokenid);
 
-  const updateNFTMutation = useUpdateNFT();
+  const { data: token, isLoading } = useNFT(tokenId);
+  const updateNFT = useUpdateNFT();
+  const { updateRoyalty, isPending: royaltyPending } = useUpdateRoyalty();
+
+  const { listNFT } = useListNFT();
+  const { cancelListing, isPending: cancelPending } = useCancelListing();
+  const { data: listing, refetch } = useListing(BigInt(tokenId))as {
+    data?: [string, string];
+    refetch: () => void;
+  };;
 
   const [royalty, setRoyalty] = useState(500);
   const [isListed, setIsListed] = useState(false);
   const [priceEth, setPriceEth] = useState("");
-  const [tokenJson, setTokenJson] = useState<PinataJSON | null>(null);
-  const [initial, setInitial] = useState({
-    royalty: 500,
-    isListed: false,
-    priceEth: "",
-  });
+  const [meta, setMeta] = useState<PinataJSON | null>(null);
 
-  const { listNFT } = useListNFT();
-  const { cancelListing, isPending: isCanceling } = useCancelListing();
-
-  const tokenIdStr = Array.isArray(tokenid) ? tokenid[0] : tokenid;
-  const { data: listing, refetch: refetchListing } = useListing(
-    tokenIdStr ? BigInt(tokenIdStr) : BigInt(0)
-  ) as {
-    data: [string, string] | undefined;
-    refetch: () => void;
-  };
-
+  /** -------------------------------
+   * Init state
+   -------------------------------- */
   useEffect(() => {
     if (!token) return;
 
     setRoyalty(token.royaltyBps ?? 500);
     setIsListed(token.isListed ?? false);
-
-    const price = token.mintPrice
-      ? (Number(token.mintPrice) / 1e18).toString()
-      : "";
-
-    setPriceEth(price);
-    setInitial({
-      royalty: token.royaltyBps ?? 500,
-      isListed: token.isListed ?? false,
-      priceEth: price,
-    });
+    setPriceEth(
+      token.mintPrice ? (Number(token.mintPrice) / 1e18).toString() : ""
+    );
 
     if (token.tokenUri?.startsWith("ipfs://")) {
-      const url = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${token.tokenUri.replace(
-        "ipfs://",
-        ""
-      )}`;
-      fetch(url)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((json) => setTokenJson(json))
-        .catch(() => setTokenJson(null));
+      fetch(
+        `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${token.tokenUri.replace(
+          "ipfs://",
+          ""
+        )}`
+      )
+        .then((r) => r.json())
+        .then(setMeta)
+        .catch(() => null);
     }
 
-    refetchListing();
-  }, [token?.tokenUri]);
+    refetch();
+  }, [token]);
 
-  const isRoyaltyChanged = royalty !== initial.royalty;
-  const isListingChanged =
-    isListed !== initial.isListed || priceEth !== initial.priceEth;
+  const hasRoyaltyChanged = royalty !== token?.royaltyBps;
+  const hasListingChanged =
+    isListed !== token?.isListed ||
+    priceEth !==
+      (token?.mintPrice
+        ? (Number(token.mintPrice) / 1e18).toString()
+        : "");
 
-  const handleUpdateRoyalty = async () => {
-    if (!token || !isRoyaltyChanged) return;
+  /** -------------------------------
+   * Handlers
+   -------------------------------- */
+
+  async function handleSaveRoyalty() {
+    if (!token || !hasRoyaltyChanged) return;
 
     try {
+      // 1️⃣ On-chain
       await updateRoyalty(
         marketplaceAddress as `0x${string}`,
         BigInt(token.tokenId),
         BigInt(royalty)
       );
 
-      await updateNFTMutation.mutateAsync({
+      // 2️⃣ DB
+      await updateNFT.mutateAsync({
         id: token.id,
         data: { royaltyBps: royalty },
       });
 
-      toast.success("Royalty updated successfully ✨");
+      toast.success("Royalty updated successfully");
     } catch (err: any) {
-      toast.error("Failed to update royalty", {
+      toast.error("Royalty update failed", {
         description: err?.message,
       });
     }
-  };
+  }
 
-  const handleUpdateListing = async () => {
-    if (!token || !isListingChanged) return;
+  async function handleSaveListing() {
+    if (!token || !hasListingChanged) return;
 
     try {
-      const mintPrice = priceEth ? Math.floor(Number(priceEth) * 1e18) : 0;
-
-      await updateNFTMutation.mutateAsync({
-        id: token.id,
-        data: { isListed, mintPrice },
-      });
-
-      if (isListed && priceEth) {
-        await listNFT(BigInt(token.tokenId), priceEth);
-        refetchListing();
+      // Cancel existing listing if needed
+      if (!isListed && token.isListed) {
+        await cancelListing(BigInt(token.tokenId));
       }
 
-      toast.success("Marketplace updated 🛒");
+      // Create / update listing on-chain
+      if (isListed && priceEth) {
+        await listNFT(BigInt(token.tokenId), priceEth);
+      }
+
+      // Update DB after chain success
+      await updateNFT.mutateAsync({
+        id: token.id,
+        data: {
+          isListed,
+          mintPrice: priceEth ? Math.floor(Number(priceEth) * 1e18) : 0,
+        },
+      });
+
+      refetch();
+      toast.success("Marketplace updated");
     } catch (err: any) {
-      toast.error("Failed to update listing", {
+      toast.error("Marketplace update failed", {
         description: err?.message,
       });
     }
-  };
+  }
 
-  const handleCancelListing = async () => {
-    if (!tokenIdStr) return;
-
-    try {
-      await cancelListing(BigInt(tokenIdStr));
-      setIsListed(false);
-      refetchListing();
-      toast.success("Listing cancelled ❌");
-    } catch (err: any) {
-      toast.error("Failed to cancel listing", {
-        description: err?.message,
-      });
-    }
-  };
-
-  if (loading)
-    return (
-      <div className="flex justify-center items-center min-h-[40vh] text-muted-foreground">
-        Loading NFT...
-      </div>
-    );
-
-  if (nftError)
-    return <div className="p-8 text-center text-red-500">{nftError.message}</div>;
-
-  if (!token) return <div className="p-8 text-center">NFT not found</div>;
-
-  const identifier = tokenJson?.name || "Unknown NFT";
-  const cover = tokenJson?.cover;
+  if (isLoading)
+    return <div className="text-center py-20">Loading NFT...</div>;
+  if (!token) return <div className="text-center py-20">NFT not found</div>;
 
   return (
-    <div className="flex flex-col items-center min-h-[80vh] bg-background">
-      <div className="w-full max-w-2xl px-2 pt-6 pb-2">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-2 text-cyan-600 hover:text-cyan-800 text-sm font-medium"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </Link>
-      </div>
+    <div className="container max-w-2xl py-8">
+      <Link
+        href="/dashboard"
+        className="inline-flex items-center gap-2 text-sm mb-4 text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back
+      </Link>
 
-      <Card className="w-full max-w-2xl shadow-xl rounded-2xl border overflow-hidden">
-        {/* NFT HEADER */}
-        <div className="flex gap-6 p-6 border-b bg-gradient-to-br from-cyan-500/5 to-purple-500/5">
-          {cover && (
+      <Card className="overflow-hidden">
+        {/* HEADER */}
+        <CardHeader className="flex flex-row gap-4 items-center bg-muted/50">
+          {meta?.cover && (
             <img
-              src={cover}
-              alt="NFT"
-              className="w-28 h-28 rounded-xl object-cover border"
+              src={meta.cover}
+              alt=""
+              className="w-20 h-20 rounded-lg object-cover"
             />
           )}
-
-          <div className="flex flex-col justify-center">
-            <h2 className="text-2xl font-bold text-cyan-600">{identifier}</h2>
-            <p className="text-sm text-muted-foreground">
-              Token #{token.tokenId}
-            </p>
-
-            <div className="flex gap-4 mt-3 text-xs">
-              <span className="px-2 py-1 rounded-md bg-cyan-500/10 text-cyan-600">
-                Royalty: {(royalty / 100).toFixed(2)}%
-              </span>
-              <span className="px-2 py-1 rounded-md bg-purple-500/10 text-purple-600">
-                {isListed ? "Listed" : "Not Listed"}
-              </span>
+          <div>
+            <h2 className="text-xl font-bold">{meta?.name}</h2>
+            <div className="flex gap-2 mt-1">
+              <Badge variant="secondary">
+                {(royalty / 100).toFixed(2)}% royalty
+              </Badge>
+              <Badge variant={isListed ? "default" : "outline"}>
+                {isListed ? "Listed" : "Not listed"}
+              </Badge>
             </div>
           </div>
-        </div>
+        </CardHeader>
 
-        {/* TABS */}
-        <div className="p-6">
+        <CardContent className="p-6">
           <Tabs defaultValue="royalty">
-            <TabsList className="grid grid-cols-2 mb-6 rounded-xl bg-muted">
-              <TabsTrigger value="royalty">⚙️ Royalty</TabsTrigger>
-              <TabsTrigger value="marketplace">🛒 Marketplace</TabsTrigger>
+            <TabsList className="grid grid-cols-2 mb-6">
+              <TabsTrigger value="royalty">Royalty</TabsTrigger>
+              <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
             </TabsList>
 
             {/* ROYALTY TAB */}
-            <TabsContent value="royalty">
-              <div className="space-y-6">
-                <div className="bg-muted/40 p-5 rounded-xl border">
-                  <Label className="text-lg font-semibold text-cyan-600">
-                    Creator Royalty
-                  </Label>
-
-                  <div className="flex items-center gap-4 mt-4">
-                    <input
-                      type="range"
-                      min={0}
-                      max={1000}
-                      step={10}
-                      value={royalty}
-                      onChange={(e) => setRoyalty(Number(e.target.value))}
-                      className="w-full accent-cyan-500"
-                    />
-                    <div className="text-right min-w-[90px]">
-                      <div className="text-sm text-muted-foreground">BPS</div>
-                      <div className="text-lg font-bold text-cyan-600">
-                        {royalty}
-                      </div>
-                    </div>
-                  </div>
-
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Creator earns{" "}
-                    <span className="font-semibold text-cyan-600">
-                      {(royalty / 100).toFixed(2)}%
-                    </span>{" "}
-                    from each resale.
-                  </p>
-                </div>
-
-                <Button
-                  onClick={handleUpdateRoyalty}
-                  disabled={!isRoyaltyChanged || isRoyaltyPending}
-                  className="w-full rounded-xl py-3 text-lg bg-cyan-600 hover:bg-cyan-700"
-                >
-                  {isRoyaltyPending ? "Updating..." : "Update Royalty"}
-                </Button>
+            <TabsContent value="royalty" className="space-y-6">
+              <div>
+                <Label>Royalty (BPS)</Label>
+                <input
+                  type="range"
+                  min={0}
+                  max={1000}
+                  step={10}
+                  value={royalty}
+                  onChange={(e) => setRoyalty(Number(e.target.value))}
+                  className="w-full mt-3 accent-primary"
+                />
+                <p className="text-sm text-muted-foreground mt-2">
+                  {(royalty / 100).toFixed(2)}% creator royalty
+                </p>
               </div>
+
+              <Button
+                className="w-full"
+                disabled={!hasRoyaltyChanged || royaltyPending}
+                onClick={handleSaveRoyalty}
+              >
+                Save Royalty
+              </Button>
             </TabsContent>
 
             {/* MARKETPLACE TAB */}
-            <TabsContent value="marketplace">
-              <div className="space-y-6">
-                <div className="bg-muted/40 p-5 rounded-xl border">
-                  <Label className="text-lg font-semibold text-purple-600">
-                    Marketplace Listing
-                  </Label>
-
-                  <div className="flex items-center gap-3 mt-4">
-                    <input
-                      type="checkbox"
-                      checked={isListed}
-                      onChange={(e) => setIsListed(e.target.checked)}
-                      className="w-5 h-5 accent-purple-600"
-                    />
-                    <span className="text-sm">
-                      {isListed
-                        ? "NFT is listed on marketplace"
-                        : "NFT is not listed"}
-                    </span>
-                  </div>
-
-                  {isListed && (
-                    <div className="mt-4 space-y-2">
-                      <Label className="text-sm text-purple-600">
-                        Price (ETH)
-                      </Label>
-                      <input
-                        type="number"
-                        value={priceEth}
-                        onChange={(e) => setPriceEth(e.target.value)}
-                        className="border rounded-lg px-3 py-2 bg-background w-full"
-                        placeholder="0.05"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {listing &&
-                  listing[0] !==
-                    "0x0000000000000000000000000000000000000000" && (
-                    <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-sm">
-                      Listed for{" "}
-                      <span className="font-semibold text-green-600">
-                        {Number(listing[1]) / 1e18} ETH
-                      </span>{" "}
-                      by {listing[0].slice(0, 6)}...{listing[0].slice(-4)}
-                    </div>
-                  )}
-
-                <div className="flex gap-3">
-                  <Button
-                    onClick={handleUpdateListing}
-                    disabled={updateNFTMutation.isPending || !isListingChanged}
-                    className="flex-1 rounded-xl py-3 bg-purple-600 hover:bg-purple-700"
-                  >
-                    Update Listing
-                  </Button>
-
-                  {isListed && (
-                    <Button
-                      onClick={handleCancelListing}
-                      disabled={isCanceling}
-                      variant="destructive"
-                      className="rounded-xl"
-                    >
-                      {isCanceling ? "Cancelling..." : "Unlist"}
-                    </Button>
-                  )}
-                </div>
+            <TabsContent value="marketplace" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <Label>List on marketplace</Label>
+                <Switch checked={isListed} onCheckedChange={setIsListed} />
               </div>
+
+              {isListed && (
+                <div>
+                  <Label>Price (ETH)</Label>
+                  <Input
+                    type="number"
+                    value={priceEth}
+                    onChange={(e) => setPriceEth(e.target.value)}
+                    placeholder="0.05"
+                  />
+                </div>
+              )}
+
+              {listing && listing[0] !== ZERO_ADDRESS && (
+                <p className="text-sm text-muted-foreground">
+                  On-chain price:{" "}
+                  <strong>{Number(listing[1]) / 1e18} ETH</strong>
+                </p>
+              )}
+
+              <Button
+                className="w-full"
+                disabled={cancelPending || updateNFT.isPending}
+                onClick={handleSaveListing}
+              >
+                Save Marketplace
+              </Button>
             </TabsContent>
           </Tabs>
-        </div>
+        </CardContent>
       </Card>
     </div>
   );
 }
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";

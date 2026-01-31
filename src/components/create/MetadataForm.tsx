@@ -26,7 +26,6 @@ export function MetadataForm({
   const { address } = useAccount();
   const [name, setName] = useState(initialData?.name || "");
   const [title, setTitle] = useState(initialData?.title || "");
-  const [price, setPrice] = useState(initialData?.price || 0);
   const [description, setDescription] = useState(
     initialData?.description || ""
   );
@@ -48,7 +47,6 @@ export function MetadataForm({
       description,
       coverImageUrl,
       musicTrackUrl,
-      price
     });
   };
 
@@ -98,7 +96,6 @@ export function MetadataForm({
                 description,
                 coverImageUrl: ipfsUrl,
                 musicTrackUrl,  
-                price         // ← use url here, not musicTrackUrl
               });
       setCoverImageUrl(ipfsUrl);
       toast.success("Cover image uploaded!");
@@ -172,7 +169,6 @@ export function MetadataForm({
                 description,
                 coverImageUrl,
                 musicTrackUrl: musicTrackUrl, 
-                price          // ← use url here, not musicTrackUrl
               });
           }}
           className="bg-transparent"
@@ -196,7 +192,6 @@ export function MetadataForm({
                 description,
                 coverImageUrl,
                 musicTrackUrl,   
-                price        // ← use url here, not musicTrackUrl
               });
           }}
           className="bg-transparent text-lg"
@@ -221,7 +216,6 @@ export function MetadataForm({
                 description:e.target.value,
                 coverImageUrl,
                 musicTrackUrl,
-                price           // ← use url here, not musicTrackUrl
               });
           }}
           maxLength={500}
@@ -237,30 +231,7 @@ export function MetadataForm({
         </div>
       </div>
 
-           <div className="space-y-2">
-        <Label htmlFor="title">Price (Apollo)</Label>
-        <Input
-          id="title"
-          placeholder="Display title (shown in marketplace)"
-          value={price}
-          type="number"
-          onChange={(e) => {
-            setPrice(Number(e.target.value));
-             onMetadataChange({
-                name,
-                title:e.target.value,
-                description,
-                coverImageUrl,
-                musicTrackUrl,  
-                price         // ← use url here, not musicTrackUrl
-              });
-          }}
-          className="bg-transparent text-lg"
-        />
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          The Price in Apollo on which you want to list the nft
-        </p>
-      </div>
+         
 
       <div className="space-y-2">
         <Label>Cover Image (Optional)</Label>
@@ -349,7 +320,6 @@ export function MetadataForm({
                 description,
                 coverImageUrl,
                 musicTrackUrl: url,
-                price           // ← use url here, not musicTrackUrl
               });
             }}
             className="w-full"
