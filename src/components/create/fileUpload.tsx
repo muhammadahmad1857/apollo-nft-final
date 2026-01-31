@@ -47,6 +47,7 @@ export function FileUpload({
       // Prepare form data
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("network","public")
       console.log("")
       // Upload to Pinata
       const uploadRes = await fetch(

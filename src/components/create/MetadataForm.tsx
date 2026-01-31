@@ -65,6 +65,7 @@ export function MetadataForm({
       const { JWT } = await jwtRes.json();
            const formData = new FormData();
       formData.append("file", file);
+      formData.append("network","public")
 
   
       // Upload to Pinata
@@ -88,7 +89,7 @@ export function MetadataForm({
       const ipfsHash = json.IpfsHash;
       const ipfsUrl = `ipfs://${ipfsHash}`;
    
- 
+      
        onMetadataChange({
                 name,
                 title,
