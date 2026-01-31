@@ -76,6 +76,7 @@ const NFTCard = ({
     const detect = async () => {
       try {
         let type = await getFileTypeByIPFS(media.replace(`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`,"ipfs://"))
+        console.log("type",type)
         if(!type) type = "unknown"
         return type
       }
