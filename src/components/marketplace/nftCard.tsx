@@ -69,19 +69,23 @@ const NFTCard = ({
   // Detect media type
   useEffect(() => {
     if (!media) return;
-
+    console.log(
+    
+    )
     const detect = async () => {
       try {
         const res = await fetch(media, { method: "HEAD" });
         if (!res.ok) throw new Error();
         const type = res.headers.get("content-type")?.toLowerCase() ?? "";
+        console.log("headers:",res.headers)
+        console.log("headers:",type)
         if (type.startsWith("audio/")) return "audio";
         if (type.startsWith("video/")) return "video";
 
         const ext = media.split(".").pop()?.toLowerCase();
         if (["mp3", "wav", "ogg", "m4a", "aac"].includes(ext ?? "")) return "audio";
         if (["mp4", "webm", "ogg", "mov"].includes(ext ?? "")) return "video";
-
+        console.log("Media type is video")
         return "unknown";
       } catch {
         const ext = media.split(".").pop()?.toLowerCase();
