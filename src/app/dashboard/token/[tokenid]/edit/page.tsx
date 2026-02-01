@@ -226,9 +226,10 @@ useEffect(() => {
               {/* Render ApproveMarketButton if not approved */}
               {!user ? (
           <p>Loading user...</p>
-        ) : !user.approvedMarket ? (
+        ) : !token.approvedMarket ? (
                 <ApproveMarketButton
-                  userId={user.id}
+                  nftId={token.id}
+                  tokenId={token.tokenId}
                   onSuccess={() => userRefetch()}
                 />
               ) : (

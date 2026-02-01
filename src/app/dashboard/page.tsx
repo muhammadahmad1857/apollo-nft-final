@@ -110,7 +110,7 @@ export default function Page() {
                   minted: nft.isListed,
                   id: nft.id,
                   tokenId: nft.tokenId,
-                  isApproved: nft.auction || nft.owner?.approvedAuction ? true : false,
+                  isApproved: nft.auction || nft.approvedAuction ? true : false,
                 }}
                 owner={nft.ownerId === user.id}
                 

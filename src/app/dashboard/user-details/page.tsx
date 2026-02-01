@@ -87,7 +87,7 @@ export default function UserDetailsPage() {
           </Button>
 
           {/* Approve Auction Section */}
-          {!user.approvedAuction ? (
+          {/* {!user.approvedAuction ? (
             <ApproveAuctionButton
               userId={user.id}
               onSuccess={() => {
@@ -100,7 +100,6 @@ export default function UserDetailsPage() {
             </div>
           )}
 
-          {/* Approve Market Section */}
           {!user.approvedMarket ? (
             <ApproveMarketButton
               userId={user.id}
@@ -112,7 +111,7 @@ export default function UserDetailsPage() {
             <div className="text-blue-600 font-semibold text-center">
               ✅ Approved for Marketplace
             </div>
-          )}
+          )} */}
         </CardContent>
       </Card>
     </div>

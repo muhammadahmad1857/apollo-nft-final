@@ -15,8 +15,7 @@ model User {
   email         String?  
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  approvedAuction Boolean @default(false)
-  approvedMarket Boolean @default(false)
+
 
   // NFTs
   nftsCreated   NFT[]     @relation("CreatorNFTs")
@@ -48,7 +47,8 @@ model NFT {
   mintPrice   Float
   isListed    Boolean   @default(false)
   createdAt   DateTime  @default(now())
-
+  approvedAuction Boolean @default(false)
+  approvedMarket Boolean @default(false)
   updatedAt   DateTime  @updatedAt
 
   creator     User      @relation("CreatorNFTs", fields: [creatorId], references: [id])

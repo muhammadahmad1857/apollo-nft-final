@@ -6,15 +6,16 @@ import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { nftAddress, auctionAddress, nftABIArray } from "@/lib/wagmi/contracts";
-import { approveAuctionUser } from "@/actions/users";
+import { approveAuctionNFT } from "@/actions/nft";
 
 interface ApproveButtonProps {
-  userId: number;
+  nftId: number;
   disabled?: boolean;
+  tokenId:number;
   onSuccess?: () => void;
 }
 
-export function ApproveAuctionButton({ userId, disabled = false, onSuccess }: ApproveButtonProps) {
+export function ApproveAuctionButton({ nftId, disabled = false, onSuccess,tokenId }: ApproveButtonProps) {
   const toastIdRef = useRef<string | number | null>(null);
   const [isApproving, setIsApproving] = useState(false);
 
@@ -28,8 +29,8 @@ export function ApproveAuctionButton({ userId, disabled = false, onSuccess }: Ap
        approveForAllWrite({
         address: nftAddress,
         abi: nftABIArray,
-        functionName: "setApprovalForAll",
-        args: [auctionAddress, true],
+        functionName: "approve",
+        args: [auctionAddress, BigInt(tokenId)],
       });
       toast.info("Approval transaction sent...");
     } catch (err: any) {
@@ -47,7 +48,7 @@ export function ApproveAuctionButton({ userId, disabled = false, onSuccess }: Ap
     }
 
     if (approveSuccess && toastIdRef.current) {
-      approveAuctionUser(userId).catch(() => {});
+      approveAuctionNFT(nftId).catch(() => {});
       toast.success("✅ Approved for auction", { id: toastIdRef.current });
       toastIdRef.current = null;
       if (onSuccess) onSuccess();
@@ -57,7 +58,7 @@ export function ApproveAuctionButton({ userId, disabled = false, onSuccess }: Ap
       toast.error(approveReceiptError?.message || "Approval failed", { id: toastIdRef.current });
       toastIdRef.current = null;
     }
-  }, [isApproveConfirming, approveSuccess, approveReceiptError, userId, onSuccess]);
+  }, [isApproveConfirming, approveSuccess, approveReceiptError, nftId, onSuccess]);
 
   return (
     <Button

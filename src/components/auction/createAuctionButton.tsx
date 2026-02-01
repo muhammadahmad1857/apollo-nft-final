@@ -23,10 +23,11 @@ import { useUser } from "@/hooks/useUser";
 interface CreateAuctionButtonProps {
   tokenId: bigint;
   nftId:number;
+  approvedAuction:boolean
   disabled?: boolean;
 }
 
-export function CreateAuctionButton({ tokenId, disabled = false,nftId }: CreateAuctionButtonProps) {
+export function CreateAuctionButton({ tokenId, disabled = false,nftId,approvedAuction }: CreateAuctionButtonProps) {
   const { address } = useAccount();
   const { data: user, refetch, isLoading: isUserLoading } = useUser(address || "");
   const { createAuction: createAuctionOnChain, isPending: isTxPending } = useCreateAuction();
@@ -36,7 +37,6 @@ export function CreateAuctionButton({ tokenId, disabled = false,nftId }: CreateA
   const [minBid, setMinBid] = useState("");
   const [duration, setDuration] = useState(""); // hours
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
-
   const toastIdRef = useRef<string | number | null>(null);
 
   const {
@@ -131,8 +131,8 @@ export function CreateAuctionButton({ tokenId, disabled = false,nftId }: CreateA
 
         {!user ? (
           <p>Loading user...</p>
-        ) : !user.approvedAuction ? (
-          <ApproveAuctionButton userId={user.id} onSuccess={() => refetch && refetch()} />
+        ) : approvedAuction ? (
+          <ApproveAuctionButton tokenId={Number(tokenId)} nftId={nftId} onSuccess={() => refetch && refetch()} />
         ) : (
           <div className="space-y-4 mt-2">
             <div className="flex flex-col gap-2">

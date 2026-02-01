@@ -10,17 +10,19 @@ import {
   marketplaceAddress,
   nftABIArray,
 } from "@/lib/wagmi/contracts";
-import { approveMarketUser } from "@/actions/users";
+import { approveMarketNFT } from "@/actions/nft";
 
 interface ApproveMarketButtonProps {
-  userId: number;
+    nftId: number;
   disabled?: boolean;
   onSuccess?: () => void;
+  tokenId:number
 }
 
 export function ApproveMarketButton({
-  userId,
+    nftId,
   disabled = false,
+  tokenId,
   onSuccess,
 }: ApproveMarketButtonProps) {
   const toastIdRef = useRef<string | number | null>(null);
@@ -42,8 +44,8 @@ export function ApproveMarketButton({
       const hash = await writeContractAsync({
         address: nftAddress,
         abi: nftABIArray,
-        functionName: "setApprovalForAll",
-        args: [marketplaceAddress, true],
+        functionName: "approve",
+        args: [marketplaceAddress, BigInt(tokenId)],
       });
 
       setTxHash(hash);
@@ -63,7 +65,7 @@ export function ApproveMarketButton({
     if (!txHash) return;
 
     if (isSuccess && toastIdRef.current) {
-      approveMarketUser(userId).catch(() => {
+      approveMarketNFT(nftId).catch(() => {
         // silently fail DB sync (chain is source of truth)
       });
 
@@ -83,7 +85,7 @@ export function ApproveMarketButton({
       toastIdRef.current = null;
       setTxHash(undefined);
     }
-  }, [isSuccess, error, txHash, userId, onSuccess]);
+  }, [isSuccess, error, txHash, nftId, onSuccess]);
 
   return (
     <Button

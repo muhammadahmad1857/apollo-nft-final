@@ -78,3 +78,18 @@ export async function transferOwnership(
 export async function deleteNFT(id: number): Promise<PrismaNFT> {
   return db.nFT.delete({ where: { id } });
 }
+
+
+export async function approveAuctionNFT(nftId: number) {
+  return db.nFT.update({
+    where: { id: nftId },
+    data: { approvedAuction: true },
+  });
+}
+
+export async function approveMarketNFT(nftId: number) {
+  return db.nFT.update({
+    where: { id: nftId },
+    data: { approvedMarket: true },
+  });
+}
