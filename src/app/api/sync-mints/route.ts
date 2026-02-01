@@ -18,7 +18,9 @@ export async function GET() {
       select: { tokenId: true },
       orderBy: { tokenId: "desc" },
     });
-    const fromToken = last ? Number(last.tokenId) + 1 : 1;
+    const START_TOKEN = 22; // assume your last mint was #22
+
+    const fromToken = last ? Number(last.tokenId) + 1 :START_TOKEN ;
     console.log(`[SYNC-MINTS] Last tokenId: ${last ? last.tokenId : "none"}, fromToken: ${fromToken}`);
 
     // 2️⃣ Fetch all Transfer events where from == zeroAddress (mint)
