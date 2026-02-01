@@ -226,7 +226,7 @@ useEffect(() => {
               {/* Render ApproveMarketButton if not approved */}
               {!user ? (
           <p>Loading user...</p>
-        ) : !user.approvedAuction ? (
+        ) : !user.approvedMarket ? (
                 <ApproveMarketButton
                   userId={user.id}
                   onSuccess={() => userRefetch()}
