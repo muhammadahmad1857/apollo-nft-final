@@ -61,7 +61,7 @@ export function useCreateAuction() {
     (async () => {
       try {
         await createAuctionDB({
-          nft: { connect: { id: pendingData.nftId } },
+          nft: { connect: { id: pendingData.nftId,isListed:true } },
           seller: { connect: { id: pendingData.sellerId } },
           minBid: Number(pendingData.minBidEth),
           startTime: new Date(),

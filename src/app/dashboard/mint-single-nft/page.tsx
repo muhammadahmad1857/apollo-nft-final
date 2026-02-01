@@ -17,7 +17,7 @@ const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 
 export default function MintSingleNFTPage() {
   const { address } = useAccount();
-  const [selectedFile, setSelectedFile] = useState("");
+  const [selectedFile, setSelectedFile] = useState<string |null>(null);
   const [royaltyBps, setRoyaltyBps] = useState(500); // Default 5%
   const [previewUrl, setPreviewUrl] = useState("");
   const [metaName, setMetaName] = useState("");
