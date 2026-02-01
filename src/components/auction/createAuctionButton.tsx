@@ -97,21 +97,11 @@ export function CreateAuctionButton({ tokenId, disabled = false,nftId,approvedAu
         await new Promise((r) => setTimeout(r, 1000)); // 1 sec
       }
 
-      // 3️⃣ Update DB
-      await createAuctionInDB({
-        nft: { connect: { tokenId: Number(tokenId) } },
-        seller: { connect: { walletAddress: address } },
-        minBid: Number(minBid),
-        startTime: new Date(),
-        endTime: new Date(Date.now() + Number(durationSec) * 1000),
-      });
-
-      toast.success("Auction created successfully! 🎉");
+    
       setOpen(false);
       setTxHash(undefined);
 
       // 4️⃣ Redirect to auction page
-      router.push(`/auctions/${tokenId}`);
     } catch (err: any) {
       console.error(err);
       toast.error(err?.message || "Failed to create auction");
@@ -162,7 +152,7 @@ export function CreateAuctionButton({ tokenId, disabled = false,nftId,approvedAu
             </Button>
             :
             <Button
-              onClick={()=>router.push(`/auction/${Number(tokenId)}`)}
+              onClick={()=>router.push(`/auction/${Number(nftId)}`)}
               className="w-full"
             >
               View Auction

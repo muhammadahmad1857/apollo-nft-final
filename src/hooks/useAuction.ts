@@ -18,6 +18,7 @@ import {
   updateHighestBid,
   settleAuction as settleAuctionDB,
 } from "@/actions/auction";
+import { useRouter } from "next/router";
 
 /* ======================================================
    CREATE AUCTION
@@ -25,7 +26,7 @@ import {
 export function useCreateAuction() {
   const { writeContractAsync } = useWriteContract();
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
-
+  const router = useRouter()
   const { isSuccess, isLoading } = useWaitForTransactionReceipt({
     hash: txHash,
     confirmations: 1,
@@ -81,7 +82,7 @@ export function useCreateAuction() {
           ),
           settled: false,
         });
-
+router.push(`/auction/${pendingData.nftId}`)
         toast.success("Auction created successfully 🎉");
       } catch {
         toast.error("Auction confirmed but DB sync failed");
