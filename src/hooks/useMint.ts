@@ -182,7 +182,12 @@ export function useMintContract() {
           ? "Not enough ETH ⛽"
           : msg
       );
+       rejectRef.current?.(false);
+  resolveRef.current = null;
+  rejectRef.current = null;
+    setIsBusy(false);
     }
+   
 
     // Tx pending
     if (isConfirming && !toastIdRef.current) {

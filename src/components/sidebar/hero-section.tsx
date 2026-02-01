@@ -5,6 +5,7 @@ import { Music, Play } from 'lucide-react'
 import { easeOut,easeInOut, motion } from 'framer-motion'
 import Image from 'next/image'
 import { useTheme } from 'next-themes'
+import Link from 'next/link'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -97,19 +98,23 @@ export default function HeroSection() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
+                <Link href={'/marketplace'}>
                 <Button size="lg" className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
                   <Music className="mr-2" size={20} />
                   Explore Music
                 </Button>
+                </Link>
               </motion.div>
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
+                <Link href={'/dashboard/ming-single-nft'}>
                 <Button size="lg" variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-muted bg-transparent transition-all">
                   <Play className="mr-2" size={20} />
                   Upload Track
                 </Button>
+                </Link>
               </motion.div>
             </motion.div>
 

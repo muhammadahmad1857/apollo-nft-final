@@ -22,6 +22,7 @@ export default function PublicMintsGrid() {
       const data = await getAllNFTs(); // server-side fetch via Prisma
 
 setMints(data as (PrismaNFT & { creator: UserModel,auction:AuctionModel|null })[]);
+console.log("data",data)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err);
