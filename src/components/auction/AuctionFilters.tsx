@@ -26,7 +26,7 @@ export default function AuctionFilters() {
     if (max) query.set("max", max);
     if (endingSoon) query.set("endingSoon", "true");
 
-    router.push(`/auctions?${query.toString()}`);
+    router.push(`/auction?${query.toString()}`);
   }
 
   return (
