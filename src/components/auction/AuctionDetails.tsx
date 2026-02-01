@@ -19,7 +19,7 @@ export function AuctionDetails({
     <div className="bg-white mt-20 dark:bg-zinc-900 shadow-lg rounded-2xl p-6 flex flex-col lg:flex-row gap-6">
       
       {/* NFT Image */}
-      <div className="flex-shrink-0 w-full lg:w-64 h-64 relative rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
+      <div className="shrink-0 w-full lg:w-64 h-64 relative rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
         <Image
           src={auction.nft.imageUrl.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}`)}
           alt={auction.nft.name}
@@ -39,7 +39,7 @@ export function AuctionDetails({
 
           {/* Seller Info */}
           <div className="mt-4 flex items-center gap-3">
-            <div className="flex-shrink-0 size-24 rounded-full overflow-hidden border border-zinc-300 dark:border-zinc-700">
+            <div className="shrink-0 size-24 rounded-full overflow-hidden border border-zinc-300 dark:border-zinc-700">
             <Avatar className="size-24 mb-2">
             <AvatarImage src={auction.seller.avatarUrl ?? ""} alt={auction.seller.name} />
             <AvatarFallback className="rounded-lg">{auction.seller.name.slice(0, 2).toUpperCase()}</AvatarFallback>

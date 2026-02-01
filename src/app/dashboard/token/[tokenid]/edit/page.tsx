@@ -124,6 +124,18 @@ useEffect(() => {
       // Cancel existing listing if needed
       if (!isListed && token.isListed) {
         await cancelListing(BigInt(token.tokenId));
+        // Reset price in DB when unlisting
+      await updateNFT.mutateAsync({
+        id: token.id,
+        data: {
+          isListed: false,
+          mintPrice: 0,
+        },
+      });
+      toast.success("NFT unlisted and price reset to 0");
+      refetch();
+      return; // exit since unlisting is done
+    
       }
 
       // Create / update listing on-chain
@@ -226,52 +238,67 @@ useEffect(() => {
             {/* MARKETPLACE TAB */}
             <TabsContent value="marketplace" className="space-y-6">
               {/* Render ApproveMarketButton if not approved */}
-              {!user ? (
-  <p>Loading user...</p>
-) : token.approvedAuction ? (
-  <p className="text-sm text-muted-foreground">
-    This NFT is already approved for auction and cannot be approved for the marketplace.
-  </p>
-) : !token.approvedMarket ? (
-  <ApproveMarketButton
-    nftId={token.id}
-    tokenId={token.tokenId}
-    onSuccess={() => refetch()}
-  />
-) : (
-  <>
-    <div className="flex items-center justify-between">
-      <Label>List on marketplace</Label>
-      <Switch checked={isListed} onCheckedChange={setIsListed} />
-    </div>
-
-    {isListed && (
-      <div>
-        <Label>Price (Apollo)</Label>
-        <Input
-          type="number"
-          value={priceEth}
-          onChange={(e) => setPriceEth(e.target.value)}
-          placeholder="0.05"
+        {/* MARKETPLACE TAB */}
+<TabsContent value="marketplace" className="space-y-6">
+  {!user ? (
+    <p>Loading user...</p>
+  ) : token.approvedAuction ? (
+    <p className="text-sm text-muted-foreground">
+      This NFT is already approved for auction and cannot be approved for the marketplace.
+    </p>
+  ) : !token.approvedMarket ? (
+    <ApproveMarketButton
+      nftId={token.id}
+      tokenId={token.tokenId}
+      onSuccess={() => refetch()}
+    />
+  ) : (
+    <>
+      <div className="flex items-center justify-between">
+        <Label>List on marketplace</Label>
+        <Switch
+          checked={isListed}
+          onCheckedChange={(val) => {
+            setIsListed(val);
+            if (!val) setPriceEth(""); // Clear price on unlist
+          }}
         />
       </div>
-    )}
 
-    {listing && listing[0] !== ZERO_ADDRESS && (
-      <p className="text-sm text-muted-foreground">
-        On-chain price: <strong>{Number(listing[1])} Apollo</strong>
-      </p>
-    )}
+      {isListed && (
+        <div>
+          <Label>Price (Apollo)</Label>
+          <Input
+            type="number"
+            value={priceEth}
+            onChange={(e) => setPriceEth(e.target.value)}
+            placeholder="0.05"
+            disabled={Boolean(token.mintPrice && token.mintPrice > 0)} // disable if already listed once
+          />
+          {token.mintPrice && token.mintPrice > 0 && (
+            <p className="text-sm text-yellow-600 mt-1">
+              Tip: If you really want to edit the price, unlist the NFT first. Unlisting will reset the price to 0. And then you can list it again.
+            </p>
+          )}
+        </div>
+      )}
 
-    <Button
-      className="w-full"
-      disabled={cancelPending || updateNFT.isPending}
-      onClick={handleSaveListing}
-    >
-      Save Marketplace
-    </Button>
-  </>
-)}
+      {listing && listing[0] !== ZERO_ADDRESS && (
+        <p className="text-sm text-muted-foreground">
+          On-chain price: <strong>{Number(listing[1])} Apollo</strong>
+        </p>
+      )}
+
+      <Button
+        className="w-full"
+        disabled={cancelPending || updateNFT.isPending || Boolean(token.mintPrice && token.mintPrice > 0)}
+        onClick={handleSaveListing}
+      >
+        Save Marketplace
+      </Button>
+    </>
+  )}
+</TabsContent>
 
             </TabsContent>
           </Tabs>
