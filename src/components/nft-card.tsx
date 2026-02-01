@@ -81,7 +81,7 @@ export function NFTCard({ nft, owner = true, onEditRoyalty, onBuy, onShare }: NF
           >
             <Edit /> Edit Listing
           </Button>
-          <CreateAuctionButton disabled={nft.isApproved} tokenId={BigInt(nft.tokenId)} approvedAuction={nft.approvedAuction} nftId={nft.id}/>
+          <CreateAuctionButton disabled={nft.isApproved} tokenId={BigInt(nft.tokenId)} approvedAuction={nft.isApproved} nftId={nft.id}/>
           </div>
         ) : (
           <Button
