@@ -2,36 +2,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  useWriteContract,
-  useReadContract,
-  useWaitForTransactionReceipt,
-} from "wagmi";
+import { useWriteContract, useReadContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseEther } from "viem";
 import { toast } from "sonner";
-
 import { auctionABIArray, auctionAddress } from "@/lib/wagmi/contracts";
-
-import {
-  createAuction as createAuctionDB,
-  updateHighestBid,
-  settleAuction as settleAuctionDB,
-} from "@/actions/auction";
+import { createAuction as createAuctionDB, updateHighestBid, settleAuction as settleAuctionDB } from "@/actions/auction";
 import { useRouter } from "next/router";
+import { BaseError } from "abitype";
 
 /* ======================================================
    CREATE AUCTION
 ====================================================== */
 export function useCreateAuction() {
   const { writeContractAsync } = useWriteContract();
-  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
+  const [txHash, setTxHash] = useState<`0x${string}`>();
   const toastIdRef = useRef<string | number | null>(null);
   const router = useRouter();
-
-  const { isSuccess, isLoading } = useWaitForTransactionReceipt({
-    hash: txHash,
-    confirmations: 1,
-  });
+  const { isSuccess, isLoading, isError, error } = useWaitForTransactionReceipt({ hash: txHash, confirmations: 1 });
 
   const [pendingData, setPendingData] = useState<{
     sellerId: number;
@@ -40,13 +27,7 @@ export function useCreateAuction() {
     minBidEth: string;
   } | null>(null);
 
-  const createAuction = async (
-    tokenId: bigint,
-    durationSec: bigint,
-    minBidEth: string,
-    sellerId: number,
-    nftId: number
-  ) => {
+  const createAuction = async (tokenId: bigint, durationSec: bigint, minBidEth: string, sellerId: number, nftId: number) => {
     try {
       toastIdRef.current = toast.loading("Creating auction on blockchain...");
 
@@ -59,14 +40,19 @@ export function useCreateAuction() {
 
       setPendingData({ sellerId, nftId, durationSec, minBidEth });
       setTxHash(hash);
+
       return hash;
     } catch (err: any) {
-      toast.error(err?.shortMessage || "Failed to create auction", {
-        id: toastIdRef.current ?? undefined,
-      });
+      toast.error(err?.shortMessage || "Failed to create auction", { id: toastIdRef.current ?? undefined });
       throw err;
     }
   };
+
+  useEffect(() => {
+    if (isError && toastIdRef.current) {
+      toast.error((error as BaseError)?.shortMessage || error?.message || "Transaction failed", { id: toastIdRef.current });
+    }
+  }, [isError, error]);
 
   useEffect(() => {
     if (!isSuccess || !pendingData) return;
@@ -78,29 +64,19 @@ export function useCreateAuction() {
           seller: { connect: { id: pendingData.sellerId } },
           minBid: Number(pendingData.minBidEth),
           startTime: new Date(),
-          endTime: new Date(
-            Date.now() + Number(pendingData.durationSec) * 1000
-          ),
+          endTime: new Date(Date.now() + Number(pendingData.durationSec) * 1000),
           settled: false,
         });
 
-        toast.success("Auction created successfully 🎉", {
-          id: toastIdRef.current ?? undefined,
-        });
-
+        toast.success("Auction created successfully 🎉", { id: toastIdRef.current ?? undefined });
         router.push(`/auction/${pendingData.nftId}`);
       } catch {
-        toast.error("Auction confirmed but DB sync failed", {
-          id: toastIdRef.current ?? undefined,
-        });
+        toast.error("Auction confirmed but DB sync failed", { id: toastIdRef.current ?? undefined });
       }
     })();
   }, [isSuccess]);
 
-  return {
-    createAuction,
-    isPending: isLoading,
-  };
+  return { createAuction, isPending: isLoading };
 }
 
 /* ======================================================
@@ -108,26 +84,13 @@ export function useCreateAuction() {
 ====================================================== */
 export function usePlaceBid() {
   const { writeContractAsync } = useWriteContract();
-  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
+  const [txHash, setTxHash] = useState<`0x${string}`>();
   const toastIdRef = useRef<string | number | null>(null);
 
-  const { isSuccess, isLoading } = useWaitForTransactionReceipt({
-    hash: txHash,
-    confirmations: 1,
-  });
+  const { isSuccess, isLoading, isError, error } = useWaitForTransactionReceipt({ hash: txHash, confirmations: 1 });
+  const [pendingData, setPendingData] = useState<{ auctionId: number; bidderId: number; bidEth: string } | null>(null);
 
-  const [pendingData, setPendingData] = useState<{
-    auctionId: number;
-    bidderId: number;
-    bidEth: string;
-  } | null>(null);
-
-  const placeBid = async (
-    tokenId: bigint,
-    bidEth: string,
-    auctionId: number,
-    bidderId: number
-  ) => {
+  const placeBid = async (tokenId: bigint, bidEth: string, auctionId: number, bidderId: number) => {
     try {
       toastIdRef.current = toast.loading("Placing bid...");
 
@@ -141,41 +104,34 @@ export function usePlaceBid() {
 
       setPendingData({ auctionId, bidderId, bidEth });
       setTxHash(hash);
+
       return hash;
     } catch (err: any) {
-      toast.error(err?.shortMessage || "Bid failed", {
-        id: toastIdRef.current ?? undefined,
-      });
+      toast.error(err?.shortMessage || "Bid failed", { id: toastIdRef.current ?? undefined });
       throw err;
     }
   };
+
+  useEffect(() => {
+    if (isError && toastIdRef.current) {
+      toast.error((error as BaseError)?.shortMessage || error?.message || "Transaction failed", { id: toastIdRef.current });
+    }
+  }, [isError, error]);
 
   useEffect(() => {
     if (!isSuccess || !pendingData) return;
 
     (async () => {
       try {
-        await updateHighestBid(
-          pendingData.auctionId,
-          pendingData.bidderId,
-          Number(pendingData.bidEth)
-        );
-
-        toast.success("Bid placed successfully 🔥", {
-          id: toastIdRef.current ?? undefined,
-        });
+        await updateHighestBid(pendingData.auctionId, pendingData.bidderId, Number(pendingData.bidEth));
+        toast.success("Bid placed successfully 🔥", { id: toastIdRef.current ?? undefined });
       } catch {
-        toast.error("Bid confirmed but DB update failed", {
-          id: toastIdRef.current ?? undefined,
-        });
+        toast.error("Bid confirmed but DB update failed", { id: toastIdRef.current ?? undefined });
       }
     })();
   }, [isSuccess]);
 
-  return {
-    placeBid,
-    isPending: isLoading,
-  };
+  return { placeBid, isPending: isLoading };
 }
 
 /* ======================================================
@@ -183,15 +139,11 @@ export function usePlaceBid() {
 ====================================================== */
 export function useSettleAuction() {
   const { writeContractAsync } = useWriteContract();
-  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
+  const [txHash, setTxHash] = useState<`0x${string}`>();
   const toastIdRef = useRef<string | number | null>(null);
-
-  const { isSuccess, isLoading } = useWaitForTransactionReceipt({
-    hash: txHash,
-    confirmations: 1,
-  });
-
   const [pendingAuctionId, setPendingAuctionId] = useState<number | null>(null);
+
+  const { isSuccess, isLoading, isError, error } = useWaitForTransactionReceipt({ hash: txHash, confirmations: 1 });
 
   const settleAuction = async (tokenId: bigint, auctionId: number) => {
     try {
@@ -206,14 +158,19 @@ export function useSettleAuction() {
 
       setPendingAuctionId(auctionId);
       setTxHash(hash);
+
       return hash;
     } catch (err: any) {
-      toast.error(err?.shortMessage || "Settlement failed", {
-        id: toastIdRef.current ?? undefined,
-      });
+      toast.error(err?.shortMessage || "Settlement failed", { id: toastIdRef.current ?? undefined });
       throw err;
     }
   };
+
+  useEffect(() => {
+    if (isError && toastIdRef.current) {
+      toast.error((error as BaseError)?.shortMessage || error?.message || "Transaction failed", { id: toastIdRef.current });
+    }
+  }, [isError, error]);
 
   useEffect(() => {
     if (!isSuccess || !pendingAuctionId) return;
@@ -221,22 +178,14 @@ export function useSettleAuction() {
     (async () => {
       try {
         await settleAuctionDB(pendingAuctionId);
-
-        toast.success("Auction settled successfully ✅", {
-          id: toastIdRef.current ?? undefined,
-        });
+        toast.success("Auction settled successfully ✅", { id: toastIdRef.current ?? undefined });
       } catch {
-        toast.error("Auction settled on-chain but DB sync failed", {
-          id: toastIdRef.current ?? undefined,
-        });
+        toast.error("Auction settled on-chain but DB sync failed", { id: toastIdRef.current ?? undefined });
       }
     })();
   }, [isSuccess]);
 
-  return {
-    settleAuction,
-    isPending: isLoading,
-  };
+  return { settleAuction, isPending: isLoading };
 }
 
 /* ======================================================

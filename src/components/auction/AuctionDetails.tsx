@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { AuctionModel, NFTModel, UserModel } from "@/generated/prisma/models";
 import Image from "next/image";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export function AuctionDetails({
   auction,
@@ -15,7 +16,7 @@ export function AuctionDetails({
   const highestBid = auction.highestBid || auction.minBid;
 
   return (
-    <div className="bg-white dark:bg-zinc-900 shadow-lg rounded-2xl p-6 flex flex-col lg:flex-row gap-6">
+    <div className="bg-white min-h-screen mt-20 dark:bg-zinc-900 shadow-lg rounded-2xl p-6 flex flex-col lg:flex-row gap-6">
       
       {/* NFT Image */}
       <div className="flex-shrink-0 w-full lg:w-64 h-64 relative rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
@@ -39,13 +40,10 @@ export function AuctionDetails({
           {/* Seller Info */}
           <div className="mt-4 flex items-center gap-3">
             <div className="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden border border-zinc-300 dark:border-zinc-700">
-              <Image
-                src={auction.seller.avatarUrl || "/default-avatar.png"}
-                alt={auction.seller.name}
-                width={40}
-                height={40}
-                className="object-cover"
-              />
+            <Avatar className="size-24 mb-2">
+            <AvatarImage src={auction.seller.avatarUrl ?? ""} alt={auction.seller.name} />
+            <AvatarFallback className="rounded-lg">{auction.seller.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+          </Avatar>
             </div>
             <div className="text-sm text-zinc-700 dark:text-zinc-300">
               Seller: <span className="font-medium">{auction.seller.name || auction.seller.walletAddress}</span>
