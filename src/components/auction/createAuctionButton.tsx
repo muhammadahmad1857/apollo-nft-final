@@ -153,13 +153,20 @@ export function CreateAuctionButton({ tokenId, disabled = false,nftId,approvedAu
                 onChange={(e) => setDuration(e.target.value)}
               />
             </div>
-            <Button
+           { !disabled?<Button
               onClick={handleCreateAuction}
               disabled={isTxPending || !minBid || !duration}
               className="w-full"
             >
-              {isTxPending ? "Creating..." : "Create Auction"}
+              {isTxPending ? "Creating..." :  "Create Auction"}
             </Button>
+            :
+            <Button
+              onClick={()=>router.push(`/auction/${Number(tokenId)}`)}
+              className="w-full"
+            >
+              View Auction
+            </Button>}
           </div>
         )}
       </DialogContent>
