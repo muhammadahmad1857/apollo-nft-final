@@ -13,6 +13,7 @@ import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
 import { transferOwnership } from "@/actions/nft";
 import { getFileTypeByIPFS } from "@/actions/files";
+import { parseEther } from "viem";
 
 export interface NFTCardProps {
   title: string;
@@ -25,6 +26,35 @@ export interface NFTCardProps {
   mintPrice?: number; // in wei
   showBuyButton?: boolean;
   showEditRoyaltyButton?: boolean;
+}
+
+async function detectFileTypeFromHEAD(url: string): Promise<string> {
+  try {
+    const gatewayUrl = url.startsWith("ipfs://")
+      ? `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${url.replace(
+          "ipfs://",
+          ""
+        )}`
+      : url;
+
+    const res = await fetch(gatewayUrl, { method: "HEAD" });
+    const contentType = res.headers.get("content-type");
+
+    if (!contentType) return "unknown";
+
+    if (contentType.includes("video")) return ".mp4";
+    if (contentType.includes("audio")) {
+      if (contentType.includes("wav")) return ".wav";
+      if (contentType.includes("mpeg")) return ".mp3";
+      return ".audio";
+    }
+    if (contentType.includes("image")) return ".image";
+
+    return "unknown";
+  } catch (err) {
+    console.error("HEAD type detection failed", err);
+    return "unknown";
+  }
 }
 
 const NFTCard = ({
@@ -47,7 +77,7 @@ const NFTCard = ({
     if (!mintPrice) return toast.error("Mint price not available");
 
     try {
-      await buyNFT(BigInt(tokenId), BigInt(mintPrice)); // use real price
+      await buyNFT(BigInt(tokenId), parseEther(String(mintPrice))); // use real price
       if (user?.id) {
         await transferOwnership(tokenId, user.id); // update DB
       }
@@ -66,32 +96,69 @@ const NFTCard = ({
   const [mediaType, setMediaType] = useState<string>("unknown");
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [realMedia,setRealMedia] = useState("")
+  const [realMedia, setRealMedia] = useState("");
   // Detect media type
   useEffect(() => {
     if (!media) return;
-    console.log(
-    
-    )
+  
     const detect = async () => {
       try {
-        const res = await fetch(media)
-        const json = await res.json()
-        let type = await getFileTypeByIPFS(json.media)
-        console.log("type",type)
-        setRealMedia(json.media);
-        if(!type) type = "unknown"
-        return type
-      }
-      catch(e){
-        toast.error("Error in getting file type")
-        return "unkown"
+        // 1️⃣ Fetch metadata JSON
+        const res = await fetch(media);
+        const json = await res.json();
+  
+        const actualMedia = json.media;
+        setRealMedia(actualMedia);
+  
+        // 2️⃣ Try existing IPFS detection
+        let type = await getFileTypeByIPFS(actualMedia);
+  
+        // 3️⃣ Fallback: HEAD request on real media
+        if (!type || type === "unknown") {
+          type = await detectFileTypeFromHEAD(actualMedia);
+        }
+  
+        return type || "unknown";
+      } catch (e) {
+        console.error(e);
+        toast.error("Error detecting media type");
+        return "unknown";
       }
     };
-
+  
     detect().then(setMediaType);
   }, [media]);
-
+  useEffect(() => {
+    if (!media) return;
+  
+    const detect = async () => {
+      try {
+        // 1️⃣ Fetch metadata JSON
+        const res = await fetch(media);
+        const json = await res.json();
+  
+        const actualMedia = json.media;
+        setRealMedia(actualMedia);
+  
+        // 2️⃣ Try existing IPFS detection
+        let type = await getFileTypeByIPFS(actualMedia);
+  
+        // 3️⃣ Fallback: HEAD request on real media
+        if (!type || type === "unknown") {
+          type = await detectFileTypeFromHEAD(actualMedia);
+        }
+  
+        return type || "unknown";
+      } catch (e) {
+        console.error(e);
+        toast.error("Error detecting media type");
+        return "unknown";
+      }
+    };
+  
+    detect().then(setMediaType);
+  }, [media]);
+    
   const modalVariants = {
     hidden: { opacity: 0, scale: 0.92 },
     visible: { opacity: 1, scale: 1, transition: { duration: 0.35 } },
@@ -137,19 +204,30 @@ const NFTCard = ({
             {description || "No description provided"}
           </p>
           <p className="text-xs text-zinc-500 dark:text-zinc-500 mb-2">
-            By <span className="font-medium text-zinc-700 dark:text-zinc-300">{name}</span> • #{tokenId}
+            By{" "}
+            <span className="font-medium text-zinc-700 dark:text-zinc-300">
+              {name}
+            </span>{" "}
+            • #{tokenId}
           </p>
           {mintPrice && (
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3">
-              Price: <span className="font-semibold">{(mintPrice).toFixed(4)} Apollo</span>
+              Price:{" "}
+              <span className="font-semibold">
+                {mintPrice.toFixed(4)} Apollo
+              </span>
             </p>
           )}
 
           {/* Media player / play button */}
-          {realMedia && mediaType !== "unknown" && mediaType !== ".json"? (
-            mediaType === ".wav"||mediaType ===".mp3" ? (
+          {realMedia && mediaType !== "unknown" && mediaType !== ".json" ? (
+            mediaType === ".wav" || mediaType === ".mp3" ? (
               <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-lg p-3 mb-4">
-                <audio controls className="w-full h-9" controlsList="nodownload">
+                <audio
+                  controls
+                  className="w-full h-9"
+                  controlsList="nodownload"
+                >
                   <source src={media} type="audio/mpeg" />
                 </audio>
               </div>
@@ -163,7 +241,9 @@ const NFTCard = ({
               </button>
             )
           ) : (
-            <p className="text-xs text-center text-zinc-500 italic mb-4">No playable media</p>
+            <p className="text-xs text-center text-zinc-500 italic mb-4">
+              No playable media
+            </p>
           )}
 
           {/* Actions */}
@@ -209,14 +289,25 @@ const NFTCard = ({
             exit="exit"
             onClick={() => setShowVideoModal(false)}
           >
-            <div className="relative w-full max-w-5xl" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="relative w-full max-w-5xl"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 className="absolute -top-12 right-0 text-white p-3 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
                 onClick={() => setShowVideoModal(false)}
               >
                 <X size={24} />
               </button>
-              <video controls autoPlay className="w-full rounded-xl shadow-2xl" src={realMedia.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)} />
+              <video
+                controls
+                autoPlay
+                className="w-full rounded-xl shadow-2xl"
+                src={realMedia.replace(
+                  "ipfs://",
+                  `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`
+                )}
+              />
             </div>
           </motion.div>
         )}
