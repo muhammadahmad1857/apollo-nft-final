@@ -227,48 +227,52 @@ useEffect(() => {
             <TabsContent value="marketplace" className="space-y-6">
               {/* Render ApproveMarketButton if not approved */}
               {!user ? (
-          <p>Loading user...</p>
-        ) : !token.approvedMarket ? (
-                <ApproveMarketButton
-                  nftId={token.id}
-                  tokenId={token.tokenId}
-                  onSuccess={() => refetch()}
-                />
-              ) : (
-                <>
-                  <div className="flex items-center justify-between">
-                    <Label>List on marketplace</Label>
-                    <Switch checked={isListed} onCheckedChange={setIsListed} />
-                  </div>
+  <p>Loading user...</p>
+) : token.approvedAuction ? (
+  <p className="text-sm text-muted-foreground">
+    This NFT is already approved for auction and cannot be approved for the marketplace.
+  </p>
+) : !token.approvedMarket ? (
+  <ApproveMarketButton
+    nftId={token.id}
+    tokenId={token.tokenId}
+    onSuccess={() => refetch()}
+  />
+) : (
+  <>
+    <div className="flex items-center justify-between">
+      <Label>List on marketplace</Label>
+      <Switch checked={isListed} onCheckedChange={setIsListed} />
+    </div>
 
-                  {isListed && (
-                    <div>
-                      <Label>Price (Apollo)</Label>
-                      <Input
-                        type="number"
-                        value={priceEth}
-                        onChange={(e) => setPriceEth(e.target.value)}
-                        placeholder="0.05"
-                      />
-                    </div>
-                  )}
+    {isListed && (
+      <div>
+        <Label>Price (Apollo)</Label>
+        <Input
+          type="number"
+          value={priceEth}
+          onChange={(e) => setPriceEth(e.target.value)}
+          placeholder="0.05"
+        />
+      </div>
+    )}
 
-                  {listing && listing[0] !== ZERO_ADDRESS && (
-                    <p className="text-sm text-muted-foreground">
-                      On-chain price:{" "}
-                      <strong>{Number(listing[1])} Apollo</strong>
-                    </p>
-                  )}
+    {listing && listing[0] !== ZERO_ADDRESS && (
+      <p className="text-sm text-muted-foreground">
+        On-chain price: <strong>{Number(listing[1])} Apollo</strong>
+      </p>
+    )}
 
-                  <Button
-                    className="w-full"
-                    disabled={cancelPending || updateNFT.isPending}
-                    onClick={handleSaveListing}
-                  >
-                    Save Marketplace
-                  </Button>
-                </>
-              )}
+    <Button
+      className="w-full"
+      disabled={cancelPending || updateNFT.isPending}
+      onClick={handleSaveListing}
+    >
+      Save Marketplace
+    </Button>
+  </>
+)}
+
             </TabsContent>
           </Tabs>
         </CardContent>

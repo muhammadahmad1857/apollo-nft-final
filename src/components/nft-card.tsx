@@ -19,6 +19,7 @@ interface NFTCardProps {
     isApproved: boolean;
     tokenId: number;
     isDisabled:boolean
+    isMarketApproved:boolean
   };
   owner?: boolean;
   onEditRoyalty?: () => void;
@@ -82,7 +83,9 @@ export function NFTCard({ nft, owner = true, onEditRoyalty, onBuy, onShare }: NF
           >
             <Edit /> Edit Listing
           </Button>
-          <CreateAuctionButton disabled={nft.isDisabled} tokenId={BigInt(nft.tokenId)} approvedAuction={nft.isApproved} nftId={nft.id}/>
+         {!nft.isMarketApproved? <CreateAuctionButton disabled={nft.isDisabled} tokenId={BigInt(nft.tokenId)} approvedAuction={nft.isApproved} nftId={nft.id}/>:<p className="text-sm text-muted-foreground">
+    This NFT is already approved for marketing and cannot be approved for the auction.
+  </p>}
           </div>
         ) : (
           <Button

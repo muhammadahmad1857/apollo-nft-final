@@ -97,7 +97,16 @@ export default function Page() {
         {loading ? (
           <div>Loading NFTs...</div>
         ) : filteredNFTs.length === 0 ? (
-          <div className="text-center text-muted-foreground">No NFTs found.</div>
+<div className="text-center text-muted-foreground space-y-2">
+  <div>No NFTs found.</div>
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={() => router.refresh()}
+  >
+    Refresh
+  </Button>
+</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredNFTs.map((nft) => (
@@ -111,7 +120,8 @@ export default function Page() {
                   id: nft.id,
                   tokenId: nft.tokenId,
                   isDisabled: nft.auction ? true:false,
-                  isApproved:nft.approvedAuction
+                  isApproved:nft.approvedAuction,
+                  isMarketApproved:nft.approvedMarket
                 }}
                 owner={nft.ownerId === user.id}
                 

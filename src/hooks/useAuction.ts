@@ -7,7 +7,7 @@ import { parseEther } from "viem";
 import { toast } from "sonner";
 import { auctionABIArray, auctionAddress } from "@/lib/wagmi/contracts";
 import { createAuction as createAuctionDB, updateHighestBid, settleAuction as settleAuctionDB } from "@/actions/auction";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { BaseError } from "abitype";
 import { createBid } from "@/actions/bid";
 
