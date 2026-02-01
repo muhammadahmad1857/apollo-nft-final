@@ -5,12 +5,12 @@ import NFTCard from "./nftCard";
 import SkeletonCards from "./SekeletonCards";
 import { Button } from "../ui/button";
 import { getAllNFTs } from "@/actions/nft"; // server-side Prisma function
-import type { NFTModel as PrismaNFT, UserModel } from "@/generated/prisma/models";
+import type { AuctionModel, NFTModel as PrismaNFT, UserModel } from "@/generated/prisma/models";
 
 const PAGE_SIZE = 12;
 
 export default function PublicMintsGrid() {
-  const [mints, setMints] = useState<(PrismaNFT & { creator: UserModel })[]>([]);
+  const [mints, setMints] = useState<(PrismaNFT & { creator: UserModel,auction:AuctionModel|null })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +21,7 @@ export default function PublicMintsGrid() {
 
       const data = await getAllNFTs(); // server-side fetch via Prisma
 
-setMints(data as (PrismaNFT & { creator: UserModel })[]);
+setMints(data as (PrismaNFT & { creator: UserModel,auction:AuctionModel|null })[]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err);
@@ -88,6 +88,14 @@ setMints(data as (PrismaNFT & { creator: UserModel })[]);
             minted={true}
             showBuyButton={true}
             mintPrice={nft.mintPrice}
+             auction={nft.auction ? {
+      id: nft.auction.id,
+      startTime: nft.auction.startTime.toISOString(),
+      endTime: nft.auction.endTime.toISOString(),
+      settled: nft.auction.settled,
+      highestBid: nft.auction.highestBid || undefined,
+    } : undefined}
+    nftId={nft.id}
           />
         ))}
       </div>

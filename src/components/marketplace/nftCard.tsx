@@ -35,6 +35,14 @@ export interface NFTCardProps {
   mintPrice?: number; // in wei
   showBuyButton?: boolean;
   showEditRoyaltyButton?: boolean;
+  nftId: number;
+  auction?: {
+    id: number;
+    startTime: string;
+    endTime: string;
+    settled: boolean;
+    highestBid?: number;
+  };
 }
 
 async function detectFileTypeFromHEAD(url: string): Promise<string> {
@@ -76,6 +84,8 @@ const NFTCard = ({
   mintPrice,
   showBuyButton,
   showEditRoyaltyButton,
+  auction,
+  nftId,
 }: NFTCardProps) => {
   const { buyNFT, isPending } = useBuyNFT();
   const router = useRouter();
@@ -83,6 +93,12 @@ const NFTCard = ({
   const { data: user } = useUser(address);
   const [showBuyConfirm, setShowBuyConfirm] = useState(false);
   const [isProcessingBuy, setIsProcessingBuy] = useState(false);
+  const now = new Date();
+  const isAuctionActive =
+    auction &&
+    !auction.settled &&
+    new Date(auction.startTime) <= now &&
+    new Date(auction.endTime) >= now;
 
   console.log("nft.media", cover);
 
@@ -188,10 +204,12 @@ const NFTCard = ({
         transition={{ duration: 0.5 }}
       >
         {/* Status badge */}
-        <div className="absolute top-3 right-3 z-10 flex items-center gap-2 bg-white/70 dark:bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium border border-white/30 dark:border-zinc-700/50">
-          <div className="h-2 w-2 rounded-full bg-cyan-500 animate-pulse" />
-          Minted
-        </div>
+
+        {isAuctionActive && (
+          <div className="absolute top-3 left-3 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+            Auction Live
+          </div>
+        )}
 
         {/* Media preview */}
         <div className="aspect-square relative bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
@@ -270,7 +288,7 @@ const NFTCard = ({
               <Share size={18} />
               <span className="text-sm font-medium">Share</span>
             </button>
-            {showBuyButton && mintPrice && (
+            {/* {showBuyButton && mintPrice && (
               <button
                 onClick={() => setShowBuyConfirm(true)}
                 className="ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors"
@@ -278,7 +296,27 @@ const NFTCard = ({
               >
                 {isPending ? "Buying..." : "Buy"}
               </button>
+            )} */}
+            {isAuctionActive ? (
+              <button
+                onClick={() => router.push(`/auction/${nftId}`)}
+                className="ml-auto px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+              >
+                View Auction
+              </button>
+            ) : (
+              showBuyButton &&
+              mintPrice && (
+                <button
+                  onClick={() => setShowBuyConfirm(true)}
+                  className="ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors"
+                  disabled={isPending}
+                >
+                  {isPending ? "Buying..." : "Buy"}
+                </button>
+              )
             )}
+
             {showEditRoyaltyButton && (
               <button
                 onClick={handleEditRoyalty}
@@ -335,50 +373,50 @@ const NFTCard = ({
         name={name}
       />
       <Dialog open={showBuyConfirm} onOpenChange={setShowBuyConfirm}>
-  <DialogContent className="sm:max-w-100">
-    <DialogHeader>
-      <DialogTitle>Confirm Purchase</DialogTitle>
-      <DialogDescription>
-        You are about to pay <strong>{mintPrice?.toFixed(4)} Apollo</strong> for this NFT.
-        <br />
-        This action cannot be undone.
-      </DialogDescription>
-    </DialogHeader>
+        <DialogContent className="sm:max-w-100">
+          <DialogHeader>
+            <DialogTitle>Confirm Purchase</DialogTitle>
+            <DialogDescription>
+              You are about to pay{" "}
+              <strong>{mintPrice?.toFixed(4)} Apollo</strong> for this NFT.
+              <br />
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
 
-    <div className="mt-4 text-center">
-      <p className="text-xs text-zinc-500">
-        Wallet: {address?.slice(0, 6)}...{address?.slice(-4)}
-      </p>
-    </div>
+          <div className="mt-4 text-center">
+            <p className="text-xs text-zinc-500">
+              Wallet: {address?.slice(0, 6)}...{address?.slice(-4)}
+            </p>
+          </div>
 
-    <DialogFooter className="mt-6 flex gap-2">
-      <Button
-        variant="outline"
-        className="flex-1"
-        onClick={() => setShowBuyConfirm(false)}
-        disabled={isProcessingBuy}
-      >
-        Cancel
-      </Button>
-      <Button
-        className="flex-1"
-        onClick={async () => {
-          try {
-            setIsProcessingBuy(true);
-            await handleBuy();
-            setShowBuyConfirm(false);
-          } finally {
-            setIsProcessingBuy(false);
-          }
-        }}
-        disabled={isProcessingBuy}
-      >
-        {isProcessingBuy ? "Processing..." : "Confirm & Pay"}
-      </Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
-
+          <DialogFooter className="mt-6 flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setShowBuyConfirm(false)}
+              disabled={isProcessingBuy}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={async () => {
+                try {
+                  setIsProcessingBuy(true);
+                  await handleBuy();
+                  setShowBuyConfirm(false);
+                } finally {
+                  setIsProcessingBuy(false);
+                }
+              }}
+              disabled={isProcessingBuy}
+            >
+              {isProcessingBuy ? "Processing..." : "Confirm & Pay"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

@@ -18,13 +18,14 @@ export async function getNFTById(id: number): Promise<PrismaNFT | null> {
 }
 
 
-export async function getAllNFTs(): Promise<(PrismaNFT & { creator: UserModel|null })[]> {
+export async function getAllNFTs(): Promise<(PrismaNFT & { creator: UserModel|null, auction:AuctionModel|null })[]> {
   return db.nFT.findMany({
     where:{
         isListed:true
     },
     orderBy: { createdAt: "desc" },
-    include: { creator: true }, // nested relation
+    include: { creator: true,      auction: true, // include auction info
+ }, // nested relation
   });
 }
 
