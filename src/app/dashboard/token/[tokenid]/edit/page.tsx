@@ -101,6 +101,8 @@ useEffect(() => {
         BigInt(royalty)
       );
 
+
+
       // 2️⃣ DB
       await updateNFT.mutateAsync({
         id: token.id,
@@ -128,7 +130,7 @@ useEffect(() => {
       if (isListed && priceEth) {
         await listNFT(BigInt(token.tokenId), priceEth);
       }
-
+      console.log("price in etherium",priceEth)
       // Update DB after chain success
       await updateNFT.mutateAsync({
         id: token.id,
@@ -230,7 +232,7 @@ useEffect(() => {
                 <ApproveMarketButton
                   nftId={token.id}
                   tokenId={token.tokenId}
-                  onSuccess={() => userRefetch()}
+                  onSuccess={() => refetch()}
                 />
               ) : (
                 <>

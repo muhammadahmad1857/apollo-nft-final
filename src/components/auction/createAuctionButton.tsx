@@ -131,7 +131,7 @@ export function CreateAuctionButton({ tokenId, disabled = false,nftId,approvedAu
 
         {!user ? (
           <p>Loading user...</p>
-        ) : approvedAuction ? (
+        ) : !approvedAuction ? (
           <ApproveAuctionButton tokenId={Number(tokenId)} nftId={nftId} onSuccess={() => refetch && refetch()} />
         ) : (
           <div className="space-y-4 mt-2">
