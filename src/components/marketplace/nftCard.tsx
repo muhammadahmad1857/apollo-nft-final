@@ -155,7 +155,7 @@ const NFTCard = ({
               </div>
             ) : (
               <button
-                onClick={() => {console.log("I am clicked");setShowVideoModal(true)}}
+                onClick={() => setShowVideoModal(true)}
                 className="w-full py-3.5 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-all mb-4 shadow-sm hover:shadow-md"
               >
                 <Play size={18} fill="white" />

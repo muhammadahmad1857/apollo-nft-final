@@ -1,81 +1,224 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useWriteContract, useReadContract } from "wagmi";
-import { auctionABIArray, auctionAddress } from "@/lib/wagmi/contracts";
-import { toast } from "sonner";
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  useWriteContract,
+  useReadContract,
+  useWaitForTransactionReceipt,
+} from "wagmi";
 import { parseEther } from "viem";
+import { toast } from "sonner";
 
-// Create Auction
+import { auctionABIArray, auctionAddress } from "@/lib/wagmi/contracts";
+
+// 👉 SERVER ACTIONS (DB)
+import {
+  createAuction as createAuctionDB,
+  updateHighestBid,
+  settleAuction as settleAuctionDB,
+} from "@/actions/auction";
+
+/* ======================================================
+   CREATE AUCTION
+====================================================== */
 export function useCreateAuction() {
-  const { writeContractAsync, isPending } = useWriteContract();
+  const { writeContractAsync } = useWriteContract();
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
 
-  const createAuction = async (tokenId: bigint, durationSec: bigint, minBidEth: string) => {
+  const { isSuccess, isLoading } = useWaitForTransactionReceipt({
+    hash: txHash,
+    confirmations: 1,
+  });
+
+  // store temp data until tx confirms
+  const [pendingData, setPendingData] = useState<{
+    sellerId: number;
+    nftId: number;
+    durationSec: bigint;
+    minBidEth: string;
+  } | null>(null);
+
+  const createAuction = async (
+    tokenId: bigint,
+    durationSec: bigint,
+    minBidEth: string,
+    sellerId: number,
+    nftId: number
+  ) => {
     try {
-      const tx = await writeContractAsync({
+      const hash = await writeContractAsync({
         address: auctionAddress,
         abi: auctionABIArray,
         functionName: "createAuction",
         args: [tokenId, durationSec, parseEther(minBidEth)],
       });
-      toast.info("Transaction sent. Waiting for confirmation...");
-      
-      return tx;
+
+      setPendingData({ sellerId, nftId, durationSec, minBidEth });
+      setTxHash(hash);
+
+      toast.loading("Creating auction on blockchain...");
+      return hash;
     } catch (err: any) {
-      toast.error(err?.message || "Failed to create auction");
+      toast.error(err?.shortMessage || "Failed to create auction");
       throw err;
     }
   };
 
-  return { createAuction, isPending };
+  // 👉 DB sync after confirmation
+  useEffect(() => {
+    if (!isSuccess || !pendingData) return;
+
+    (async () => {
+      try {
+        await createAuctionDB({
+          nft: {connect:{id:pendingData.nftId}},
+          seller: {connect:{id:pendingData.sellerId}},
+          minBid: Number(pendingData.minBidEth),
+          startTime: new Date(),
+          endTime: new Date(
+            Date.now() + Number(pendingData.durationSec) * 1000
+          ),
+          settled: false,
+        });
+
+        toast.success("Auction created successfully 🎉");
+      } catch {
+        toast.error("Auction confirmed but DB sync failed");
+      }
+    })();
+  }, [isSuccess]);
+
+  return {
+    createAuction,
+    isPending: isLoading,
+  };
 }
 
-// Place Bid
+/* ======================================================
+   PLACE BID
+====================================================== */
 export function usePlaceBid() {
-  const { writeContractAsync, isPending } = useWriteContract();
+  const { writeContractAsync } = useWriteContract();
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
 
-  const placeBid = async (tokenId: bigint, bidEth: string) => {
+  const { isSuccess, isLoading } = useWaitForTransactionReceipt({
+    hash: txHash,
+    confirmations: 1,
+  });
+
+  const [pendingData, setPendingData] = useState<{
+    auctionId: number;
+    bidderId: number;
+    bidEth: string;
+  } | null>(null);
+
+  const placeBid = async (
+    tokenId: bigint,
+    bidEth: string,
+    auctionId: number,
+    bidderId: number
+  ) => {
     try {
-      const tx = await writeContractAsync({
+      const hash = await writeContractAsync({
         address: auctionAddress,
         abi: auctionABIArray,
         functionName: "bid",
         args: [tokenId],
         value: parseEther(bidEth),
       });
-      toast.info("Bid transaction sent!");
-      return tx;
+
+      setPendingData({ auctionId, bidderId, bidEth });
+      setTxHash(hash);
+
+      toast.loading("Placing bid...");
+      return hash;
     } catch (err: any) {
-      toast.error(err?.message || "Failed to place bid");
+      toast.error(err?.shortMessage || "Bid failed");
       throw err;
     }
   };
 
-  return { placeBid, isPending };
+  useEffect(() => {
+    if (!isSuccess || !pendingData) return;
+
+    (async () => {
+      try {
+        await updateHighestBid(
+          pendingData.auctionId,
+          pendingData.bidderId,
+          Number(pendingData.bidEth)
+        );
+
+        toast.success("Bid placed successfully 🔥");
+      } catch {
+        toast.error("Bid confirmed but DB update failed");
+      }
+    })();
+  }, [isSuccess]);
+
+  return {
+    placeBid,
+    isPending: isLoading,
+  };
 }
 
-// Settle Auction
+/* ======================================================
+   SETTLE AUCTION
+====================================================== */
 export function useSettleAuction() {
-  const { writeContractAsync, isPending } = useWriteContract();
+  const { writeContractAsync } = useWriteContract();
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
 
-  const settleAuction = async (tokenId: bigint) => {
+  const { isSuccess, isLoading } = useWaitForTransactionReceipt({
+    hash: txHash,
+    confirmations: 1,
+  });
+
+  const [pendingAuctionId, setPendingAuctionId] = useState<number | null>(null);
+
+  const settleAuction = async (tokenId: bigint, auctionId: number) => {
     try {
-      const tx = await writeContractAsync({
+      const hash = await writeContractAsync({
         address: auctionAddress,
         abi: auctionABIArray,
         functionName: "settle",
         args: [tokenId],
       });
-      toast.info("Settling auction...");
-      return tx;
+
+      setPendingAuctionId(auctionId);
+      setTxHash(hash);
+
+      toast.loading("Settling auction...");
+      return hash;
     } catch (err: any) {
-      toast.error(err?.message || "Failed to settle auction");
+      toast.error(err?.shortMessage || "Settlement failed");
       throw err;
     }
   };
 
-  return { settleAuction, isPending };
+  useEffect(() => {
+    if (!isSuccess || !pendingAuctionId) return;
+
+    (async () => {
+      try {
+        await settleAuctionDB(pendingAuctionId);
+        toast.success("Auction settled successfully ✅");
+      } catch {
+        toast.error("Auction settled on-chain but DB sync failed");
+      }
+    })();
+  }, [isSuccess]);
+
+  return {
+    settleAuction,
+    isPending: isLoading,
+  };
 }
 
-// Read Auction Details
+/* ======================================================
+   READ AUCTION (ON-CHAIN)
+====================================================== */
 export function useAuctionDetails(tokenId: bigint) {
   return useReadContract({
     address: auctionAddress,

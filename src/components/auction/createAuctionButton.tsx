@@ -22,10 +22,11 @@ import { useUser } from "@/hooks/useUser";
 
 interface CreateAuctionButtonProps {
   tokenId: bigint;
+  nftId:number;
   disabled?: boolean;
 }
 
-export function CreateAuctionButton({ tokenId, disabled = false }: CreateAuctionButtonProps) {
+export function CreateAuctionButton({ tokenId, disabled = false,nftId }: CreateAuctionButtonProps) {
   const { address } = useAccount();
   const { data: user, refetch, isLoading: isUserLoading } = useUser(address || "");
   const { createAuction: createAuctionOnChain, isPending: isTxPending } = useCreateAuction();
@@ -80,7 +81,7 @@ export function CreateAuctionButton({ tokenId, disabled = false }: CreateAuction
       const durationSec = BigInt(Number(duration) * 3600);
 
       // 1️⃣ Call smart contract
-      const tx = await createAuctionOnChain(tokenId, durationSec, minBid);
+      const tx = await createAuctionOnChain(tokenId, durationSec, minBid,user?.id||0,nftId);
       setTxHash(tx);
       toast.info("Transaction sent! Waiting for confirmation...");
 
