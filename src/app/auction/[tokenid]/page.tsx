@@ -2,58 +2,99 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useAuctionDetails, usePlaceBid, useSettleAuction } from "@/hooks/useAuction";
-import { getAuctionByNFT, } from "@/actions/auction";
+import {
+  useAuctionDetails,
+  usePlaceBid,
+  useSettleAuction,
+} from "@/hooks/useAuction";
+import { getAuctionByNFT } from "@/actions/auction";
 import { AuctionDetails } from "@/components/auction/AuctionDetails";
 import { BidHistory } from "@/components/auction/BidHistory";
 import { BidInput } from "@/components/auction/BidInput";
 import { AuctionStatus } from "@/components/auction/AuctionStatus";
 import { getBidsByAuctionWithUser } from "@/actions/bid";
-import { AuctionModel, BidModel, NFTModel, UserModel } from "@/generated/prisma/models";
+import {
+  AuctionModel,
+  BidModel,
+  NFTModel,
+  UserModel,
+} from "@/generated/prisma/models";
 import { useAccount } from "wagmi";
 import { useUser } from "@/hooks/useUser";
 
-
 export default function AuctionPage() {
   const params = useParams();
-  const tokenId = BigInt(String(params.tokenId));
+  const nftId = Number(params.tokenid);
 
-  const [auction, setAuction] = useState<(AuctionModel & {
-    seller: UserModel;
-    nft: NFTModel;
-    highestBidder: UserModel | null;
-    bids: BidModel[];
-  }) | null>(null);
-  const [bids, setBids] = useState<any[]>([]);
-  const router = useRouter()
-;
-const address = useAccount()
-const {data:user} = useUser()
-  const { data: auctionOnChain } = useAuctionDetails(tokenId);
+  const router = useRouter();
+  const { address } = useAccount();
+  const { data: user } = useUser(address || "");
+
+  const [auction, setAuction] = useState<
+    | (AuctionModel & {
+        seller: UserModel;
+        nft: NFTModel;
+        highestBidder: UserModel | null;
+        bids: BidModel[];
+      })
+    | null
+  >(null);
+
+  const [bids, setBids] = useState<(BidModel & {bidder:UserModel})[]>([]);
+
+  // ✅ tokenId derived safely
+  const tokenId = auction?.nft?.tokenId;
+
+  // ✅ SAFE hook usage (only runs when tokenId exists)
+  const { data: auctionOnChain } = useAuctionDetails(
+    tokenId !== undefined ? BigInt(tokenId) : BigInt(0)
+  );
+
   const { placeBid } = usePlaceBid();
   const { settleAuction } = useSettleAuction();
 
+  /* -----------------------------
+     Fetch DB data
+  ------------------------------ */
   useEffect(() => {
-    async function fetchData() {
-      const auctionDB = await getAuctionByNFT(Number(tokenId));
-      const bidList = await getBidsByAuctionWithUser(Number(tokenId));
-      setAuction(auctionDB);
-      setBids(bidList);
-    }
-    fetchData();
-  }, [tokenId]);
+    if (!nftId) return;
 
+    async function fetchData() {
+      try {
+        const auctionDB = await getAuctionByNFT(nftId);
+        if (!auctionDB?.nft?.tokenId) return;
+
+        const bidList = await getBidsByAuctionWithUser(nftId);
+
+        setAuction(auctionDB);
+        setBids(bidList);
+      } catch (err) {
+        toast.error("Failed to load auction");
+      }
+    }
+
+    fetchData();
+  }, [nftId]);
+
+  /* -----------------------------
+     Actions
+  ------------------------------ */
   const handlePlaceBid = async (bidEth: string) => {
+    if (!auction || tokenId === undefined || !user?.id) return;
+
     try {
-      if (!auction) return;
-      const txHash = await placeBid(tokenId, bidEth,auction.id||0,user?.id||0);
-      toast.info("Bid transaction sent!");
-      // you can also wait for confirmation here if you want
-      // refresh bids
-      const bidList = await getBidsByAuctionWithUser(Number(tokenId));
+      await placeBid(
+        BigInt(tokenId),
+        bidEth,
+        auction.id,
+        user.id
+      );
+
+      toast.info("Bid transaction sent");
+
+      const bidList = await getBidsByAuctionWithUser(nftId);
       setBids(bidList);
     } catch (err: any) {
       toast.error(err?.message || "Failed to place bid");
@@ -61,19 +102,26 @@ const {data:user} = useUser()
   };
 
   const handleSettle = async () => {
+    if (!auction || tokenId === undefined) return;
+
     try {
-      const txHash = await settleAuction(tokenId,auction?.id||0);
-      toast.info("Settling auction...");
-      // refresh auction status after settle
-      const updatedAuction = await getAuctionByNFT(Number(tokenId));
+      await settleAuction(BigInt(tokenId), auction.id);
+
+      const updatedAuction = await getAuctionByNFT(nftId);
       setAuction(updatedAuction);
-      toast.success("Auction settled!");
+
+      toast.success("Auction settled");
     } catch (err: any) {
       toast.error(err?.message || "Failed to settle auction");
     }
   };
 
-  if (!auction) return <div className="p-10 text-center">Loading auction...</div>;
+  /* -----------------------------
+     Loading state
+  ------------------------------ */
+  if (!auction || tokenId === undefined) {
+    return <div className="p-10 text-center">Loading auction...</div>;
+  }
 
   return (
     <div className="max-w-5xl mx-auto py-10 space-y-8">

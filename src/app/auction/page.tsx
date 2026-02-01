@@ -18,9 +18,10 @@ export default async function AuctionsPage({
     maxPrice: searchParams.max ? Number(searchParams.max) : undefined,
     endingSoon: searchParams.endingSoon === "true",
   });
+  console.log(auctions)
 
   return (
-    <div className="container mx-auto py-10 space-y-6">
+    <div className="container mx-auto py-20 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Live Auctions</h1>
         <p className="text-muted-foreground">Browse all active NFT auctions</p>
