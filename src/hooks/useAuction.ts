@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useWriteContract,
   useReadContract,
@@ -12,7 +12,6 @@ import { toast } from "sonner";
 
 import { auctionABIArray, auctionAddress } from "@/lib/wagmi/contracts";
 
-// 👉 SERVER ACTIONS (DB)
 import {
   createAuction as createAuctionDB,
   updateHighestBid,
@@ -26,13 +25,14 @@ import { useRouter } from "next/router";
 export function useCreateAuction() {
   const { writeContractAsync } = useWriteContract();
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
-  const router = useRouter()
+  const toastIdRef = useRef<string | number | null>(null);
+  const router = useRouter();
+
   const { isSuccess, isLoading } = useWaitForTransactionReceipt({
     hash: txHash,
     confirmations: 1,
   });
 
-  // store temp data until tx confirms
   const [pendingData, setPendingData] = useState<{
     sellerId: number;
     nftId: number;
@@ -48,6 +48,8 @@ export function useCreateAuction() {
     nftId: number
   ) => {
     try {
+      toastIdRef.current = toast.loading("Creating auction on blockchain...");
+
       const hash = await writeContractAsync({
         address: auctionAddress,
         abi: auctionABIArray,
@@ -57,24 +59,23 @@ export function useCreateAuction() {
 
       setPendingData({ sellerId, nftId, durationSec, minBidEth });
       setTxHash(hash);
-
-      toast.loading("Creating auction on blockchain...");
       return hash;
     } catch (err: any) {
-      toast.error(err?.shortMessage || "Failed to create auction");
+      toast.error(err?.shortMessage || "Failed to create auction", {
+        id: toastIdRef.current ?? undefined,
+      });
       throw err;
     }
   };
 
-  // 👉 DB sync after confirmation
   useEffect(() => {
     if (!isSuccess || !pendingData) return;
 
     (async () => {
       try {
         await createAuctionDB({
-          nft: {connect:{id:pendingData.nftId}},
-          seller: {connect:{id:pendingData.sellerId}},
+          nft: { connect: { id: pendingData.nftId } },
+          seller: { connect: { id: pendingData.sellerId } },
           minBid: Number(pendingData.minBidEth),
           startTime: new Date(),
           endTime: new Date(
@@ -82,10 +83,16 @@ export function useCreateAuction() {
           ),
           settled: false,
         });
-router.push(`/auction/${pendingData.nftId}`)
-        toast.success("Auction created successfully 🎉");
+
+        toast.success("Auction created successfully 🎉", {
+          id: toastIdRef.current ?? undefined,
+        });
+
+        router.push(`/auction/${pendingData.nftId}`);
       } catch {
-        toast.error("Auction confirmed but DB sync failed");
+        toast.error("Auction confirmed but DB sync failed", {
+          id: toastIdRef.current ?? undefined,
+        });
       }
     })();
   }, [isSuccess]);
@@ -102,6 +109,7 @@ router.push(`/auction/${pendingData.nftId}`)
 export function usePlaceBid() {
   const { writeContractAsync } = useWriteContract();
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
+  const toastIdRef = useRef<string | number | null>(null);
 
   const { isSuccess, isLoading } = useWaitForTransactionReceipt({
     hash: txHash,
@@ -121,6 +129,8 @@ export function usePlaceBid() {
     bidderId: number
   ) => {
     try {
+      toastIdRef.current = toast.loading("Placing bid...");
+
       const hash = await writeContractAsync({
         address: auctionAddress,
         abi: auctionABIArray,
@@ -131,11 +141,11 @@ export function usePlaceBid() {
 
       setPendingData({ auctionId, bidderId, bidEth });
       setTxHash(hash);
-
-      toast.loading("Placing bid...");
       return hash;
     } catch (err: any) {
-      toast.error(err?.shortMessage || "Bid failed");
+      toast.error(err?.shortMessage || "Bid failed", {
+        id: toastIdRef.current ?? undefined,
+      });
       throw err;
     }
   };
@@ -151,9 +161,13 @@ export function usePlaceBid() {
           Number(pendingData.bidEth)
         );
 
-        toast.success("Bid placed successfully 🔥");
+        toast.success("Bid placed successfully 🔥", {
+          id: toastIdRef.current ?? undefined,
+        });
       } catch {
-        toast.error("Bid confirmed but DB update failed");
+        toast.error("Bid confirmed but DB update failed", {
+          id: toastIdRef.current ?? undefined,
+        });
       }
     })();
   }, [isSuccess]);
@@ -170,6 +184,7 @@ export function usePlaceBid() {
 export function useSettleAuction() {
   const { writeContractAsync } = useWriteContract();
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
+  const toastIdRef = useRef<string | number | null>(null);
 
   const { isSuccess, isLoading } = useWaitForTransactionReceipt({
     hash: txHash,
@@ -180,6 +195,8 @@ export function useSettleAuction() {
 
   const settleAuction = async (tokenId: bigint, auctionId: number) => {
     try {
+      toastIdRef.current = toast.loading("Settling auction...");
+
       const hash = await writeContractAsync({
         address: auctionAddress,
         abi: auctionABIArray,
@@ -189,11 +206,11 @@ export function useSettleAuction() {
 
       setPendingAuctionId(auctionId);
       setTxHash(hash);
-
-      toast.loading("Settling auction...");
       return hash;
     } catch (err: any) {
-      toast.error(err?.shortMessage || "Settlement failed");
+      toast.error(err?.shortMessage || "Settlement failed", {
+        id: toastIdRef.current ?? undefined,
+      });
       throw err;
     }
   };
@@ -204,9 +221,14 @@ export function useSettleAuction() {
     (async () => {
       try {
         await settleAuctionDB(pendingAuctionId);
-        toast.success("Auction settled successfully ✅");
+
+        toast.success("Auction settled successfully ✅", {
+          id: toastIdRef.current ?? undefined,
+        });
       } catch {
-        toast.error("Auction settled on-chain but DB sync failed");
+        toast.error("Auction settled on-chain but DB sync failed", {
+          id: toastIdRef.current ?? undefined,
+        });
       }
     })();
   }, [isSuccess]);

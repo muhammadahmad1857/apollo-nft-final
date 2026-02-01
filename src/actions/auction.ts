@@ -110,8 +110,9 @@ export async function updateHighestBid(
   bidAmount: number
 ): Promise<PrismaAuction> {
   const auction = await db.auction.findUnique({ where: { id: auctionId } });
+  console.log("auction1",auction)
   if (!auction) throw new Error("Auction not found");
-
+  console.log("auction",auction)
   if (!auction.highestBid || bidAmount > auction.highestBid) {
     return db.auction.update({
       where: { id: auctionId },
