@@ -5,8 +5,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { nftAddress, marketplaceAddress, nftABIArray } from "@/lib/wagmi/contracts";
-import { approveMarketUser } from "@/actions/users"; // backend call for market approval
+import {
+  nftAddress,
+  marketplaceAddress,
+  nftABIArray,
+} from "@/lib/wagmi/contracts";
+import { approveMarketUser } from "@/actions/users";
 
 interface ApproveMarketButtonProps {
   userId: number;
@@ -14,58 +18,80 @@ interface ApproveMarketButtonProps {
   onSuccess?: () => void;
 }
 
-export function ApproveMarketButton({ userId, disabled = false, onSuccess }: ApproveMarketButtonProps) {
+export function ApproveMarketButton({
+  userId,
+  disabled = false,
+  onSuccess,
+}: ApproveMarketButtonProps) {
   const toastIdRef = useRef<string | number | null>(null);
-  const [isApproving, setIsApproving] = useState(false);
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
 
-  const { writeContract: approveForAllWrite, data: approveTx } = useWriteContract();
-  const { isLoading: isApproveConfirming, isSuccess: approveSuccess, error: approveReceiptError } =
-    useWaitForTransactionReceipt({ hash: approveTx });
+  const { writeContractAsync } = useWriteContract();
+
+  const {
+    isLoading: isConfirming,
+    isSuccess,
+    error,
+  } = useWaitForTransactionReceipt({
+    hash: txHash,
+    confirmations: 1,
+  });
 
   const handleApproveMarket = useCallback(async () => {
-    setIsApproving(true);
     try {
-      approveForAllWrite({
+      const hash = await writeContractAsync({
         address: nftAddress,
         abi: nftABIArray,
         functionName: "setApprovalForAll",
         args: [marketplaceAddress, true],
       });
-      toast.info("Approval transaction sent...");
+
+      setTxHash(hash);
+      toastIdRef.current = toast.loading(
+        "Waiting for marketplace approval confirmation..."
+      );
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.message || "Approval failed");
-    } finally {
-      setIsApproving(false);
+      toast.error(err?.shortMessage || err?.message || "Approval failed");
     }
-  }, [approveForAllWrite]);
+  }, [writeContractAsync]);
 
-  /** Watch lifecycle and trigger backend */
+  /* -----------------------------
+     TX Lifecycle
+  ------------------------------ */
   useEffect(() => {
-    if (isApproveConfirming && !toastIdRef.current) {
-      toastIdRef.current = toast.loading("Waiting for market approval confirmation...");
+    if (!txHash) return;
+
+    if (isSuccess && toastIdRef.current) {
+      approveMarketUser(userId).catch(() => {
+        // silently fail DB sync (chain is source of truth)
+      });
+
+      toast.success("✅ Approved for marketplace", {
+        id: toastIdRef.current,
+      });
+
+      toastIdRef.current = null;
+      setTxHash(undefined);
+      onSuccess?.();
     }
 
-    if (approveSuccess && toastIdRef.current) {
-      approveMarketUser(userId).catch(() => {});
-      toast.success("✅ Approved for marketplace", { id: toastIdRef.current });
+    if (error && toastIdRef.current) {
+      toast.error(error.message || "Approval failed", {
+        id: toastIdRef.current,
+      });
       toastIdRef.current = null;
-      if (onSuccess) onSuccess();
+      setTxHash(undefined);
     }
-
-    if (approveReceiptError && toastIdRef.current) {
-      toast.error(approveReceiptError?.message || "Approval failed", { id: toastIdRef.current });
-      toastIdRef.current = null;
-    }
-  }, [isApproveConfirming, approveSuccess, approveReceiptError, userId, onSuccess]);
+  }, [isSuccess, error, txHash, userId, onSuccess]);
 
   return (
     <Button
       onClick={handleApproveMarket}
-      disabled={disabled || isApproving || isApproveConfirming}
+      disabled={disabled || isConfirming}
       className="w-full bg-green-600 hover:bg-green-700"
     >
-      {isApproving || isApproveConfirming ? "Approving..." : "Approve for Marketplace"}
+      {isConfirming ? "Approving..." : "Approve for Marketplace"}
     </Button>
   );
 }
