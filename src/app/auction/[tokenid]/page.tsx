@@ -12,16 +12,26 @@ import { BidHistory } from "@/components/auction/BidHistory";
 import { BidInput } from "@/components/auction/BidInput";
 import { AuctionStatus } from "@/components/auction/AuctionStatus";
 import { getBidsByAuctionWithUser } from "@/actions/bid";
+import { AuctionModel, BidModel, NFTModel, UserModel } from "@/generated/prisma/models";
+import { useAccount } from "wagmi";
+import { useUser } from "@/hooks/useUser";
 
 
 export default function AuctionPage() {
   const params = useParams();
   const tokenId = BigInt(String(params.tokenId));
 
-  const [auction, setAuction] = useState<any>(null);
+  const [auction, setAuction] = useState<(AuctionModel & {
+    seller: UserModel;
+    nft: NFTModel;
+    highestBidder: UserModel | null;
+    bids: BidModel[];
+  }) | null>(null);
   const [bids, setBids] = useState<any[]>([]);
-  const router = useRouter();
-
+  const router = useRouter()
+;
+const address = useAccount()
+const {data:user} = useUser()
   const { data: auctionOnChain } = useAuctionDetails(tokenId);
   const { placeBid } = usePlaceBid();
   const { settleAuction } = useSettleAuction();
@@ -39,7 +49,7 @@ export default function AuctionPage() {
   const handlePlaceBid = async (bidEth: string) => {
     try {
       if (!auction) return;
-      const txHash = await placeBid(tokenId, bidEth);
+      const txHash = await placeBid(tokenId, bidEth,auction.id||0,user?.id||0);
       toast.info("Bid transaction sent!");
       // you can also wait for confirmation here if you want
       // refresh bids
@@ -52,7 +62,7 @@ export default function AuctionPage() {
 
   const handleSettle = async () => {
     try {
-      const txHash = await settleAuction(tokenId);
+      const txHash = await settleAuction(tokenId,auction?.id||0);
       toast.info("Settling auction...");
       // refresh auction status after settle
       const updatedAuction = await getAuctionByNFT(Number(tokenId));
