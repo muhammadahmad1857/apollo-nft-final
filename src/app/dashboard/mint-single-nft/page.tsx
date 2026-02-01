@@ -14,7 +14,6 @@ import MintSuccessDialog from "@/components/MintSuccess";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 
-
 export default function MintSingleNFTPage() {
   const { address } = useAccount();
   const [selectedFile, setSelectedFile] = useState("");
@@ -27,11 +26,11 @@ export default function MintSingleNFTPage() {
   const [metaJson, setMetaJson] = useState<any>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const searchParams = useSearchParams()
-  const cid = searchParams.get("cid")
+  const searchParams = useSearchParams();
+  const cid = searchParams.get("cid");
   const { mint, handleToasts, isBusy } = useMintContract();
- 
-  const handleFileChange =  useCallback(async (ipfsUrl: string) => {
+
+  const handleFileChange = useCallback(async (ipfsUrl: string) => {
     setSelectedFile(ipfsUrl);
     setPreviewUrl("");
     setMetaName("");
@@ -44,7 +43,7 @@ export default function MintSingleNFTPage() {
     try {
       const url = `${PINATA_GATEWAY}${ipfsUrl.replace("ipfs://", "")}`;
       const res = await fetch(url);
-      console.log("Fetched metadata from:", url); 
+      console.log("Fetched metadata from:", url);
       const meta = await res.json();
       console.log("Metadata:", meta);
 
@@ -63,18 +62,28 @@ export default function MintSingleNFTPage() {
       setPreviewUrl("");
     }
     setIsLoadingPreview(false);
-  },[])
+  }, []);
 
   const handleMint = async () => {
-    if (!selectedFile) return;
-    setIsMinting(true);
-    const success = await mint({ tokenURIs: selectedFile, royaltyBps, });
+  if (!selectedFile) return;
+
+  setIsMinting(true);
+
+  try {
+    const success = await mint({
+      tokenURIs: selectedFile,
+      royaltyBps,
+    });
+
+    if (success) {
+      setShowSuccess(true);
+    }
+  } finally {
+    // ✅ ALWAYS stop loader (success OR error)
     setIsMinting(false);
-    
-  if (success) {
-    setShowSuccess(true);
   }
-  };
+};
+
 
   handleToasts();
 
@@ -85,25 +94,37 @@ export default function MintSingleNFTPage() {
           Mint NFTs
         </h1>
         <p className="mt-4 text-lg text-gray-500 dark:text-gray-300 max-w-2xl mx-auto animate-fade-in delay-100">
-          Effortlessly mint your unique NFT with custom metadata and royalty settings. Upload your file, preview your NFT, and set your royalty percentage with a sleek slider.
+          Effortlessly mint your unique NFT with custom metadata and royalty
+          settings. Upload your file, preview your NFT, and set your royalty
+          percentage with a sleek slider.
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2  gap-10 items-start">
-       
-
         {/* Form Section */}
         <div className="flex flex-col gap-8 w-full animate-fade-in delay-150">
           <div className="flex items-center gap-3 mb-2">
             <SparklesIcon className="w-7 h-7 text-cyan-500 dark:text-cyan-300 animate-sparkle" />
-            <h2 className="text-2xl font-bold text-black dark:text-white">Mint Single NFT</h2>
+            <h2 className="text-2xl font-bold text-black dark:text-white">
+              Mint Single NFT
+            </h2>
           </div>
-          <FileSelectInput walletId={address || ""} file_id={`ipfs://${cid}`} onChange={handleFileChange} fileExtensions={[".json"]} />
+          <FileSelectInput
+            walletId={address || ""}
+            file_id={`ipfs://${cid}`}
+            onChange={handleFileChange}
+            fileExtensions={[".json"]}
+          />
 
           {/* Royalty Slider */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="royalty-slider" className="font-medium text-sm flex justify-between">
+            <label
+              htmlFor="royalty-slider"
+              className="font-medium text-sm flex justify-between"
+            >
               <span>Royalty Percentage</span>
-              <span className="font-semibold text-cyan-600 dark:text-cyan-300">{(royaltyBps / 100).toFixed(2)}%</span>
+              <span className="font-semibold text-cyan-600 dark:text-cyan-300">
+                {(royaltyBps / 100).toFixed(2)}%
+              </span>
             </label>
             <div className="flex items-center gap-3">
               <input
@@ -113,13 +134,17 @@ export default function MintSingleNFTPage() {
                 max={1000}
                 step={10}
                 value={royaltyBps}
-                onChange={e => setRoyaltyBps(Number(e.target.value))}
+                onChange={(e) => setRoyaltyBps(Number(e.target.value))}
                 className="w-full accent-cyan-500 h-2 rounded-lg appearance-none bg-gray-200 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
-                style={{ boxShadow: '0 0 0 2px #06b6d4' }}
+                style={{ boxShadow: "0 0 0 2px #06b6d4" }}
               />
-              <span className="w-12 text-right text-xs text-gray-500 dark:text-gray-400">{royaltyBps} bps</span>
+              <span className="w-12 text-right text-xs text-gray-500 dark:text-gray-400">
+                {royaltyBps} bps
+              </span>
             </div>
-            <span className="text-xs text-gray-400 dark:text-gray-500">Set the royalty for secondary sales (0-10%).</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              Set the royalty for secondary sales (0-10%).
+            </span>
           </div>
 
           <Button
@@ -130,30 +155,53 @@ export default function MintSingleNFTPage() {
           >
             {isBusy || isMinting ? (
               <span className="flex items-center gap-2 animate-pulse">
-                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                <svg
+                  className="w-5 h-5 animate-spin"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8z"
+                  ></path>
+                </svg>
                 Minting...
               </span>
-            ) : "Mint NFT"}
+            ) : (
+              "Mint NFT"
+            )}
           </Button>
         </div>
-         {/* Preview Section */}
+        {/* Preview Section */}
         <div className="flex flex-col items-center gap-6">
           <div className="w-full aspect-square max-w-xs relative border-2 border-cyan-400/60 dark:border-cyan-300/40 rounded-2xl overflow-hidden shadow-xl bg-white dark:bg-black transition-all duration-300 animate-fade-in">
             {isLoadingPreview ? (
-              <span className="flex items-center justify-center h-full w-full text-lg animate-pulse">Loading preview...</span>
+              <span className="flex items-center justify-center h-full w-full text-lg animate-pulse">
+                Loading preview...
+              </span>
             ) : metaJson ? (
               <JsonWithIpfsImages data={metaJson} />
             ) : (
-              <span className="flex items-center justify-center h-full w-full text-gray-400 dark:text-gray-600">No preview</span>
+              <span className="flex items-center justify-center h-full w-full text-gray-400 dark:text-gray-600">
+                No preview
+              </span>
             )}
           </div>
-         
         </div>
       </div>
       <MintSuccessDialog
-  open={showSuccess}
-  onClose={() => setShowSuccess(false)}
-/>
+        open={showSuccess}
+        onClose={() => setShowSuccess(false)}
+      />
     </div>
   );
 }
@@ -181,7 +229,13 @@ function JsonWithIpfsImages({ data }: { data: any }) {
             <span className="text-xs break-all underline decoration-dotted decoration-cyan-400/60 group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors">
               {val}
             </span>
-            <Image src={imgUrl} alt="ipfs" width={32} height={32} className="rounded shadow transition-transform duration-300 group-hover:scale-110" />
+            <Image
+              src={imgUrl}
+              alt="ipfs"
+              width={32}
+              height={32}
+              className="rounded shadow transition-transform duration-300 group-hover:scale-110"
+            />
           </span>
         );
       }
@@ -212,7 +266,13 @@ function JsonWithIpfsImages({ data }: { data: any }) {
       {hoveredIpfs && (
         <div className="mb-4 flex justify-center animate-fade-in-fast">
           <div className="rounded-xl border shadow-lg bg-white dark:bg-black p-2 max-w-xs transition-all duration-300 scale-100 opacity-100">
-            <Image src={hoveredIpfs} alt="ipfs preview" width={200} height={200} className="object-contain rounded transition-transform duration-300" />
+            <Image
+              src={hoveredIpfs}
+              alt="ipfs preview"
+              width={200}
+              height={200}
+              className="object-contain rounded transition-transform duration-300"
+            />
           </div>
         </div>
       )}
