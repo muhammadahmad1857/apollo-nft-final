@@ -136,7 +136,7 @@ useEffect(() => {
         id: token.id,
         data: {
           isListed,
-          mintPrice: priceEth ? Math.floor(Number(priceEth)) : 0,
+          mintPrice: priceEth ? Number(priceEth) : 0,
         },
       });
 
