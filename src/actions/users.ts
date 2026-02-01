@@ -119,16 +119,16 @@ export async function deleteUserByWallet(
 }
 
 
-export async function approveAuctionUser(userId: number) {
-  return db.user.update({
-    where: { id: userId },
-    data: { approvedAuction: true },
-  });
-}
+// export async function approveAuctionUser(userId: number) {
+//   return db.user.update({
+//     where: { id: userId },
+//     data: { approvedAuction: true },
+//   });
+// }
 
-export async function approveMarketUser(userId: number) {
-  return db.user.update({
-    where: { id: userId },
-    data: { approvedMarket: true },
-  });
-}
+// export async function approveMarketUser(userId: number) {
+//   return db.user.update({
+//     where: { id: userId },
+//     data: { approvedMarket: true },
+//   });
+// }
