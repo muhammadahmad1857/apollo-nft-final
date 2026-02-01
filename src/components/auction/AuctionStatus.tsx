@@ -8,7 +8,7 @@ export function AuctionStatus({ auction, auctionOnChain }: { auction: AuctionMod
   const highestBid = auctionOnChain?.highestBid ? Number(auctionOnChain.highestBid) / 1e18 : auction.minBid;
 
   return (
-    <div className="p-4 bg-gray-50 rounded flex justify-between items-center">
+    <div className="p-4  rounded flex justify-between items-center">
       <p>Status: {ended ? "Ended" : "Active"}</p>
       <p>Current Highest Bid: {highestBid} ETH</p>
     </div>

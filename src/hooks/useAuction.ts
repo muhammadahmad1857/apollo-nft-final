@@ -9,6 +9,7 @@ import { auctionABIArray, auctionAddress } from "@/lib/wagmi/contracts";
 import { createAuction as createAuctionDB, updateHighestBid, settleAuction as settleAuctionDB } from "@/actions/auction";
 import { useRouter } from "next/router";
 import { BaseError } from "abitype";
+import { createBid } from "@/actions/bid";
 
 /* ======================================================
    CREATE AUCTION
@@ -82,17 +83,32 @@ export function useCreateAuction() {
 /* ======================================================
    PLACE BID
 ====================================================== */
+
 export function usePlaceBid() {
   const { writeContractAsync } = useWriteContract();
-  const [txHash, setTxHash] = useState<`0x${string}`>();
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   const toastIdRef = useRef<string | number | null>(null);
 
-  const { isSuccess, isLoading, isError, error } = useWaitForTransactionReceipt({ hash: txHash, confirmations: 1 });
-  const [pendingData, setPendingData] = useState<{ auctionId: number; bidderId: number; bidEth: string } | null>(null);
+  const { isSuccess, isLoading, isError, error } = useWaitForTransactionReceipt({
+    hash: txHash,
+    confirmations: 1,
+  });
 
-  const placeBid = async (tokenId: bigint, bidEth: string, auctionId: number, bidderId: number) => {
+  const [pendingData, setPendingData] = useState<{
+    tokenId: bigint;
+    auctionId: number;
+    bidderId: number;
+    bidEth: string;
+  } | null>(null);
+
+  const placeBid = async (
+    tokenId: bigint,
+    bidEth: string,
+    auctionId: number,
+    bidderId: number
+  ) => {
     try {
-      toastIdRef.current = toast.loading("Placing bid...");
+      toastIdRef.current = toast.loading("Placing bid on blockchain...");
 
       const hash = await writeContractAsync({
         address: auctionAddress,
@@ -102,34 +118,48 @@ export function usePlaceBid() {
         value: parseEther(bidEth),
       });
 
-      setPendingData({ auctionId, bidderId, bidEth });
+      setPendingData({ tokenId, auctionId, bidderId, bidEth });
       setTxHash(hash);
-
       return hash;
     } catch (err: any) {
-      toast.error(err?.shortMessage || "Bid failed", { id: toastIdRef.current ?? undefined });
+      toast.error(err?.shortMessage || err?.message || "Bid failed", {
+        id: toastIdRef.current ?? undefined,
+      });
       throw err;
     }
   };
 
+  // Handle on-chain transaction error
   useEffect(() => {
     if (isError && toastIdRef.current) {
-      toast.error((error as BaseError)?.shortMessage || error?.message || "Transaction failed", { id: toastIdRef.current });
+      const msg = (error as BaseError)?.shortMessage || error?.message;
+      toast.error(msg || "Transaction failed", { id: toastIdRef.current });
     }
   }, [isError, error]);
 
+  // After transaction success, create bid in DB
   useEffect(() => {
     if (!isSuccess || !pendingData) return;
 
     (async () => {
       try {
-        await updateHighestBid(pendingData.auctionId, pendingData.bidderId, Number(pendingData.bidEth));
-        toast.success("Bid placed successfully 🔥", { id: toastIdRef.current ?? undefined });
-      } catch {
-        toast.error("Bid confirmed but DB update failed", { id: toastIdRef.current ?? undefined });
+        await createBid({
+          auction: { connect: { id: pendingData.auctionId } },
+          bidder: { connect: { id: pendingData.bidderId } },
+          amount: Number(pendingData.bidEth),
+        });
+
+        toast.success("Bid placed successfully 🔥", {
+          id: toastIdRef.current ?? undefined,
+        });
+      } catch (err) {
+        console.error(err);
+        toast.error("Bid confirmed on-chain but DB update failed", {
+          id: toastIdRef.current ?? undefined,
+        });
       }
     })();
-  }, [isSuccess]);
+  }, [isSuccess, pendingData]);
 
   return { placeBid, isPending: isLoading };
 }

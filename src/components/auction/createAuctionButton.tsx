@@ -19,6 +19,7 @@ import { useCreateAuction } from "@/hooks/useAuction";
 import { createAuction as createAuctionInDB } from "@/actions/auction";
 import { ApproveAuctionButton } from "./ApproveButton";
 import { useUser } from "@/hooks/useUser";
+import { useNFT } from "@/hooks/useNft";
 
 interface CreateAuctionButtonProps {
   tokenId: bigint;
@@ -122,7 +123,7 @@ export function CreateAuctionButton({ tokenId, disabled = false,nftId,approvedAu
         {!user ? (
           <p>Loading user...</p>
         ) : !approvedAuction ? (
-          <ApproveAuctionButton tokenId={Number(tokenId)} nftId={nftId} onSuccess={() => refetch && refetch()} />
+          <ApproveAuctionButton tokenId={Number(tokenId)} nftId={nftId} onSuccess={() => router.refresh()} />
         ) : (
           <div className="space-y-4 mt-2">
             <div className="flex flex-col gap-2">
