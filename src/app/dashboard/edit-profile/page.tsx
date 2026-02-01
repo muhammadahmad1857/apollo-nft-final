@@ -42,7 +42,7 @@ export default function EditProfilePage() {
       console.log("");
       setUploadProgress(50);
       // Upload to Pinata
-      const uploadRes = await fetch("https://uploads.pinata.cloud/v3/files", {
+      const uploadRes = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${JWT}`,
@@ -58,7 +58,7 @@ export default function EditProfilePage() {
       const json = await uploadRes.json();
       console.log("uploadRes.json()", json);
       setAvatarUrl(
-        `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${json.data.cid}`
+        `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${json.IpfsHash}`
       );
       setUploadProgress(100);
       toast.success("Image uploaded successfully!");

@@ -70,7 +70,7 @@ export function MetadataForm({
   
       // Upload to Pinata
       const uploadRes = await fetch(
-        "https://uploads.pinata.cloud/v3/files",
+        "https://api.pinata.cloud/pinning/pinFileToIPFS",
         {
           method: "POST",
           headers: {
@@ -86,7 +86,7 @@ export function MetadataForm({
       }
       const json = await uploadRes.json();
       console.log("uploadRes.json()", json);
-      const ipfsHash = json.data.cid;
+      const ipfsHash = json.IpfsHash;
       const ipfsUrl = `ipfs://${ipfsHash}`;
    
       
@@ -247,7 +247,7 @@ export function MetadataForm({
                 <img
                   src={
                     coverPreview ||
-                    `https://yellow-random-swordfish-139.mypinata.cloud/ipfs/${coverImageUrl?.replace(
+                    `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${coverImageUrl?.replace(
                       "ipfs://",
                       ""
                     )}`

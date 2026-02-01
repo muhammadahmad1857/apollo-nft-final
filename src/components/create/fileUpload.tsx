@@ -49,7 +49,7 @@ export function FileUpload({
       setUploadProgress(50)
       // Upload to Pinata
       const uploadRes = await fetch(
-        "https://uploads.pinata.cloud/v3/files",
+        "https://api.pinata.cloud/pinning/pinFileToIPFS",
         {
           method: "POST",
           headers: {
@@ -66,7 +66,7 @@ export function FileUpload({
       setUploadProgress(77)
       const json = await uploadRes.json();
       console.log("uploadRes.json()", json);
-      const ipfsHash = json.data.cid;
+      const ipfsHash = json.IpfsHash;
       const ipfsUrl = `ipfs://${ipfsHash}`;
 
       // Determine file type

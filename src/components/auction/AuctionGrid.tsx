@@ -6,6 +6,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export default function AuctionGrid({ auctions }: { auctions: any[] }) {
   if (!auctions.length) {
@@ -25,18 +26,22 @@ export default function AuctionGrid({ auctions }: { auctions: any[] }) {
         return (
           <Link
             key={auction.id}
-            href={`/auction/${auction.nft.tokenId}`}
+            href={`/auction/${auction.nft.id}`}
+            className="group"
           >
-            <Card className="hover:shadow-lg transition cursor-pointer">
+            <Card className="hover:shadow-lg transition cursor-pointer h-full flex flex-col">
               <CardHeader className="p-0">
                 <img
-                  src={auction.nft.imageUrl}
+                  src={auction.nft.imageUrl.replace(
+                    "ipfs://",
+                    `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`
+                  )}
                   alt={auction.nft.title}
                   className="h-56 w-full object-cover rounded-t-lg"
                 />
               </CardHeader>
 
-              <CardContent className="p-4 space-y-2">
+              <CardContent className="p-4 space-y-2 flex-1">
                 <h3 className="text-lg font-semibold">
                   {auction.nft.title}
                 </h3>
@@ -47,15 +52,26 @@ export default function AuctionGrid({ auctions }: { auctions: any[] }) {
 
                 <div className="flex items-center justify-between">
                   <span className="font-medium">
-                    {currentBid} ETH
+                    {currentBid} Apollo
                   </span>
                   <Badge variant="secondary">Live</Badge>
                 </div>
               </CardContent>
 
-              <CardFooter className="px-4 pb-4 text-xs text-muted-foreground">
-                Ends at{" "}
-                {new Date(auction.endTime).toLocaleString()}
+              <CardFooter className="px-4 pb-4 flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  Ends at{" "}
+                  {new Date(auction.endTime).toLocaleString()}
+                </span>
+
+                {/* View Auction Button */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="pointer-events-none group-hover:bg-primary group-hover:text-primary-foreground transition"
+                >
+                  View Auction
+                </Button>
               </CardFooter>
             </Card>
           </Link>
