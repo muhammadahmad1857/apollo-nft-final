@@ -65,7 +65,10 @@ export default function AuctionPage() {
       try {
         const auctionDB = await getAuctionByNFT(nftId);
         if (!auctionDB?.nft?.tokenId) return;
-
+        if (!auctionDB || !auctionDB.nft?.tokenId) {
+          router.push("/auction");
+          return;
+        }
         const bidList = await getBidsByAuctionWithUser(nftId);
 
         setAuction(auctionDB);
