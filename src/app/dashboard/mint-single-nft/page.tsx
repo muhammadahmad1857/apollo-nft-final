@@ -11,6 +11,7 @@ import { nftABIArray, nftAddress } from "@/lib/wagmi/contracts";
 import { SparklesIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import MintSuccessDialog from "@/components/MintSuccess";
+import { toast } from "sonner";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 
@@ -65,7 +66,10 @@ export default function MintSingleNFTPage() {
   }, []);
 
   const handleMint = async () => {
-  if (!selectedFile) return;
+  if (!selectedFile) {
+    toast.error("Please select a file to continue")
+    return
+  };
 
   setIsMinting(true);
 

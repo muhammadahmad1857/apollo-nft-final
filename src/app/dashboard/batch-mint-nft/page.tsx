@@ -8,6 +8,7 @@ import { useMintContract } from "@/hooks/useMint";
 import { nftABIArray, nftAddress } from "@/lib/wagmi/contracts";
 import { SparklesIcon } from "lucide-react";
 import MintSuccessDialog from "@/components/MintSuccess";
+import { toast } from "sonner";
 
 export default function BatchMintNFTPage() {
   const { address } = useAccount();
@@ -20,18 +21,27 @@ export default function BatchMintNFTPage() {
 
  
 
-  const handleMint = async () => {
-    if (!selectedFiles.length) return;
-    setIsMinting(true);
 
-   const success= await mint({ tokenURIs: selectedFiles, quantity: selectedFiles.length, royaltyBps, isBatch: true });
-   
-    setIsMinting(false);
-    
-  if (success) {
-    setShowSuccess(true);
-  }
+const handleMint = async () => {
+  if (!selectedFiles) {
+    toast.error("Please select at least 1 file to continue")
+    return
   };
+
+  setIsMinting(true);
+
+  try {
+      const success= await mint({ tokenURIs: selectedFiles, quantity: selectedFiles.length, royaltyBps, isBatch: true });
+
+
+    if (success) {
+      setShowSuccess(true);
+    }
+  } finally {
+    // ✅ ALWAYS stop loader (success OR error)
+    setIsMinting(false);
+  }
+};
 
   handleToasts();
 
