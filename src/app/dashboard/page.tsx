@@ -121,7 +121,8 @@ export default function Page() {
                   tokenId: nft.tokenId,
                   isDisabled: nft.auction ? true:false,
                   isApproved:nft.approvedAuction,
-                  isMarketApproved:nft.approvedMarket
+                  isMarketApproved:nft.approvedMarket,
+                  tokenUri: nft.tokenUri.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)
                 }}
                 owner={nft.ownerId === user.id}
                 

@@ -8,6 +8,8 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { CreateAuctionButton } from "./auction/createAuctionButton";
+import { useEffect, useState } from "react";
+import { detectMediaFromTokenURI } from "@/lib/media";
 
 interface NFTCardProps {
   nft: {
@@ -18,8 +20,9 @@ interface NFTCardProps {
     minted: boolean;
     isApproved: boolean;
     tokenId: number;
-    isDisabled:boolean
-    isMarketApproved:boolean
+    isDisabled: boolean;
+    isMarketApproved: boolean;
+    tokenUri: string;
   };
   owner?: boolean;
   onEditRoyalty?: () => void;
@@ -27,14 +30,54 @@ interface NFTCardProps {
   onShare?: () => void;
 }
 
-export function NFTCard({ nft, owner = true, onEditRoyalty, onBuy, onShare }: NFTCardProps) {
+export function NFTCard({
+  nft,
+  owner = true,
+  onEditRoyalty,
+  onBuy,
+  onShare,
+}: NFTCardProps) {
   const router = useRouter();
+  const [mediaType, setMediaType] = useState<"audio" | "video" | "unknown">(
+    "unknown"
+  );
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [showVideo, setShowVideo] = useState(false);
+  console.log("nft.media",nft.image)
+ useEffect(() => {
+  if (!nft.tokenUri) return;
+
+  const detect = async () => {
+    try {
+      const res = await fetch(nft.tokenUri);
+      const json = await res.json();
+
+      const media = json.media;
+      if (!media) return;
+
+      const resolved =
+        media.startsWith("ipfs://")
+          ? `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${media.replace("ipfs://", "")}`
+          : media;
+
+      setMediaUrl(resolved);
+
+      if (media.endsWith(".mp4")) setMediaType("video");
+      else if (media.endsWith(".mp3") || media.endsWith(".wav"))
+        setMediaType("audio");
+    } catch (e) {
+      console.error("Media detect failed", e);
+    }
+  };
+
+  detect();
+}, [nft.tokenUri]);
 
   const handleEditRoyalty = () => {
     if (onEditRoyalty) return onEditRoyalty();
     router.push(`/dashboard/token/${nft.id}/edit`);
   };
-  console.log(nft.image)
+  console.log(nft.image);
   const handleShare = () => {
     if (!nft.minted) {
       toast.info("List this NFT first to share");
@@ -60,6 +103,27 @@ export function NFTCard({ nft, owner = true, onEditRoyalty, onBuy, onShare }: NF
             Minted
           </span>
         )}
+        {mediaType === "audio" && mediaUrl && (
+  <div className="px-4 py-2 bg-muted">
+    <audio controls className="w-full h-8">
+      <source src={mediaUrl} />
+    </audio>
+  </div>
+)}
+
+{mediaType === "video" && mediaUrl && (
+  <div className="px-4 py-2">
+    <Button
+      variant="secondary"
+      size="sm"
+      className="w-full"
+      onClick={() => setShowVideo(true)}
+    >
+      ▶ Play Video
+    </Button>
+  </div>
+)}
+
         <button
           className="absolute top-2 left-2 bg-background/80 rounded-full p-2 hover:bg-primary/20 transition"
           onClick={handleShare}
@@ -69,23 +133,35 @@ export function NFTCard({ nft, owner = true, onEditRoyalty, onBuy, onShare }: NF
         </button>
       </div>
       <div className="p-4 flex flex-col gap-2">
-        <div className="font-semibold text-lg truncate" title={nft.title}>{nft.title}</div>
+        <div className="font-semibold text-lg truncate" title={nft.title}>
+          {nft.title}
+        </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>❤ {nft.likes}</span>
         </div>
         {owner ? (
           <div className="flex flex-col gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-2 flex items-center gap-2"
-            onClick={handleEditRoyalty}
-          >
-            <Edit /> Edit Listing
-          </Button>
-         {!nft.isMarketApproved? <CreateAuctionButton disabled={nft.isDisabled} tokenId={BigInt(nft.tokenId)} approvedAuction={nft.isApproved} nftId={nft.id}/>:<p className="text-sm text-muted-foreground">
-    This NFT is already approved for marketing and cannot be approved for the auction.
-  </p>}
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2 flex items-center gap-2"
+              onClick={handleEditRoyalty}
+            >
+              <Edit /> Edit Listing
+            </Button>
+            {!nft.isMarketApproved ? (
+              <CreateAuctionButton
+                disabled={nft.isDisabled}
+                tokenId={BigInt(nft.tokenId)}
+                approvedAuction={nft.isApproved}
+                nftId={nft.id}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                This NFT is already approved for marketing and cannot be
+                approved for the auction.
+              </p>
+            )}
           </div>
         ) : (
           <Button
@@ -98,6 +174,21 @@ export function NFTCard({ nft, owner = true, onEditRoyalty, onBuy, onShare }: NF
           </Button>
         )}
       </div>
+      {showVideo && (
+  <div
+    className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+    onClick={() => setShowVideo(false)}
+  >
+    <video
+      controls
+      autoPlay
+      className="max-w-4xl w-full rounded-xl"
+      src={mediaUrl}
+      onClick={(e) => e.stopPropagation()}
+    />
+  </div>
+)}
+
     </Card>
   );
 }

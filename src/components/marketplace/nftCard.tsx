@@ -72,6 +72,7 @@ const NFTCard = ({
   const router = useRouter();
   const { address } = useAccount();
   const { data: user } = useUser(address);
+  console.log("nft.media",cover)
 
   const handleBuy = async () => {
     if (!mintPrice) return toast.error("Mint price not available");
