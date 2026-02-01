@@ -14,6 +14,15 @@ import { toast } from "sonner";
 import { transferOwnership } from "@/actions/nft";
 import { getFileTypeByIPFS } from "@/actions/files";
 import { parseEther } from "viem";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export interface NFTCardProps {
   title: string;
@@ -33,7 +42,7 @@ async function detectFileTypeFromHEAD(url: string): Promise<string> {
     const gatewayUrl = url.startsWith("ipfs://")
       ? `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${url.replace(
           "ipfs://",
-          ""
+          "",
         )}`
       : url;
 
@@ -72,7 +81,10 @@ const NFTCard = ({
   const router = useRouter();
   const { address } = useAccount();
   const { data: user } = useUser(address);
-  console.log("nft.media",cover)
+  const [showBuyConfirm, setShowBuyConfirm] = useState(false);
+  const [isProcessingBuy, setIsProcessingBuy] = useState(false);
+
+  console.log("nft.media", cover);
 
   const handleBuy = async () => {
     if (!mintPrice) return toast.error("Mint price not available");
@@ -101,24 +113,24 @@ const NFTCard = ({
   // Detect media type
   useEffect(() => {
     if (!media) return;
-  
+
     const detect = async () => {
       try {
         // 1️⃣ Fetch metadata JSON
         const res = await fetch(media);
         const json = await res.json();
-  
+
         const actualMedia = json.media;
         setRealMedia(actualMedia);
-  
+
         // 2️⃣ Try existing IPFS detection
         let type = await getFileTypeByIPFS(actualMedia);
-  
+
         // 3️⃣ Fallback: HEAD request on real media
         if (!type || type === "unknown") {
           type = await detectFileTypeFromHEAD(actualMedia);
         }
-  
+
         return type || "unknown";
       } catch (e) {
         console.error(e);
@@ -126,29 +138,29 @@ const NFTCard = ({
         return "unknown";
       }
     };
-  
+
     detect().then(setMediaType);
   }, [media]);
   useEffect(() => {
     if (!media) return;
-  
+
     const detect = async () => {
       try {
         // 1️⃣ Fetch metadata JSON
         const res = await fetch(media);
         const json = await res.json();
-  
+
         const actualMedia = json.media;
         setRealMedia(actualMedia);
-  
+
         // 2️⃣ Try existing IPFS detection
         let type = await getFileTypeByIPFS(actualMedia);
-  
+
         // 3️⃣ Fallback: HEAD request on real media
         if (!type || type === "unknown") {
           type = await detectFileTypeFromHEAD(actualMedia);
         }
-  
+
         return type || "unknown";
       } catch (e) {
         console.error(e);
@@ -156,10 +168,10 @@ const NFTCard = ({
         return "unknown";
       }
     };
-  
+
     detect().then(setMediaType);
   }, [media]);
-    
+
   const modalVariants = {
     hidden: { opacity: 0, scale: 0.92 },
     visible: { opacity: 1, scale: 1, transition: { duration: 0.35 } },
@@ -201,7 +213,7 @@ const NFTCard = ({
         {/* Content */}
         <div className="p-5">
           <h3 className="font-bold text-lg mb-1.5 truncate">{title}</h3>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 mb-1 min-h-[3rem]">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 mb-1 min-h-12">
             {description || "No description provided"}
           </p>
           <p className="text-xs text-zinc-500 dark:text-zinc-500 mb-2">
@@ -235,7 +247,7 @@ const NFTCard = ({
             ) : (
               <button
                 onClick={() => setShowVideoModal(true)}
-                className="w-full py-3.5 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-all mb-4 shadow-sm hover:shadow-md"
+                className="w-full py-3.5 bg-linear-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-all mb-4 shadow-sm hover:shadow-md"
               >
                 <Play size={18} fill="white" />
                 Play Video
@@ -260,7 +272,7 @@ const NFTCard = ({
             </button>
             {showBuyButton && mintPrice && (
               <button
-                onClick={handleBuy}
+                onClick={() => setShowBuyConfirm(true)}
                 className="ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors"
                 disabled={isPending}
               >
@@ -306,7 +318,7 @@ const NFTCard = ({
                 className="w-full rounded-xl shadow-2xl"
                 src={realMedia.replace(
                   "ipfs://",
-                  `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`
+                  `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`,
                 )}
               />
             </div>
@@ -322,6 +334,51 @@ const NFTCard = ({
         title={title}
         name={name}
       />
+      <Dialog open={showBuyConfirm} onOpenChange={setShowBuyConfirm}>
+  <DialogContent className="sm:max-w-100">
+    <DialogHeader>
+      <DialogTitle>Confirm Purchase</DialogTitle>
+      <DialogDescription>
+        You are about to pay <strong>{mintPrice?.toFixed(4)} Apollo</strong> for this NFT.
+        <br />
+        This action cannot be undone.
+      </DialogDescription>
+    </DialogHeader>
+
+    <div className="mt-4 text-center">
+      <p className="text-xs text-zinc-500">
+        Wallet: {address?.slice(0, 6)}...{address?.slice(-4)}
+      </p>
+    </div>
+
+    <DialogFooter className="mt-6 flex gap-2">
+      <Button
+        variant="outline"
+        className="flex-1"
+        onClick={() => setShowBuyConfirm(false)}
+        disabled={isProcessingBuy}
+      >
+        Cancel
+      </Button>
+      <Button
+        className="flex-1"
+        onClick={async () => {
+          try {
+            setIsProcessingBuy(true);
+            await handleBuy();
+            setShowBuyConfirm(false);
+          } finally {
+            setIsProcessingBuy(false);
+          }
+        }}
+        disabled={isProcessingBuy}
+      >
+        {isProcessingBuy ? "Processing..." : "Confirm & Pay"}
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
     </>
   );
 };
