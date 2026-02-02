@@ -110,7 +110,7 @@ export default function AuctionPage() {
     if (!auction || tokenId === undefined) return;
 
     try {
-      await settleAuction(BigInt(tokenId), auction.id);
+      await settleAuction(BigInt(tokenId), auction.id,auction.highestBidderId);
 
       const updatedAuction = await getAuctionByNFT(nftId);
       setAuction(updatedAuction);

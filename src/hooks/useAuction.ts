@@ -207,16 +207,16 @@ export function useSettleAuction() {
   const toastIdRef = useRef<string | number | null>(null);
   const [pendingAuctionId, setPendingAuctionId] = useState<number | null>(null);
   const [tokenId, setTokenId] = useState<number | null>(null);
+  const [winnerId, setWinnerId] = useState<number | null>(null);
   const { isSuccess, isLoading, isError, error } = useWaitForTransactionReceipt(
     { hash: txHash, confirmations: 1 },
   );
-  const { address } = useAccount();
-  const { data: user, isLoading: userLoading } = useUser(address);
 
-  const settleAuction = async (tokenId: bigint, auctionId: number) => {
+  const settleAuction = async (tokenId: bigint, auctionId: number,winnerId:number|null) => {
     try {
       toastIdRef.current = toast.loading("Settling auction...");
       setTokenId(Number(tokenId));
+      setWinnerId(Number(winnerId));
       const hash = await writeContractAsync({
         address: auctionAddress,
         abi: auctionABIArray,
@@ -252,9 +252,10 @@ export function useSettleAuction() {
 
     (async () => {
       try {
-        if (!tokenId || !user?.id) throw new Error("Something went wrong!!");
+        if (!tokenId) throw new Error("Something went wrong!!");
         await settleAuctionDB(pendingAuctionId);
-        await transferOwnership(tokenId, user.id);
+        if(!winnerId) return
+        await transferOwnership(tokenId, winnerId);
         toast.success("Auction settled successfully ✅", {
           id: toastIdRef.current ?? undefined,
         });
@@ -264,7 +265,7 @@ export function useSettleAuction() {
         });
       }
     })();
-  }, [isSuccess, pendingAuctionId, user]);
+  }, [isSuccess, pendingAuctionId]);
 
   return { settleAuction, isPending: isLoading };
 }
