@@ -11,7 +11,7 @@ interface NotFoundProps {
 
 export const NotFound: React.FC<NotFoundProps> = ({ title, link }) => {
   return (
-    <div className="main_wrapper">
+    <div className="main_wrapper py-20">
       <div className="main">
         {/* Antenna */}
         <div className="antenna">

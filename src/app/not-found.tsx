@@ -8,7 +8,7 @@ const NotFound = () => {
   return (
     <>
     <Header/>
-    <div className="grid items-center min-w-screen">
+    <div className="grid place-items-center">
     
       <NotFoundUI title="Go Home" link="/"/>
 
