@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import CustomSelect from "./CustomSelect";
 import type { FileFromDB } from "@/types";
 import { getFilesByWallet } from "@/actions/files";
+import { FileModel } from "@/generated/prisma/models";
 
 interface FileSelectInputProps {
   walletId: string;
@@ -23,7 +24,7 @@ const FileSelectInput = ({
   className,
   
 }: FileSelectInputProps) => {
-  const [files, setFiles] = useState<FileFromDB[]>([]);
+  const [files, setFiles] = useState<FileModel[]>([]);
   const [selectedFile, setSelectedFile] = useState<string>(file_id);
   const [isLoading,setIsLoading] = useState(false)
   useEffect(() => {
@@ -36,7 +37,7 @@ const FileSelectInput = ({
     const fetchFiles = async () => {
       setIsLoading(true)
       try {
-        const allFiles =  await getFilesByWallet(walletId,false);
+        const allFiles =  await getFilesByWallet(walletId,true);
         let filteredFiles = allFiles;
         if (fileExtensions && fileExtensions.length > 0) {
           filteredFiles = allFiles.filter((file) =>
@@ -65,6 +66,7 @@ const FileSelectInput = ({
   const options = files.map((file) => ({
     value: file.ipfsUrl,
     label: `${file.filename}`,
+    isListed:file.isMinted
   }));
 
   return (

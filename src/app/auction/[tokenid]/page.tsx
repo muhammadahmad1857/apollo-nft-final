@@ -48,9 +48,9 @@ export default function AuctionPage() {
   const tokenId = auction?.nft?.tokenId;
 
   // ✅ SAFE hook usage (only runs when tokenId exists)
-  const { data: auctionOnChain } = useAuctionDetails(
-    tokenId !== undefined ? BigInt(tokenId) : BigInt(0)
-  );
+  // const { data: auctionOnChain } = useAuctionDetails(
+  //   tokenId !== undefined ? BigInt(tokenId) : BigInt(0)
+  // );
 
   const { placeBid } = usePlaceBid();
   const { settleAuction } = useSettleAuction();
@@ -70,7 +70,7 @@ export default function AuctionPage() {
           return;
         }
         const bidList = await getBidsByAuctionWithUser(nftId);
-
+        console.log("bidlist",bidList)
         setAuction(auctionDB);
         setBids(bidList);
       } catch (err) {
@@ -98,6 +98,7 @@ export default function AuctionPage() {
       toast.info("Bid transaction sent");
 
       const bidList = await getBidsByAuctionWithUser(nftId);
+      console.log("bidlist",bidList)
       setBids(bidList);
     } catch (err: any) {
       toast.error(err?.message || "Failed to place bid");
@@ -129,7 +130,7 @@ export default function AuctionPage() {
   return (
     <div className="max-w-5xl mx-auto py-10 space-y-8">
       <AuctionDetails auction={auction} onSettle={handleSettle} />
-      <AuctionStatus auction={auction} auctionOnChain={auctionOnChain} />
+      <AuctionStatus auction={auction} />
       <BidInput onPlaceBid={handlePlaceBid} />
       <BidHistory bids={bids} />
     </div>

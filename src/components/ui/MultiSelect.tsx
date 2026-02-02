@@ -1,19 +1,19 @@
-"use client";
-
 import * as React from "react";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, X, Check, PlusIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"; // shadcn tooltip
 
 interface Option {
   value: string;
   label: string;
+  isListed?: boolean; // new
 }
 
 interface MultiSelectProps {
   options: Option[];
-  value: string[];                    // ← now array
+  value: string[];
   onChange: (value: string[]) => void;
   placeholder?: string;
   className?: string;
@@ -29,7 +29,6 @@ const MultiSelect = ({
   className,
   isLoading = false,
   maxSelections = 10,
-  
 }: MultiSelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -44,19 +43,21 @@ const MultiSelect = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const toggleOption = (optionValue: string) => {
+  const toggleOption = (option: Option) => {
+    if (option.isListed) {
+      return; // cannot select
+    }
+
     let newValue: string[];
 
-    if (value.includes(optionValue)) {
-      newValue = value.filter((v) => v !== optionValue);
+    if (value.includes(option.value)) {
+      newValue = value.filter((v) => v !== option.value);
     } else {
       if (value.length >= maxSelections) return;
-      newValue = [...value, optionValue];
+      newValue = [...value, option.value];
     }
 
     onChange(newValue);
-    // keep dropdown open after selection (better UX for multi-select)
-    // setIsOpen(true); ← uncomment if you prefer it stays open
   };
 
   const removeItem = (val: string) => {
@@ -69,10 +70,9 @@ const MultiSelect = ({
     <div className={`relative w-full ${className}`} ref={containerRef}>
       {/* Trigger / Selected items display */}
       <div
-        className={`
-          min-h-[42px] w-full p-2 border rounded bg-transparent flex flex-wrap gap-2 items-center cursor-pointer
-          ${isLoading ? "opacity-70 cursor-wait" : ""}
-        `}
+        className={`min-h-10.5 w-full p-2 border rounded bg-transparent flex flex-wrap gap-2 items-center cursor-pointer ${
+          isLoading ? "opacity-70 cursor-wait" : ""
+        }`}
         onClick={() => !isLoading && setIsOpen(!isOpen)}
       >
         {isLoading ? (
@@ -140,18 +140,37 @@ const MultiSelect = ({
               ) : (
                 options.map((option) => {
                   const isSelected = value.includes(option.value);
-                  return (
+                  const disabled = option.isListed;
+
+                  const optionContent = (
                     <div
                       key={option.value}
-                      className={`
-                        px-4 py-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer flex items-center justify-between
-                        ${isSelected ? "bg-primary/5" : ""}
-                      `}
-                      onClick={() => toggleOption(option.value)}
+                      className={`px-4 py-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer flex items-center justify-between ${
+                        isSelected ? "bg-primary/5" : ""
+                      } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                      onClick={() => !disabled && toggleOption(option)}
                     >
-                      <span>{option.label}</span>
+                      <span className="flex items-center gap-2">
+                        {option.label}
+                        {disabled && (
+                          <span className="text-xs bg-yellow-200 text-yellow-800 px-1 rounded">
+                            Listed
+                          </span>
+                        )}
+                      </span>
                       {isSelected && <Check className="h-4 w-4 text-primary" />}
                     </div>
+                  );
+
+                  return disabled ? (
+                     <Tooltip key={option.value}>
+                      <TooltipTrigger asChild>{optionContent}</TooltipTrigger>
+                      <TooltipContent>
+                        <p>This file is already listed</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    optionContent
                   );
                 })
               )}

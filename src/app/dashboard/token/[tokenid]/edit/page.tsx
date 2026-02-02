@@ -27,6 +27,7 @@ import { PinataJSON } from "@/types";
 import { ApproveMarketButton } from "@/components/marketplace/marketplaceApproveButton"; // Market approve button
 import { useAccount } from "wagmi";
 import { useUser } from "@/hooks/useUser";
+import { MarketplaceListing } from "@/components/marketplace/editMarketplace";
 
 export default function EditRoyaltyPage() {
   const { tokenid } = useParams();
@@ -240,64 +241,8 @@ useEffect(() => {
               {/* Render ApproveMarketButton if not approved */}
         {/* MARKETPLACE TAB */}
 <TabsContent value="marketplace" className="space-y-6">
-  {!user ? (
-    <p>Loading user...</p>
-  ) : token.approvedAuction ? (
-    <p className="text-sm text-muted-foreground">
-      This NFT is already approved for auction and cannot be approved for the marketplace.
-    </p>
-  ) : !token.approvedMarket ? (
-    <ApproveMarketButton
-      nftId={token.id}
-      tokenId={token.tokenId}
-      onSuccess={() => refetch()}
-    />
-  ) : (
-    <>
-      <div className="flex items-center justify-between">
-        <Label>List on marketplace</Label>
-        <Switch
-          checked={isListed}
-          onCheckedChange={(val) => {
-            setIsListed(val);
-            if (!val) setPriceEth(""); // Clear price on unlist
-          }}
-        />
-      </div>
+    <MarketplaceListing token={token} />
 
-      {isListed && (
-        <div>
-          <Label>Price (Apollo)</Label>
-          <Input
-            type="number"
-            value={priceEth}
-            onChange={(e) => setPriceEth(e.target.value)}
-            placeholder="0.05"
-            disabled={Boolean(token.mintPrice && token.mintPrice > 0)} // disable if already listed once
-          />
-          {token.mintPrice && token.mintPrice > 0 && (
-            <p className="text-sm text-yellow-600 mt-1">
-              Tip: If you really want to edit the price, unlist the NFT first. Unlisting will reset the price to 0. And then you can list it again.
-            </p>
-          )}
-        </div>
-      )}
-
-      {listing && listing[0] !== ZERO_ADDRESS && (
-        <p className="text-sm text-muted-foreground">
-          On-chain price: <strong>{Number(listing[1])} Apollo</strong>
-        </p>
-      )}
-
-      <Button
-        className="w-full"
-        disabled={cancelPending || updateNFT.isPending || Boolean(token.mintPrice && token.mintPrice > 0)}
-        onClick={handleSaveListing}
-      >
-        Save Marketplace
-      </Button>
-    </>
-  )}
 </TabsContent>
 
             </TabsContent>

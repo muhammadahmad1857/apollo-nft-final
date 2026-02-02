@@ -6,10 +6,16 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Check, PlusIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"; // shadcn tooltip
 
 interface Option {
   value: string;
   label: string;
+  isListed?: boolean; // new
 }
 
 interface CustomSelectProps {
@@ -44,8 +50,9 @@ const CustomSelect = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleOptionClick = (optionValue: string) => {
-    onChange(optionValue);
+  const handleOptionClick = (option: Option) => {
+    if (option.isListed) return; // cannot select listed option
+    onChange(option.value);
     setIsOpen(false);
   };
 
@@ -61,17 +68,15 @@ const CustomSelect = ({
           {isLoading
             ? "Loading files..."
             : selectedOption
-            ? selectedOption.label
-            : placeholder}
+              ? selectedOption.label
+              : placeholder}
         </span>
 
         {isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
           <ChevronDown
-            className={`h-4 w-4 transition-transform ${
-              isOpen ? "rotate-180" : ""
-            }`}
+            className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
           />
         )}
       </button>
@@ -95,16 +100,41 @@ const CustomSelect = ({
                   No files found
                 </li>
               ) : (
-                options.map((option) => (
-                  <li
-                    key={option.value}
-                    className="px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer flex items-center justify-between"
-                    onClick={() => handleOptionClick(option.value)}
-                  >
-                    <span>{option.label}</span>
-                    {option.value === value && <Check className="h-4 w-4" />}
-                  </li>
-                ))
+                options.map((option) => {
+                  const disabled = option.isListed;
+                  const optionContent = (
+                    <li
+                      key={option.value}
+                      className={`px-4 py-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center justify-between cursor-pointer ${
+                        disabled ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                      onClick={() => handleOptionClick(option)}
+                    >
+                      <span className="flex items-center gap-2">
+                        {option.label}
+                        {disabled && (
+                          <span className="text-xs bg-yellow-200 text-yellow-800 px-1 rounded">
+                            Listed
+                          </span>
+                        )}
+                      </span>
+                      {option.value === value && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
+                    </li>
+                  );
+
+                  return disabled ? (
+                    <Tooltip key={option.value}>
+                      <TooltipTrigger asChild>{optionContent}</TooltipTrigger>
+                      <TooltipContent>
+                        <p>This file is already listed</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    optionContent
+                  );
+                })
               )}
 
               {/* Always show Create New – even while loading */}

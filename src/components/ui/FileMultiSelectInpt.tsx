@@ -4,8 +4,8 @@ import * as React from "react";
 import { useState, useEffect } from "react";
 
 import MultiSelect from "./MultiSelect";
-import type { FileFromDB } from "@/types";
 import { getFilesByWallet } from "@/actions/files";
+import { FileModel } from "@/generated/prisma/models";
 
 interface FileSelectInputProps {
   walletId: string;
@@ -22,7 +22,7 @@ const FileMultiSelectInput = ({
   className,
   maxSelections = 10,
 }: FileSelectInputProps) => {
-  const [files, setFiles] = useState<FileFromDB[]>([]);
+  const [files, setFiles] = useState<FileModel[]>([]);
   const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -32,7 +32,7 @@ const FileMultiSelectInput = ({
       try {
        
         
-       let filteredFiles:FileFromDB[] = await getFilesByWallet(walletId,false);
+       let filteredFiles:FileModel[] = await getFilesByWallet(walletId,true);
 if (fileExtensions?.length) {
           filteredFiles = filteredFiles.filter((file) =>
             fileExtensions.includes(file.type)
@@ -58,6 +58,7 @@ if (fileExtensions?.length) {
   const options = files.map((file) => ({
     value: file.ipfsUrl,
     label: file.filename,
+    isListed:file.isMinted
   }));
 
   return (

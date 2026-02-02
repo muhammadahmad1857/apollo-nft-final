@@ -1,15 +1,22 @@
-// components/nft-card.tsx
 "use client";
 
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Share, Edit, ShoppingCart } from "lucide-react";
+import { Share, Edit } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { CreateAuctionButton } from "./auction/createAuctionButton";
 import { useEffect, useState } from "react";
-import { detectMediaFromTokenURI } from "@/lib/media";
+import { MarketplaceListing } from "./marketplace/editMarketplace"; // our modal component
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 interface NFTCardProps {
   nft: {
@@ -25,59 +32,44 @@ interface NFTCardProps {
     tokenUri: string;
   };
   owner?: boolean;
-  onEditRoyalty?: () => void;
   onBuy?: () => void;
-  onShare?: () => void;
 }
 
-export function NFTCard({
-  nft,
-  owner = true,
-  onEditRoyalty,
-  onBuy,
-  onShare,
-}: NFTCardProps) {
+export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
   const router = useRouter();
   const [mediaType, setMediaType] = useState<"audio" | "video" | "unknown">(
-    "unknown"
+    "unknown",
   );
   const [mediaUrl, setMediaUrl] = useState("");
   const [showVideo, setShowVideo] = useState(false);
-  console.log("nft.media",nft.image)
- useEffect(() => {
-  if (!nft.tokenUri) return;
 
-  const detect = async () => {
-    try {
-      const res = await fetch(nft.tokenUri);
-      const json = await res.json();
+  useEffect(() => {
+    if (!nft.tokenUri) return;
 
-      const media = json.media;
-      if (!media) return;
+    const detect = async () => {
+      try {
+        const res = await fetch(nft.tokenUri);
+        const json = await res.json();
+        const media = json.media;
+        if (!media) return;
 
-      const resolved =
-        media.startsWith("ipfs://")
+        const resolved = media.startsWith("ipfs://")
           ? `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${media.replace("ipfs://", "")}`
           : media;
 
-      setMediaUrl(resolved);
+        setMediaUrl(resolved);
 
-      if (media.endsWith(".mp4")) setMediaType("video");
-      else if (media.endsWith(".mp3") || media.endsWith(".wav"))
-        setMediaType("audio");
-    } catch (e) {
-      console.error("Media detect failed", e);
-    }
-  };
+        if (media.endsWith(".mp4")) setMediaType("video");
+        else if (media.endsWith(".mp3") || media.endsWith(".wav"))
+          setMediaType("audio");
+      } catch (e) {
+        console.error("Media detect failed", e);
+      }
+    };
 
-  detect();
-}, [nft.tokenUri]);
+    detect();
+  }, [nft.tokenUri]);
 
-  const handleEditRoyalty = () => {
-    if (onEditRoyalty) return onEditRoyalty();
-    router.push(`/dashboard/token/${nft.id}/edit`);
-  };
-  console.log(nft.image);
   const handleShare = () => {
     if (!nft.minted) {
       toast.info("List this NFT first to share");
@@ -88,8 +80,30 @@ export function NFTCard({
     toast.success("Link copied to clipboard!");
   };
 
+  const handleEditPage = () => {
+    router.push(`/dashboard/token/${nft.id}/edit`);
+  };
+
   return (
-    <Card className="p-0 overflow-hidden bg-card shadow-lg hover:shadow-xl transition-shadow">
+    <Card className="p-0 overflow-hidden bg-card shadow-lg hover:shadow-xl transition-shadow relative">
+      {/* Top icons: Share + Edit page */}
+      <div className="absolute top-2 right-2 flex gap-2 z-10">
+        <button
+          className="bg-background/80 rounded-full p-2 hover:bg-primary/20 transition"
+          onClick={handleShare}
+          title="Share"
+        >
+          <Share className="text-lg text-primary" />
+        </button>
+        <button
+          className="bg-background/80 rounded-full p-2 hover:bg-primary/20 transition"
+          onClick={handleEditPage}
+          title="Edit NFT"
+        >
+          <Edit className="text-lg text-primary" />
+        </button>
+      </div>
+
       <div className="relative">
         <Image
           src={nft.image}
@@ -99,39 +113,33 @@ export function NFTCard({
           className="w-full h-48 object-cover"
         />
         {nft.minted && (
-          <span className="absolute top-2 right-2 text-xs px-2 py-1 rounded text-white font-bold bg-cyan-400">
+          <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded text-white font-bold bg-cyan-400">
             Minted
           </span>
         )}
+
         {mediaType === "audio" && mediaUrl && (
-  <div className="px-4 py-2 bg-muted">
-    <audio controls className="w-full h-8">
-      <source src={mediaUrl} />
-    </audio>
-  </div>
-)}
+          <div className="px-4 py-2 bg-muted">
+            <audio controls className="w-full h-8">
+              <source src={mediaUrl} />
+            </audio>
+          </div>
+        )}
 
-{mediaType === "video" && mediaUrl && (
-  <div className="px-4 py-2">
-    <Button
-      variant="secondary"
-      size="sm"
-      className="w-full"
-      onClick={() => setShowVideo(true)}
-    >
-      ▶ Play Video
-    </Button>
-  </div>
-)}
-
-        <button
-          className="absolute top-2 left-2 bg-background/80 rounded-full p-2 hover:bg-primary/20 transition"
-          onClick={handleShare}
-          title="Share"
-        >
-          <Share className="text-lg text-primary" />
-        </button>
+        {mediaType === "video" && mediaUrl && (
+          <div className="px-4 py-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full"
+              onClick={() => setShowVideo(true)}
+            >
+              ▶ Play Video
+            </Button>
+          </div>
+        )}
       </div>
+
       <div className="p-4 flex flex-col gap-2">
         <div className="font-semibold text-lg truncate" title={nft.title}>
           {nft.title}
@@ -139,16 +147,29 @@ export function NFTCard({
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>❤ {nft.likes}</span>
         </div>
-        {owner ? (
-          <div className="flex flex-col gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-2 flex items-center gap-2"
-              onClick={handleEditRoyalty}
-            >
-              <Edit /> Edit Listing
-            </Button>
+
+        {owner && (
+          <div className="flex flex-col gap-2 mt-2">
+            {/* Use dialog/modal for MarketplaceListing */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Edit /> Edit Listing
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-xl w-full">
+                <DialogHeader>
+                  <DialogTitle>Edit Marketplace Listing</DialogTitle>
+                  <DialogClose />
+                </DialogHeader>
+                <MarketplaceListing token={nft} />
+              </DialogContent>
+            </Dialog>
+
             {!nft.isMarketApproved ? (
               <CreateAuctionButton
                 disabled={nft.isDisabled}
@@ -163,32 +184,34 @@ export function NFTCard({
               </p>
             )}
           </div>
-        ) : (
+        )}
+
+        {!owner && (
           <Button
             variant="default"
             size="sm"
             className="mt-2 flex items-center gap-2"
             onClick={onBuy}
           >
-            <ShoppingCart /> Buy
+            Buy
           </Button>
         )}
       </div>
-      {showVideo && (
-  <div
-    className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
-    onClick={() => setShowVideo(false)}
-  >
-    <video
-      controls
-      autoPlay
-      className="max-w-4xl w-full rounded-xl"
-      src={mediaUrl}
-      onClick={(e) => e.stopPropagation()}
-    />
-  </div>
-)}
 
+      {showVideo && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          onClick={() => setShowVideo(false)}
+        >
+          <video
+            controls
+            autoPlay
+            className="max-w-4xl w-full rounded-xl"
+            src={mediaUrl}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </Card>
   );
 }
