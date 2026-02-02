@@ -4,20 +4,33 @@ import {
   useAccount,
   useWriteContract,
   useWaitForTransactionReceipt,
+  useReadContract,
 } from "wagmi";
 import { toast } from "sonner";
 import type { BaseError } from "wagmi";
 import type { Abi } from "abitype";
 
 import { getFilesByWallet, updateFile } from "@/actions/files";
-import {nftABIArray as abi,nftAddress as contractAddress} from "@/lib/wagmi/contracts"
+import {
+  nftABIArray as abi,
+  nftAddress as contractAddress,
+} from "@/lib/wagmi/contracts";
+import { formatUnits } from "viem";
 
 export function useMintContract() {
   const { address, isConnected } = useAccount();
   const toastIdRef = useRef<string | number | null>(null);
   const resolveRef = useRef<((v: boolean) => void) | null>(null);
   const rejectRef = useRef<((v: boolean) => void) | null>(null);
-  
+  const {
+    data: mintPrice,
+    isLoading: isPriceLoading,
+    refetch,
+  } = useReadContract({
+    address: contractAddress,
+    abi: abi,
+    functionName: "MINT_PRICE",
+  });
   // Track URIs that were actually minted
   const mintedUrisRef = useRef<string[]>([]);
 
@@ -57,7 +70,7 @@ export function useMintContract() {
         console.error("Error updating mint status:", err);
       }
     },
-    [address]
+    [address],
   );
 
   /* ----------------------------------------
@@ -128,23 +141,26 @@ export function useMintContract() {
         toast.error("Connect your wallet first");
         return false;
       }
-  
-      const urisArray = Array.isArray(tokenURIs)
-        ? tokenURIs
-        : [tokenURIs];
-  
+
+      const urisArray = Array.isArray(tokenURIs) ? tokenURIs : [tokenURIs];
+
       if (!urisArray.length) {
         toast.error("No token URI provided");
         return false;
       }
-  
+
       mintedUrisRef.current = urisArray;
       setIsBusy(true);
-  
+
       return new Promise<boolean>((resolve, reject) => {
         resolveRef.current = resolve;
         rejectRef.current = reject;
-  
+        if (!mintPrice) {
+          toast.error("Mint price not loaded yet");
+          setIsBusy(false);
+          reject(false);
+          return;
+        }
         try {
           writeContract({
             address: contractAddress,
@@ -154,8 +170,8 @@ export function useMintContract() {
               ? [urisArray[0], quantity, royaltyBps]
               : [urisArray[0], royaltyBps],
             value: !isBatch
-              ? BigInt(0.1 * 1e18)
-              : BigInt(0.1 * 1e18) * BigInt(quantity),
+              ? (mintPrice as bigint)
+              : (mintPrice as bigint) * BigInt(quantity),
           });
         } catch (err) {
           console.error(err);
@@ -164,9 +180,8 @@ export function useMintContract() {
         }
       });
     },
-    [abi, contractAddress, isConnected, writeContract]
+    [abi, contractAddress, isConnected, writeContract, mintPrice],
   );
-   
 
   /* ----------------------------------------
      Toast + transaction lifecycle
@@ -174,26 +189,19 @@ export function useMintContract() {
   const handleToasts = useCallback(() => {
     // Write error (before tx submission)
     if (writeError) {
-      const msg =
-        (writeError as BaseError).shortMessage ||
-        writeError.message;
+      const msg = (writeError as BaseError).shortMessage || writeError.message;
       toast.error(
-        msg.includes("insufficient funds")
-          ? "Not enough ETH ⛽"
-          : msg
+        msg.includes("insufficient funds") ? "Not enough ETH ⛽" : msg,
       );
-       rejectRef.current?.(false);
-  resolveRef.current = null;
-  rejectRef.current = null;
-    setIsBusy(false);
+      rejectRef.current?.(false);
+      resolveRef.current = null;
+      rejectRef.current = null;
+      setIsBusy(false);
     }
-   
 
     // Tx pending
     if (isConfirming && !toastIdRef.current) {
-      toastIdRef.current = toast.loading(
-        "Transaction in progress..."
-      );
+      toastIdRef.current = toast.loading("Transaction in progress...");
     }
 
     // Tx success
@@ -217,29 +225,27 @@ export function useMintContract() {
     // }
     if (isSuccess && toastIdRef.current) {
       fetch("/api/sync-mints").catch(() => {});
-    
+
       toast.success("NFT minted successfully 🎉", {
         id: toastIdRef.current,
       });
-    
+
       if (mintedUrisRef.current.length) {
         updateMintStatus(mintedUrisRef.current);
       }
-    
+
       resolveRef.current?.(true);
       resolveRef.current = null;
       rejectRef.current = null;
-    
+
       toastIdRef.current = null;
       setIsBusy(false);
     }
-    
 
     // Tx failed
     if (txError && toastIdRef.current) {
       const msg =
-        (txReceiptError as BaseError)?.shortMessage ||
-        txReceiptError?.message;
+        (txReceiptError as BaseError)?.shortMessage || txReceiptError?.message;
 
       toast.error(msg || "Transaction failed", {
         id: toastIdRef.current,
@@ -248,9 +254,9 @@ export function useMintContract() {
       rejectRef.current?.(false);
       resolveRef.current = null;
       rejectRef.current = null;
-    
+
       toastIdRef.current = null;
-      setIsBusy(false);    
+      setIsBusy(false);
     }
   }, [
     isConfirming,
@@ -265,5 +271,8 @@ export function useMintContract() {
     mint,
     handleToasts,
     isBusy: isBusy || isPending || isConfirming,
+    mintPriceWei: mintPrice as bigint | undefined,
+    mintPriceHuman: mintPrice ? formatUnits(mintPrice as bigint, 18) : "0",
+    isPriceLoading,
   };
 }

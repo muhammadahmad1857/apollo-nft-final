@@ -17,7 +17,7 @@ const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 
 export default function MintSingleNFTPage() {
   const { address } = useAccount();
-  const [selectedFile, setSelectedFile] = useState<string |null>(null);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [royaltyBps, setRoyaltyBps] = useState(500); // Default 5%
   const [previewUrl, setPreviewUrl] = useState("");
   const [metaName, setMetaName] = useState("");
@@ -29,7 +29,8 @@ export default function MintSingleNFTPage() {
 
   const searchParams = useSearchParams();
   const cid = searchParams.get("cid");
-  const { mint, handleToasts, isBusy } = useMintContract();
+  const { mint, handleToasts, isBusy, mintPriceHuman, isPriceLoading } =
+    useMintContract();
 
   const handleFileChange = useCallback(async (ipfsUrl: string) => {
     setSelectedFile(ipfsUrl);
@@ -66,28 +67,27 @@ export default function MintSingleNFTPage() {
   }, []);
 
   const handleMint = async () => {
-  if (!selectedFile) {
-    toast.error("Please select a file to continue")
-    return
-  };
-
-  setIsMinting(true);
-
-  try {
-    const success = await mint({
-      tokenURIs: selectedFile,
-      royaltyBps,
-    });
-
-    if (success) {
-      setShowSuccess(true);
+    if (!selectedFile) {
+      toast.error("Please select a file to continue");
+      return;
     }
-  } finally {
-    // ✅ ALWAYS stop loader (success OR error)
-    setIsMinting(false);
-  }
-};
 
+    setIsMinting(true);
+
+    try {
+      const success = await mint({
+        tokenURIs: selectedFile,
+        royaltyBps,
+      });
+
+      if (success) {
+        setShowSuccess(true);
+      }
+    } finally {
+      // ✅ ALWAYS stop loader (success OR error)
+      setIsMinting(false);
+    }
+  };
 
   handleToasts();
 
@@ -150,10 +150,45 @@ export default function MintSingleNFTPage() {
               Set the royalty for secondary sales (0-10%).
             </span>
           </div>
+          {/* Mint Price Info */}
+          <div className="relative">
+            <div className="flex items-start gap-3 rounded-xl border border-cyan-200/60 dark:border-cyan-800/60 bg-cyan-50/60 dark:bg-cyan-950/40 p-4 shadow-sm transition-all">
+              <div className="mt-0.5 text-cyan-600 dark:text-cyan-300">
+                <SparklesIcon className="w-5 h-5" />
+              </div>
+
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Mint Price
+                </p>
+
+                {isPriceLoading ? (
+                  <div className="mt-1 flex items-center gap-2">
+                    <div className="h-4 w-24 rounded bg-cyan-200/60 dark:bg-cyan-800/60 animate-pulse" />
+                    <span className="text-xs text-gray-400">
+                      Fetching price…
+                    </span>
+                  </div>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                    <span className="font-semibold text-cyan-700 dark:text-cyan-300">
+                      {mintPriceHuman} APOLLO
+                    </span>{" "}
+                    will be charged for minting this NFT.
+                  </p>
+                )}
+
+                <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                  Price is fetched directly from the smart contract and may
+                  change.
+                </p>
+              </div>
+            </div>
+          </div>
 
           <Button
             onClick={handleMint}
-            disabled={!selectedFile || isBusy || isMinting}
+            disabled={!selectedFile || isPriceLoading || isBusy || isMinting}
             className="mt-4 py-3 text-base font-semibold rounded-xl shadow-md bg-cyan-600 hover:bg-cyan-700 text-white dark:bg-cyan-500 dark:hover:bg-cyan-400 transition-all duration-200 animate-fade-in delay-200"
             style={{ letterSpacing: 1 }}
           >
