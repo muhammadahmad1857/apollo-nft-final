@@ -189,7 +189,7 @@ export default function MintSingleNFTPage() {
           <Button
             onClick={handleMint}
             disabled={!selectedFile || isPriceLoading || isBusy || isMinting}
-            className="mt-4 py-3 text-base font-semibold rounded-xl shadow-md bg-cyan-600 hover:bg-cyan-700 text-white dark:bg-cyan-500 dark:hover:bg-cyan-400 transition-all duration-200 animate-fade-in delay-200"
+            className="my-4 py-3 text-base font-semibold rounded-xl shadow-md bg-cyan-600 hover:bg-cyan-700 text-white dark:bg-cyan-500 dark:hover:bg-cyan-400 transition-all duration-200 animate-fade-in delay-200"
             style={{ letterSpacing: 1 }}
           >
             {isBusy || isMinting ? (
