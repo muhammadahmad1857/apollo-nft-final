@@ -94,7 +94,7 @@ export const NotFound: React.FC<NotFoundProps> = ({ title, link }) => {
 
       {/* Optional Button */}
       {title && (
-        <div className="mt-6">
+        <div className="mt-10">
           <Link href={link||"#"}>
             <button className="px-6 py-2 bg-cyan-500 text-white rounded hover:bg-cyan-600 transition">
               {title}
