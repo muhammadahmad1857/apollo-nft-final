@@ -44,7 +44,7 @@ export function AuctionDetails({
       if (!auction.nft.tokenUri) return;
 
       try {
-        const res = await fetch(auction.nft.tokenUri);
+        const res = await fetch(auction.nft.tokenUri.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`));
         const metadata = await res.json();
         const media = metadata.media;
 

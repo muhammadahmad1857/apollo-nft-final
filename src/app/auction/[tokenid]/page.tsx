@@ -69,7 +69,7 @@ export default function AuctionPage() {
           router.push("/auction");
           return;
         }
-        const bidList = await getBidsByAuctionWithUser(nftId);
+        const bidList = await getBidsByAuctionWithUser(auctionDB.id);
         console.log("bidlist",bidList)
         setAuction(auctionDB);
         setBids(bidList);
@@ -97,7 +97,7 @@ export default function AuctionPage() {
 
       toast.info("Bid transaction sent");
 
-      const bidList = await getBidsByAuctionWithUser(nftId);
+      const bidList = await getBidsByAuctionWithUser(auction.id);
       console.log("bidlist",bidList)
       setBids(bidList);
     } catch (err: any) {
