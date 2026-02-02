@@ -12,6 +12,7 @@ import { getNFTLikesByNFT } from "@/actions/nft-likes";
 import { getUserById } from "@/actions/users";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Loader from "@/components/loader";
 
 
 export default function TokenDetailsPage() {
@@ -50,9 +51,7 @@ export default function TokenDetailsPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[40vh]">
-        <span className="text-muted-foreground">Loading...</span>
-      </div>
+    <Loader text={`Loading token for tokenId: ${tokenid}`}/>
     );
   }
   if (nftError) {

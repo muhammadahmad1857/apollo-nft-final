@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-
+import Loader from "@/components/loader";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -163,7 +163,7 @@ useEffect(() => {
   }
 
   if (isLoading)
-    return <div className="text-center py-20">Loading NFT...</div>;
+    return <Loader text="Loading nft...."/>;
   if (!token) return <div className="text-center py-20">NFT not found</div>;
 
   return (

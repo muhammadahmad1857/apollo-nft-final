@@ -13,6 +13,7 @@ import { truncateAddress } from "@/lib/truncate";
 import * as nftActions from "@/actions/nft"; // your server actions
 import { useAccount } from "wagmi";
 import { AuctionModel, NFTLikeModel, NFTModel, UserModel } from "@/generated/prisma/models";
+import Loader from "@/components/loader";
 
 export default function Page() {
   const router = useRouter();
@@ -95,9 +96,9 @@ export default function Page() {
         />
 
         {loading ? (
-          <div>Loading NFTs...</div>
+          <Loader text="Loading NFT's..."/>
         ) : filteredNFTs.length === 0 ? (
-<div className="text-center text-muted-foreground space-y-2">
+<div className="text-center py-5 text-muted-foreground space-y-2">
   <div>No NFTs found.</div>
   <Button
     variant="outline"

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Play, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { PinataJSON } from "@/types";
 
 async function getFileType(url: string) {
   try {
@@ -45,7 +46,7 @@ export function AuctionDetails({
 
       try {
         const res = await fetch(auction.nft.tokenUri.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`));
-        const metadata = await res.json();
+        const metadata:PinataJSON = await res.json();
         const media = metadata.media;
 
         setMediaUrl(
@@ -54,7 +55,7 @@ export function AuctionDetails({
             : media
         );
 
-        const type = await getFileType(mediaUrl || media);
+        const type = await getFileType(`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${media.replace("ipfs://", "")}`);
         setMediaType(type as any);
       } catch (err) {
         console.error("Failed to load media from tokenUri", err);
@@ -76,7 +77,7 @@ export function AuctionDetails({
       {/* NFT Image */}
       <div className="shrink-0 w-full lg:w-64 h-64 relative rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
         <Image
-          src={auction.nft.imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}`)}
+          src={auction.nft.imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
           alt={auction.nft.name}
           fill
           className="object-cover"

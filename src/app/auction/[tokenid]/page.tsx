@@ -23,6 +23,7 @@ import {
 } from "@/generated/prisma/models";
 import { useAccount } from "wagmi";
 import { useUser } from "@/hooks/useUser";
+import Loader from "@/components/loader";
 
 export default function AuctionPage() {
   const params = useParams();
@@ -124,7 +125,7 @@ export default function AuctionPage() {
      Loading state
   ------------------------------ */
   if (!auction || tokenId === undefined) {
-    return <div className="p-10 text-center">Loading auction...</div>;
+    return <Loader text="Loading Auction"/>;
   }
 
   return (

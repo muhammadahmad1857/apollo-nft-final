@@ -13,7 +13,7 @@ const Loader: React.FC<LoaderProps> = ({ text = "Loading...", fullScreen = false
 
   return (
     <div
-      className={`flex flex-col items-center justify-center ${
+      className={`flex flex-col items-center py-10 justify-center ${
         fullScreen ? "fixed inset-0 z-50 bg-black/30 dark:bg-white/20" : ""
       }`}
     >
