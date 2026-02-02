@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, CheckCircle2, Loader2, FileVideo, Music } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 interface FileUploadProps {
   onUploadComplete: (
@@ -283,6 +284,7 @@ export function FileUpload({
                     Accepted: .mp3, .wav, .mp4
                   </p>
                 </div>
+                <p className="text-accent text-sm">Already Have file? <Link href={'/dashboard/create/metadata'} className="text-cyan-400 underline hover:underline-offset-1">Create Metadata</Link></p>
               </>
             )}
           </motion.div>
