@@ -8,12 +8,15 @@ interface LoaderProps {
   fullScreen?: boolean;
 }
 
-const Loader: React.FC<LoaderProps> = ({ text = "Loading...", fullScreen = false }) => {
+const Loader: React.FC<LoaderProps> = ({
+  text = "Loading...",
+  fullScreen = false,
+}) => {
   const { theme } = useTheme();
 
   return (
     <div
-      className={`flex flex-col items-center py-10 justify-center ${
+      className={`flex flex-col items-center my-20 justify-center ${
         fullScreen ? "fixed inset-0 z-50 bg-black/30 dark:bg-white/20" : ""
       }`}
     >
@@ -31,7 +34,9 @@ const Loader: React.FC<LoaderProps> = ({ text = "Loading...", fullScreen = false
             <div
               className={`flex items-center justify-center rounded-full w-[111px] h-[111px] 
               border-t-[3px] border-b-[3px] ${
-                theme === "dark" ? "border-t-white border-b-white border-l-cyan-600 border-r-cyan-600" : "border-t-white border-b-white border-l-cyan-500 border-r-cyan-500"
+                theme === "dark"
+                  ? "border-t-white border-b-white border-l-cyan-600 border-r-cyan-600"
+                  : "border-t-white border-b-white border-l-cyan-500 border-r-cyan-500"
               }`}
             >
               {/* White Inner Circle */}
@@ -67,7 +72,9 @@ const Loader: React.FC<LoaderProps> = ({ text = "Loading...", fullScreen = false
 
       {/* Loader Text */}
       {text && (
-        <div className={`mt-4 text-lg font-medium ${theme === "dark" ? "text-cyan-400" : "text-cyan-600"}`}>
+        <div
+          className={`mt-4 text-lg font-medium ${theme === "dark" ? "text-cyan-400" : "text-cyan-600"}`}
+        >
           {text}
         </div>
       )}

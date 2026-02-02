@@ -11,20 +11,20 @@ interface NotFoundProps {
 
 const NotFound: React.FC<NotFoundProps> = ({ title, link }) => {
   return (
-    <div className="main_wrapper bg-background">
+    <div className="main_wrapper flex items-center justify-center">
       <div className="main">
         {/* Antenna */}
-        <div className="antenna dark:antenna">
-          <div className="antenna_shadow dark:antenna_shadow"></div>
-          <div className="a1 dark:a1"></div>
-          <div className="a1d dark:a1d"></div>
-          <div className="a2 dark:a2"></div>
-          <div className="a2d dark:a2d"></div>
-          <div className="a_base dark:a_base"></div>
+        <div className="antenna">
+          <div className="antenna_shadow"></div>
+          <div className="a1"></div>
+          <div className="a1d"></div>
+          <div className="a2"></div>
+          <div className="a2d"></div>
+          <div className="a_base"></div>
         </div>
 
         {/* TV */}
-        <div className="tv dark:tv">
+        <div className="tv">
           <div className="cruve">
             <svg
               className="curve_svg"
@@ -41,47 +41,47 @@ const NotFound: React.FC<NotFoundProps> = ({ title, link }) => {
             </svg>
           </div>
 
-          <div className="display_div dark:display_div">
-            <div className="screen_out dark:screen_out">
-              <div className="screen_out1 dark:screen_out1">
-                <div className="screen dark:screen">
-                  <span className="notfound_text dark:notfound_text"> NOT FOUND</span>
+          <div className="display_div">
+            <div className="screen_out">
+              <div className="screen_out1">
+                <div className="screen">
+                  <span className="notfound_text"> NOT FOUND</span>
                 </div>
-                <div className="screenM dark:screenM">
-                  <span className="notfound_text dark:notfound_text"> NOT FOUND</span>
+                <div className="screenM">
+                  <span className="notfound_text"> NOT FOUND</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="lines dark:lines">
-            <div className="line1 dark:line1"></div>
-            <div className="line2 dark:line2"></div>
-            <div className="line3 dark:line3"></div>
+          <div className="lines">
+            <div className="line1"></div>
+            <div className="line2"></div>
+            <div className="line3"></div>
           </div>
 
-          <div className="buttons_div dark:buttons_div">
-            <div className="b1 dark:b1">
+          <div className="buttons_div">
+            <div className="b1">
               <div></div>
             </div>
-            <div className="b2 dark:b2"></div>
-            <div className="speakers dark:speakers">
-              <div className="g1 dark:g1">
-                <div className="g11 dark:g11"></div>
-                <div className="g12 dark:g12"></div>
-                <div className="g13 dark:g13"></div>
+            <div className="b2"></div>
+            <div className="speakers">
+              <div className="g1">
+                <div className="g11"></div>
+                <div className="g12"></div>
+                <div className="g13"></div>
               </div>
-              <div className="g dark:g"></div>
-              <div className="g dark:g"></div>
+              <div className="g"></div>
+              <div className="g"></div>
             </div>
           </div>
         </div>
 
         {/* Bottom */}
-        <div className="bottom dark:bottom">
-          <div className="base1 dark:base1"></div>
-          <div className="base2 dark:base2"></div>
-          <div className="base3 dark:base3"></div>
+        <div className="bottom">
+          <div className="base1"></div>
+          <div className="base2"></div>
+          <div className="base3"></div>
         </div>
       </div>
 
@@ -95,7 +95,7 @@ const NotFound: React.FC<NotFoundProps> = ({ title, link }) => {
       {/* Optional Button */}
       {title && (
         <div className="mt-6">
-          <Link href={link || "#"}>
+          <Link href={link||"#"}>
             <button className="px-6 py-2 bg-cyan-500 text-white rounded hover:bg-cyan-600 transition">
               {title}
             </button>

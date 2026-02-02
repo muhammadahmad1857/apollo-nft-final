@@ -37,7 +37,7 @@ const FileSelectInput = ({
     const fetchFiles = async () => {
       setIsLoading(true)
       try {
-        const allFiles =  await getFilesByWallet(walletId,true);
+        const allFiles =  await getFilesByWallet(walletId);
         let filteredFiles = allFiles;
         if (fileExtensions && fileExtensions.length > 0) {
           filteredFiles = allFiles.filter((file) =>

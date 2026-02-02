@@ -32,7 +32,7 @@ const FileMultiSelectInput = ({
       try {
        
         
-       let filteredFiles:FileModel[] = await getFilesByWallet(walletId,true);
+       let filteredFiles:FileModel[] = await getFilesByWallet(walletId);
 if (fileExtensions?.length) {
           filteredFiles = filteredFiles.filter((file) =>
             fileExtensions.includes(file.type)
