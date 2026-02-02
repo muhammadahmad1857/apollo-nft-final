@@ -1,13 +1,15 @@
-"use client"
-import Footer from '@/components/footer'
-import Header from '@/components/header'
-import React, { Suspense } from 'react'
+"use client";
+import Footer from "@/components/footer";
+import Header from "@/components/header";
+import React, { Suspense } from "react";
 const Layout = ({ children }: { children: React.ReactNode }) => {
-
   return (
-    <Suspense fallback={<p>Loading...</p>}><Header/>{children}<Footer/></Suspense>
+    <>
+      <Header />
+      <Suspense fallback={<p>Loading...</p>}>{children}</Suspense>
+      <Footer />
+    </>
+  );
+};
 
-  )
-}
-
-export default Layout
+export default Layout;
