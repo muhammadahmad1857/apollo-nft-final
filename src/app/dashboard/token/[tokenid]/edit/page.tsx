@@ -28,6 +28,7 @@ import { ApproveMarketButton } from "@/components/marketplace/marketplaceApprove
 import { useAccount } from "wagmi";
 import { useUser } from "@/hooks/useUser";
 import { MarketplaceListing } from "@/components/marketplace/editMarketplace";
+import { NotFound } from "@/components/notFound";
 
 export default function EditRoyaltyPage() {
   const { tokenid } = useParams();
@@ -164,7 +165,7 @@ useEffect(() => {
 
   if (isLoading)
     return <Loader text="Loading nft...."/>;
-  if (!token) return <div className="text-center py-20">NFT not found</div>;
+  if (!token) return <div className="flex flex-col items-center justify-center"><NotFound title="No NFT FOUND" link="/dashboard"/></div>;
 
   return (
     <div className="container mx-auto max-w-2xl py-8">

@@ -9,9 +9,9 @@ interface NotFoundProps {
   link?: string; // Redirect link
 }
 
-const NotFound: React.FC<NotFoundProps> = ({ title, link }) => {
+export const NotFound: React.FC<NotFoundProps> = ({ title, link }) => {
   return (
-    <div className="main_wrapper flex items-center justify-center">
+    <div className="main_wrapper">
       <div className="main">
         {/* Antenna */}
         <div className="antenna">
@@ -106,4 +106,3 @@ const NotFound: React.FC<NotFoundProps> = ({ title, link }) => {
   );
 };
 
-export default NotFound;

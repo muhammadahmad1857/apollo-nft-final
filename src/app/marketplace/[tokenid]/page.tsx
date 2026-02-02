@@ -8,6 +8,7 @@ import Link from "next/link";
 import NFTInteractiveContent from "@/components/marketplace/nftPage";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import { NotFound } from "@/components/notFound";
 
 // Force dynamic rendering + light ISR
 export const dynamic = "force-dynamic";
@@ -27,7 +28,9 @@ export default async function NFTDetailPage({
 }) {
   const tokenId = Number((await params).tokenid);
   console.log(tokenId,(await params).tokenid)
-  if (isNaN(tokenId) || tokenId < 1) notFound();
+  if (isNaN(tokenId) || tokenId < 1) {
+    return <div className="flex flex-col items-center justify-center"><NotFound title="No NFT FOUND" link="/dashboard"/></div>;
+  };
 
   const publicClient = createPublicClient({
     transport: http("https://mainnet-rpc.apolloscan.io"),
@@ -102,7 +105,7 @@ const detectMediaType = async (url: string) => {
     console.error("Error loading NFT:", err);
   }
   console.log("Metadata",metadata,mediaType)
-  if (!metadata) notFound();
+  if (!metadata) return <div className="flex flex-col items-center justify-center"><NotFound title="No NFT FOUND" link="/dashboard"/></div>;;
 
   const title = metadata.title || `NFT #${tokenId}`;
   const description = metadata.description || "No description provided";
@@ -127,7 +130,7 @@ const detectMediaType = async (url: string) => {
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left - Media / Cover */}
           <div className="space-y-6">
-            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-900 to-black border border-zinc-800 shadow-2xl">
+            <div className="rounded-2xl overflow-hidden bg-linear-to-br from-zinc-900 to-black border border-zinc-800 shadow-2xl">
               {cover ? (
                 <Image
                   src={cover}
