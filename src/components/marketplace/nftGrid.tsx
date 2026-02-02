@@ -10,7 +10,7 @@ import type { AuctionModel, NFTModel as PrismaNFT, UserModel } from "@/generated
 const PAGE_SIZE = 12;
 
 export default function PublicMintsGrid() {
-  const [mints, setMints] = useState<(PrismaNFT & { creator: UserModel,auction:AuctionModel|null })[]>([]);
+  const [mints, setMints] = useState<(PrismaNFT & { owner: UserModel,auction:AuctionModel|null })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +21,7 @@ export default function PublicMintsGrid() {
 
       const data = await getAllNFTs(); // server-side fetch via Prisma
 
-setMints(data as (PrismaNFT & { creator: UserModel,auction:AuctionModel|null })[]);
+setMints(data as (PrismaNFT & { owner: UserModel,auction:AuctionModel|null, })[]);
 console.log("data",data)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
@@ -89,6 +89,7 @@ console.log("data",data)
             minted={true}
             showBuyButton={true}
             mintPrice={nft.mintPrice}
+            ownerAddress={nft.owner.walletAddress}
              auction={nft.auction ? {
       id: nft.auction.id,
       startTime: nft.auction.startTime.toISOString(),

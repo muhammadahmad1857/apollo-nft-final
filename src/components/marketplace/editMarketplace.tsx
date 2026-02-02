@@ -16,6 +16,7 @@ import { useUpdateNFT } from "@/hooks/useNft";
 import { ApproveMarketButton } from "@/components/marketplace/marketplaceApproveButton";
 import { useUser } from "@/hooks/useUser";
 import { useAccount } from "wagmi";
+import { useRouter } from "next/navigation";
 
 const ZERO_ADDRESS =
   "0x0000000000000000000000000000000000000000";
@@ -27,7 +28,7 @@ interface MarketplaceListingProps {
 export function MarketplaceListing({ token }: MarketplaceListingProps) {
   const { address } = useAccount();
   const { data: user, isLoading: isUserLoading } = useUser(address || "");
-
+  const router = useRouter()
   const { listNFT } = useListNFT();
   const { cancelListing, isPending: cancelPending } = useCancelListing();
   const { data: listing, refetch } = useListing(
@@ -86,7 +87,7 @@ export function MarketplaceListing({ token }: MarketplaceListingProps) {
           mintPrice: priceEth ? Number(priceEth) : 0,
         },
       });
-
+      
       toast.success("Marketplace updated");
       refetch();
     } catch (err: any) {
@@ -125,7 +126,7 @@ export function MarketplaceListing({ token }: MarketplaceListingProps) {
       <ApproveMarketButton
         nftId={token.id}
         tokenId={token.tokenId}
-        onSuccess={refetch}
+        onSuccess={router.refresh}
       />
     );
   }

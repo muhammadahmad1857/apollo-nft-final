@@ -36,6 +36,7 @@ export interface NFTCardProps {
   showBuyButton?: boolean;
   showEditRoyaltyButton?: boolean;
   nftId: number;
+  ownerAddress:string;
   auction?: {
     id: number;
     startTime: string;
@@ -77,6 +78,7 @@ async function detectFileTypeFromHEAD(url: string): Promise<string> {
 const NFTCard = ({
   title,
   cover,
+  ownerAddress,
   media,
   tokenId,
   name,
@@ -312,7 +314,7 @@ const NFTCard = ({
                   className="ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors"
                   disabled={isPending}
                 >
-                  {isPending ? "Buying..." : "Buy"}
+                  {address === ownerAddress ? isPending ? "Buying..." : "Buy":"Sold"}
                 </button>
               )
             )}

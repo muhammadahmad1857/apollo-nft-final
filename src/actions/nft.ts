@@ -25,7 +25,7 @@ export async function getNFTById(id: number): Promise<PrismaNFT | null> {
 }
 
 export async function getAllNFTs(): Promise<
-  (PrismaNFT & { creator: UserModel | null; auction: AuctionModel | null })[]
+  (PrismaNFT & { owner: UserModel | null; auction: AuctionModel | null })[]
 > {
   return db.nFT.findMany({
     where: {
@@ -33,7 +33,7 @@ export async function getAllNFTs(): Promise<
     },
     orderBy: { createdAt: "desc" },
     include: {
-      creator: true,
+      owner: true,
       auction: true, // include auction info
     }, // nested relation
   });
@@ -94,7 +94,16 @@ export async function transferOwnership(
   // Update the ownerId of the NFT
   return db.nFT.update({
     where: { tokenId },
-    data: { ownerId: newOwnerId },
+    data: {
+      isListed: false,
+      approvedMarket: false,
+      approvedAuction: false,
+      owner: {
+        connect: {
+          id: newOwnerId,
+        },
+      },
+    },
   });
 }
 

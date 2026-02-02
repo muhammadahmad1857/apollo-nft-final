@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export function BidInput({ onPlaceBid }: { onPlaceBid: (bidEth: string) => void }) {
+export function BidInput({ onPlaceBid,isDisabled }: { onPlaceBid: (bidEth: string) => void,isDisabled:boolean }) {
   const [bid, setBid] = useState("");
 
   return (
@@ -15,7 +15,11 @@ export function BidInput({ onPlaceBid }: { onPlaceBid: (bidEth: string) => void 
         value={bid}
         onChange={(e) => setBid(e.target.value)}
       />
-      <Button onClick={() => onPlaceBid(bid)}>Place Bid</Button>
+      <Button disabled={isDisabled} onClick={() =>{ 
+        if(isDisabled) return
+        onPlaceBid(bid)
+        }
+        }>Place Bid</Button>
     </div>
   );
 }

@@ -67,6 +67,7 @@ export function ApproveMarketButton({
     if (isSuccess && toastIdRef.current) {
       approveMarketNFT(nftId).catch(() => {
         // silently fail DB sync (chain is source of truth)
+        
       });
 
       toast.success("✅ Approved for marketplace", {
