@@ -8,12 +8,14 @@ import { useMintContract } from "@/hooks/useMint";
 import { SparklesIcon } from "lucide-react";
 import MintSuccessDialog from "@/components/MintSuccess";
 import { toast } from "sonner";
-import { saveRoyalty, removeRoyalty } from "@/lib/royaltySessionStorage";
+import { saveRoyalty, removeRoyalty,getRoyalty } from "@/lib/royaltySessionStorage";
 
 export default function BatchMintNFTPage() {
   const { address } = useAccount();
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
-  const [royaltyBps, setRoyaltyBps] = useState(500); // Default 5%
+  const [royaltyBps, setRoyaltyBps] = useState(
+      Number(getRoyalty("BATCH")) || 500
+  ); // Default 5%
   const [isMinting, setIsMinting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 

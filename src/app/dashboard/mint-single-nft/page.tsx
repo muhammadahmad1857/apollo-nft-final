@@ -11,14 +11,16 @@ import { SparklesIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import MintSuccessDialog from "@/components/MintSuccess";
 import { toast } from "sonner";
-import { saveRoyalty, removeRoyalty } from "@/lib/royaltySessionStorage";
+import { saveRoyalty, removeRoyalty, getRoyalty } from "@/lib/royaltySessionStorage";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 
 export default function MintSingleNFTPage() {
   const { address } = useAccount();
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [royaltyBps, setRoyaltyBps] = useState(500); // Default 5%
+  const [royaltyBps, setRoyaltyBps] = useState(
+      Number(getRoyalty("SINGLE")) || 500
+  ); // Default 5%
   const [previewUrl, setPreviewUrl] = useState("");
   const [metaName, setMetaName] = useState("");
   const [metaDesc, setMetaDesc] = useState("");
