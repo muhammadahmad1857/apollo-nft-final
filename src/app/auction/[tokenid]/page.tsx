@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  useAuctionDetails,
   usePlaceBid,
   useSettleAuction,
 } from "@/hooks/useAuction";
@@ -75,12 +74,13 @@ export default function AuctionPage() {
         setAuction(auctionDB);
         setBids(bidList);
       } catch (err) {
+        console.error(err);
         toast.error("Failed to load auction");
       }
     }
 
     fetchData();
-  }, [nftId]);
+  }, [nftId,router]);
 
   /* -----------------------------
      Actions

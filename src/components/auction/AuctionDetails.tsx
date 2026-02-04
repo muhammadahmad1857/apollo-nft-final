@@ -65,6 +65,7 @@ export function AuctionDetails({
         const type = await getFileType(
           `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${media.replace("ipfs://", "")}`,
         );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setMediaType(type as any);
       } catch (err) {
         console.error("Failed to load media from tokenUri", err);

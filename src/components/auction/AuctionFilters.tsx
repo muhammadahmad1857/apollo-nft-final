@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function AuctionFilters() {
   const router = useRouter();
@@ -45,7 +45,7 @@ export default function AuctionFilters() {
           placeholder="Search NFT title"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 min-w-[200px] max-w-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-black text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-gray-500"
+          className="flex-1 min-w-50 max-w-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-black text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-gray-500"
         />
 
         {/* Min & Max Bid */}
@@ -69,7 +69,7 @@ export default function AuctionFilters() {
           <Checkbox
             id="endingSoon"
             checked={endingSoon}
-            onCheckedChange={(v:any) => setEndingSoon(Boolean(v))}
+            onCheckedChange={(v:boolean) => setEndingSoon(Boolean(v))}
             className="accent-black dark:accent-white"
           />
           <label htmlFor="endingSoon" className="text-sm font-medium text-black dark:text-white">

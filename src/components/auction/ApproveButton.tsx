@@ -39,7 +39,7 @@ export function ApproveAuctionButton({ nftId, disabled = false, onSuccess,tokenI
     } finally {
       setIsApproving(false);
     }
-  }, [approveForAllWrite]);
+  }, [approveForAllWrite, tokenId]);
 
   /** Watch lifecycle and trigger backend */
   useEffect(() => {

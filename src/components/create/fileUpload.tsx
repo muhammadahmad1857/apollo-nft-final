@@ -28,6 +28,7 @@ export function FileUpload({
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const acceptedTypes = [".mp3", ".wav", ".mp4"];
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const uploadToPinata = async (file: File) => {

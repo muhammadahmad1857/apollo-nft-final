@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { getActiveAuctions } from "@/actions/auction";
 import AuctionFilters from "@/components/auction/AuctionFilters";
 import AuctionGrid from "@/components/auction/AuctionGrid";
-import { AuctionModel, BidModel, NFTModel, UserModel } from "@/generated/prisma/models";
+import { AuctionModel,  NFTModel, UserModel } from "@/generated/prisma/models";
 
 export default function AuctionsPage() {
   const searchParams = useSearchParams();
@@ -30,7 +30,7 @@ export default function AuctionsPage() {
     };
 
     fetchAuctions();
-  }, [searchParams.toString()]); // re-run whenever URL changes
+  }, [searchParams]); // re-run whenever URL changes
 
   return (
     <div className="container mx-auto pt-24 py-20 space-y-6">

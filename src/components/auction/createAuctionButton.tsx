@@ -51,7 +51,7 @@ export function CreateAuctionButton({
   approvedAuction,
 }: CreateAuctionButtonProps) {
   const { address } = useAccount();
-  const { data: user, isLoading: isUserLoading } = useUser(address || "");
+  const { data: user } = useUser(address || "");
   const { createAuction: createAuctionOnChain, isPending: isTxPending } =
     useCreateAuction();
   const [isApproved, setIsApproved] = useState(approvedAuction);

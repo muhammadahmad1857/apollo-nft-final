@@ -93,6 +93,7 @@ export default function EditProfilePage() {
       refetch();
       toast.success("Profile updated!");
     } catch (err) {
+      console.error("Update profile error:", err);
       toast.error("Failed to update profile");
     } finally {
       setIsSaving(false);

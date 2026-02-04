@@ -24,7 +24,6 @@ export default function BatchMintNFTPage() {
     handleToasts,
     isBusy,
     mintPriceHuman,
-    mintPriceWei,
     isPriceLoading,
   } = useMintContract();
 const totalPriceHuman = !isPriceLoading

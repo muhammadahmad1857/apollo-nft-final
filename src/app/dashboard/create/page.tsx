@@ -35,7 +35,7 @@ export default function CreatePage() {
                 initial={{ width: 0 }}
                 animate={{ width: "100%" }}
                 transition={{ duration: 0.4, delay: 0.2 }}
-                className="mt-3 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500"
+                className="mt-3 h-0.5 bg-linear-to-r from-cyan-500 to-blue-500"
               />
             </motion.div>
 

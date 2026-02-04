@@ -287,7 +287,7 @@ export default function FileDetailPage() {
                   {getFileIcon(file.type)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-2xl md:text-3xl font-bold text-zinc-900 dark:text-zinc-100 mb-2 break-words">
+                  <h1 className="text-2xl md:text-3xl font-bold text-zinc-900 dark:text-zinc-100 mb-2 wrap-break-word">
                     {file.filename || `File ${file.id.slice(0, 8)}`}
                   </h1>
                   <div className="flex flex-wrap items-center gap-3 mt-3">

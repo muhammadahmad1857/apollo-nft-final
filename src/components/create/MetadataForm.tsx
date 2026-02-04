@@ -12,6 +12,7 @@ import FileSelectInput from "../ui/FileSelectInput";
 
 
 import type { MetadataFormValues } from "@/types";
+import Image from "next/image";
 interface MetadataFormProps {
   onMetadataChange: (metadata: MetadataFormValues) => void;
   initialData?: MetadataFormValues;
@@ -244,7 +245,7 @@ export function MetadataForm({
               className="relative group"
             >
               <div className="relative h-48 w-full overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800">
-                <img
+                <Image
                   src={
                     coverPreview ||
                     `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${coverImageUrl?.replace(
@@ -254,6 +255,7 @@ export function MetadataForm({
                   }
                   alt="Cover preview"
                   className="h-full w-full object-cover"
+                  fill
                 />
                 <button
                   onClick={removeCover}

@@ -6,21 +6,18 @@ import {
   useWriteContract,
   useReadContract,
   useWaitForTransactionReceipt,
-  useAccount,
 } from "wagmi";
 import { parseEther } from "viem";
 import { toast } from "sonner";
 import { auctionABIArray, auctionAddress } from "@/lib/wagmi/contracts";
 import {
   createAuction as createAuctionDB,
-  updateHighestBid,
   settleAuction as settleAuctionDB,
 } from "@/actions/auction";
 import { useRouter } from "next/navigation";
 import { BaseError } from "abitype";
 import { createBid } from "@/actions/bid";
 import { transferOwnership, updateNFT } from "@/actions/nft";
-import { useUser } from "./useUser";
 
 /* ======================================================
    CREATE AUCTION
@@ -112,7 +109,7 @@ await updateNFT(pendingData.nftId, { isListed: true, });
         });
       }
     })();
-  }, [isSuccess]);
+  }, [isSuccess, pendingData]);
 
   return { createAuction, isPending: isLoading };
 }
