@@ -19,7 +19,7 @@ import {
 import { useRouter } from "next/navigation";
 import { BaseError } from "abitype";
 import { createBid } from "@/actions/bid";
-import { transferOwnership } from "@/actions/nft";
+import { transferOwnership, updateNFT } from "@/actions/nft";
 import { useUser } from "./useUser";
 
 /* ======================================================
@@ -87,7 +87,7 @@ export function useCreateAuction() {
     (async () => {
       try {
         await createAuctionDB({
-          nft: { connect: { id: pendingData.nftId, isListed: true } },
+          nft: { connect: { id: pendingData.nftId} },
           seller: { connect: { id: pendingData.sellerId } },
           minBid: Number(pendingData.minBidEth),
           startTime: new Date(),
@@ -95,13 +95,17 @@ export function useCreateAuction() {
             Date.now() + Number(pendingData.durationSec) * 1000,
           ),
           settled: false,
+
         });
+await updateNFT(pendingData.nftId, { isListed: true, });
 
         toast.success("Auction created successfully 🎉", {
           id: toastIdRef.current ?? undefined,
         });
         router.push(`/auction/${pendingData.nftId}`);
-      } catch {
+      } catch (err) {
+                console.error(err);
+
         toast.error("Auction confirmed but DB sync failed", {
           id: toastIdRef.current ?? undefined,
         });
@@ -181,6 +185,7 @@ export function usePlaceBid() {
           auction: { connect: { id: pendingData.auctionId } },
           bidder: { connect: { id: pendingData.bidderId } },
           amount: Number(pendingData.bidEth),
+
         });
 
         toast.success("Bid placed successfully 🔥", {
@@ -188,7 +193,6 @@ export function usePlaceBid() {
         });
       } catch (err) {
         console.error(err);
-        toast.error(String(err))
         toast.error("Bid confirmed on-chain but DB update failed", {
           id: toastIdRef.current ?? undefined,
         });

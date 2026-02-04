@@ -284,12 +284,13 @@ export function FileUpload({
                     Accepted: .mp3, .wav, .mp4
                   </p>
                 </div>
-                <p className="text-accent text-sm">Already Have file? <Link href={'/dashboard/create/metadata'} className="text-cyan-400 underline hover:underline-offset-1">Create Metadata</Link></p>
               </>
             )}
           </motion.div>
         )}
       </AnimatePresence>
+                      <p className="text-sm">Already Have file? <Link href={'/dashboard/create/metadata'} className="text-cyan-400 underline hover:underline-offset-1">Create Metadata</Link></p>
+
     </div>
   );
 }

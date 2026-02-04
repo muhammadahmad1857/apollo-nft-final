@@ -10,6 +10,7 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { createFile } from "@/actions/files";
+import Link from "next/link";
 
 export default function MetadataPage() {
   const { address, isConnected } = useAccount();
@@ -167,7 +168,16 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
         >
           Mint NFT
         </Button>
-
+<Button
+          className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
+          onClick={() =>
+            router.push(
+              `/dashboard/batch-mint-nft?file_id=${createdFileId}`
+            )
+          }
+        >
+          Mint NFT
+        </Button>
         <Button
           variant="outline"
           className="flex-1"
@@ -175,6 +185,9 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
         >
           View Files
         </Button>
+      </div>
+      <div>
+        <p>Or create another <Link href="/dashboard/create/file-upload" className="text-cyan-400 underline hover:underline-offset-1">File</Link></p>
       </div>
     </div>
   </motion.div>
