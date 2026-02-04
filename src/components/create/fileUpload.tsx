@@ -19,6 +19,44 @@ interface FileUploadProps {
   } | null;
 }
 
+const fileCategoryMap: Record<string, string> = {
+  "text/plain": "txt/txt",
+  "text/markdown": "txt/md",
+  "application/msword": "doc/doc", // doc
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "doc/docx", // docx
+  "application/pdf": "pdf",
+};
+
+function getFileType(file: File): string {
+  const type = file.type.toLowerCase();
+  const ext = file.name.split(".").pop()?.toLowerCase();
+
+  // Handle audio/video/image dynamically
+  if (type.startsWith("audio/")) return `audio/${type.split("/")[1]}`;
+  if (type.startsWith("video/")) return `video/${type.split("/")[1]}`;
+  if (type.startsWith("image/")) return `image/${type.split("/")[1]}`;
+
+  // Handle specific MIME types
+  if (type === "text/plain") return ext === "md" ? "txt/md" : "txt/txt";
+  if (type === "application/msword") return "doc/doc";
+  if (type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "doc/docx";
+  if (type === "application/pdf") return "pdf";
+
+  // Fallback to extension if MIME type is empty or unknown
+  if (ext) {
+    if (ext === "txt") return "txt/txt";
+    if (ext === "md") return "txt/md";
+    if (ext === "doc") return "doc/doc";
+    if (ext === "docx") return "doc/docx";
+    if (ext === "pdf") return "pdf";
+  }
+
+  return "other"; // unknown type
+}
+
+
+
+
 export function FileUpload({
   onUploadComplete,
   uploadedFile,
@@ -73,22 +111,8 @@ export function FileUpload({
       const ipfsHash = json.IpfsHash;
       const ipfsUrl = `ipfs://${ipfsHash}`;
 
-      // Determine file type (audio/type, video/type, image/type, txt/type)
-      let fileType = "other";
-      if (file.type.startsWith("audio/")) fileType = `audio/${file.type.split("/")[1]}`;
-      else if (file.type.startsWith("video/")) fileType = `video/${file.type.split("/")[1]}`;
-      else if (file.type.startsWith("image/")) fileType = `image/${file.type.split("/")[1]}`;
-      else if (
-        file.type === "text/plain" ||
-        file.type === "text/markdown" ||
-        file.type === "application/msword" ||
-        file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      ) {
-        // .txt, .md, .doc, .docx
-        const ext = file.name.split(".").pop()?.toLowerCase() || "txt";
-        fileType = `txt/${ext}`;
-      }
-
+     const fileType = getFileType(file);
+console.log(fileType);
       setUploadProgress(100);
       onUploadComplete(ipfsUrl, fileType, file.name);
       toast.success("File uploaded successfully!");

@@ -306,11 +306,11 @@ export function MetadataForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="music-track">Music track</Label>
+        <Label htmlFor="music-track">Token File</Label>
         {address ? (
           <FileSelectInput
             walletId={address}
-            fileExtensions={[".mp3", ".mp4"]}
+            fileExtensions={["!.json"]}
             onChange={(url) => {
               console.log("Our music track url", url);
               setMusicTrackUrl(url);

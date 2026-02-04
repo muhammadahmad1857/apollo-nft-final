@@ -26,6 +26,7 @@ import { getFileById } from "@/actions/files"; // <-- Our generic CRUD helper
 
 
 import type { FileModel as FileData } from "@/generated/prisma/models";
+import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 
 interface MetadataContent {
   name?: string;
@@ -433,58 +434,19 @@ export default function FileDetailPage() {
             </h2>
 
             <div className="space-y-4">
-              {mediaType === "image" && (
-                <div className="relative w-full rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800">
-                  <img
-                    src={gatewayUrl}
-                    alt={file.filename || "Image preview"}
-                    className="w-full h-auto object-contain max-h-[700px] mx-auto"
-                    loading="lazy"
-                  />
-                </div>
-              )}
-
-              {mediaType === "audio" && (
-                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6">
-                  <audio controls className="w-full" src={gatewayUrl}>
-                    Your browser does not support the audio element.
-                  </audio>
-                </div>
-              )}
-
-              {mediaType === "video" && (
-                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4">
-                  <video
-                    controls
-                    className="w-full rounded-lg max-h-[600px]"
-                    src={gatewayUrl}
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                </div>
-              )}
-
-              {(mediaType === "unknown" ||
-                (!isPotentialMediaFile(file.type) &&
-                  !isImageFile(file.type))) && (
-                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6 text-center">
-                  <FileText className="h-12 w-12 mx-auto text-zinc-400 mb-4" />
-                  <p className="text-zinc-600 dark:text-zinc-400">
-                    Preview not available for this file type ({file.type})
-                  </p>
-                  <Button
-                    variant="outline"
-                    className="mt-4 gap-2"
-                    onClick={() => window.open(gatewayUrl, "_blank")}
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Open in New Tab
-                  </Button>
-                </div>
-              )}
-            </div>
+            {file.ipfsUrl && (
+          <div className="px-4 py-2">
+            <UniversalMediaViewer
+              uri={file.ipfsUrl}
+              type={""} // If you have the type, pass it here, else UniversalMediaViewer will infer
+              gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
+              className="w-full"
+              style={{ maxHeight: 192 }}
+            />
+          </div>
+        )}
+</div>
           </motion.div>
-
           {/* File Information */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
