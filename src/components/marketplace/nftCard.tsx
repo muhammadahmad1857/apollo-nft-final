@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { Music, Play, Share, X } from "lucide-react";
@@ -125,71 +126,7 @@ const NFTCard = ({
     router.push(`/dashboard/token/${tokenId}/edit`);
   };
 
-  const [mediaType, setMediaType] = useState<string>("unknown");
-  const [showVideoModal, setShowVideoModal] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [realMedia, setRealMedia] = useState("");
-  // Detect media type
-  useEffect(() => {
-    if (!media) return;
-
-    const detect = async () => {
-      try {
-        // 1️⃣ Fetch metadata JSON
-        const res = await fetch(media);
-        const json = await res.json();
-
-        const actualMedia = json.media;
-        setRealMedia(actualMedia);
-
-        // 2️⃣ Try existing IPFS detection
-        let type = await getFileTypeByIPFS(actualMedia);
-
-        // 3️⃣ Fallback: HEAD request on real media
-        if (!type || type === "unknown") {
-          type = await detectFileTypeFromHEAD(actualMedia);
-        }
-
-        return type || "unknown";
-      } catch (e) {
-        console.error(e);
-        toast.error("Error detecting media type");
-        return "unknown";
-      }
-    };
-
-    detect().then(setMediaType);
-  }, [media]);
-  useEffect(() => {
-    if (!media) return;
-
-    const detect = async () => {
-      try {
-        // 1️⃣ Fetch metadata JSON
-        const res = await fetch(media);
-        const json = await res.json();
-
-        const actualMedia = json.media;
-        setRealMedia(actualMedia);
-
-        // 2️⃣ Try existing IPFS detection
-        let type = await getFileTypeByIPFS(actualMedia);
-
-        // 3️⃣ Fallback: HEAD request on real media
-        if (!type || type === "unknown") {
-          type = await detectFileTypeFromHEAD(actualMedia);
-        }
-
-        return type || "unknown";
-      } catch (e) {
-        console.error(e);
-        toast.error("Error detecting media type");
-        return "unknown";
-      }
-    };
-
-    detect().then(setMediaType);
-  }, [media]);
+  // Remove old mediaType, showVideoModal, showShareModal, realMedia, and useEffects
 
   const modalVariants = {
     hidden: { opacity: 0, scale: 0.92 },
@@ -214,7 +151,7 @@ const NFTCard = ({
           </div>
         )}
 
-        {/* Media preview */}
+        {/* Media preview (cover image) */}
         <div className="aspect-square relative bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
           {cover ? (
             <Image
@@ -230,6 +167,18 @@ const NFTCard = ({
             </div>
           )}
         </div>
+        {/* Media Preview (not cover) */}
+        {media && (
+          <div className="px-4 py-2">
+            <UniversalMediaViewer
+              uri={media}
+              type={""} // If you have the type, pass it here, else UniversalMediaViewer will infer
+              gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
+              className="w-full"
+              style={{ maxHeight: 192 }}
+            />
+          </div>
+        )}
 
         {/* Content */}
         <div className="p-5">
@@ -332,40 +281,7 @@ const NFTCard = ({
         </div>
       </motion.div>
 
-      {/* Video Modal */}
-      <AnimatePresence>
-        {showVideoModal && mediaType === ".mp4" && (
-          <motion.div
-            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-            variants={modalVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            onClick={() => setShowVideoModal(false)}
-          >
-            <div
-              className="relative w-full max-w-5xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                className="absolute -top-12 right-0 text-white p-3 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
-                onClick={() => setShowVideoModal(false)}
-              >
-                <X size={24} />
-              </button>
-              <video
-                controls
-                autoPlay
-                className="w-full rounded-xl shadow-2xl"
-                src={realMedia.replace(
-                  "ipfs://",
-                  `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`,
-                )}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Video modal removed, handled by UniversalMediaViewer */}
 
       {/* Share Modal */}
       <ShareModal

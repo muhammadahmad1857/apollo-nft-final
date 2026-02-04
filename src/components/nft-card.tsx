@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { CreateAuctionButton } from "./auction/createAuctionButton";
 import { useEffect, useState } from "react";
+import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 import { MarketplaceListing } from "./marketplace/editMarketplace"; // our modal component
 import {
   Dialog,
@@ -37,38 +38,7 @@ interface NFTCardProps {
 
 export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
   const router = useRouter();
-  const [mediaType, setMediaType] = useState<"audio" | "video" | "unknown">(
-    "unknown",
-  );
-  const [mediaUrl, setMediaUrl] = useState("");
-  const [showVideo, setShowVideo] = useState(false);
-
-  useEffect(() => {
-    if (!nft.tokenUri) return;
-
-    const detect = async () => {
-      try {
-        const res = await fetch(nft.tokenUri);
-        const json = await res.json();
-        const media = json.media;
-        if (!media) return;
-
-        const resolved = media.startsWith("ipfs://")
-          ? `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${media.replace("ipfs://", "")}`
-          : media;
-
-        setMediaUrl(resolved);
-
-        if (media.endsWith(".mp4")) setMediaType("video");
-        else if (media.endsWith(".mp3") || media.endsWith(".wav"))
-          setMediaType("audio");
-      } catch (e) {
-        console.error("Media detect failed", e);
-      }
-    };
-
-    detect();
-  }, [nft.tokenUri]);
+  // Remove old mediaType, mediaUrl, showVideo, and useEffect
 
   const handleShare = () => {
     if (!nft.minted) {
@@ -123,25 +93,16 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
             Listed
           </span>
         )}
-
-        {mediaType === "audio" && mediaUrl && (
-          <div className="px-4 py-2 bg-muted">
-            <audio controls className="w-full h-8">
-              <source src={mediaUrl} />
-            </audio>
-          </div>
-        )}
-
-        {mediaType === "video" && mediaUrl && (
+        {/* Media Preview (not cover) */}
+        {nft.tokenUri && (
           <div className="px-4 py-2">
-            <Button
-              variant="secondary"
-              size="sm"
+            <UniversalMediaViewer
+              uri={nft.tokenUri}
+              type={""} // If you have the type, pass it here, else UniversalMediaViewer will infer
+              gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="w-full"
-              onClick={() => setShowVideo(true)}
-            >
-              ▶ Play Video
-            </Button>
+              style={{ maxHeight: 192 }}
+            />
           </div>
         )}
       </div>
@@ -203,20 +164,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
         )}
       </div>
 
-      {showVideo && (
-        <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
-          onClick={() => setShowVideo(false)}
-        >
-          <video
-            controls
-            autoPlay
-            className="max-w-4xl w-full rounded-xl"
-            src={mediaUrl}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
+      {/* Video modal removed, handled by UniversalMediaViewer */}
     </Card>
   );
 }

@@ -1,330 +1,10 @@
-// "use client";
-
-// import { useState, useRef, useCallback } from "react";
-// import { motion, AnimatePresence } from "framer-motion";
-// import { Upload, CheckCircle2, Loader2, FileVideo, Music } from "lucide-react";
-// import { toast } from "sonner";
-// import Link from "next/link";
-
-// interface FileUploadProps {
-//   onUploadComplete: (
-//     ipfsUrl: string,
-//     fileType: string,
-//     fileName: string
-//   ) => void;
-//   uploadedFile?: {
-//     ipfsUrl: string;
-//     type: string;
-//     name: string;
-//   } | null;
-// }
-
-// export function FileUpload({
-//   onUploadComplete,
-//   uploadedFile,
-// }: FileUploadProps) {
-//   const [isDragging, setIsDragging] = useState(false);
-//   const [isUploading, setIsUploading] = useState(false);
-//   const [uploadProgress, setUploadProgress] = useState(0);
-//   const fileInputRef = useRef<HTMLInputElement>(null);
-
-//   // eslint-disable-next-line react-hooks/exhaustive-deps
-//   const acceptedTypes = [
-//     ".md", ".pdf", ".doc", ".docx", ".txt"
-//   ];
-//   // eslint-disable-next-line react-hooks/exhaustive-deps
-//   const uploadToPinata = async (file: File) => {
-//     try {
-//       setIsUploading(true);
-//       setUploadProgress(0);
-
-//       // Get signed JWT
-//       const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
-//       console.log("JWT", jwtRes);
-//       if (!jwtRes.ok) {
-//         throw new Error("Failed to get upload token");
-//       }
-//       const { JWT } = await jwtRes.json();
-//     setUploadProgress(33)
-//       const formData = new FormData();
-//       formData.append("file", file);
-//       formData.append("network","public")
-//       console.log("")
-//       setUploadProgress(50)
-//       // Upload to Pinata
-//       const uploadRes = await fetch(
-//         "https://api.pinata.cloud/pinning/pinFileToIPFS",
-//         {
-//           method: "POST",
-//           headers: {
-//             Authorization: `Bearer ${JWT}`,
-//           },
-//           body: formData,
-//         }
-//       );
-//       console.log("uploadRes", uploadRes);
-//       if (!uploadRes.ok) {
-//         const error = await uploadRes.text();
-//         throw new Error(error || "Upload failed");
-//       }
-//       setUploadProgress(77)
-//       const json = await uploadRes.json();
-//       console.log("uploadRes.json()", json);
-//       const ipfsHash = json.IpfsHash;
-//       const ipfsUrl = `ipfs://${ipfsHash}`;
-
-//       // Determine file type (audio/type, video/type, image/type, txt/type)
-//       let fileType = "other";
-//       if (file.type.startsWith("audio/")) fileType = `audio/${file.type.split("/")[1]}`;
-//       else if (file.type.startsWith("video/")) fileType = `video/${file.type.split("/")[1]}`;
-//       else if (file.type.startsWith("image/")) fileType = `image/${file.type.split("/")[1]}`;
-//       else if (
-//         file.type === "text/plain" ||
-//         file.type === "text/markdown" ||
-//         file.type === "application/msword" ||
-//         file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-//       ) {
-//         // .txt, .md, .doc, .docx
-//         const ext = file.name.split(".").pop()?.toLowerCase() || "txt";
-//         fileType = `txt/${ext}`;
-//       }
-
-//       setUploadProgress(100);
-//       onUploadComplete(ipfsUrl, fileType, file.name);
-//       toast.success("File uploaded successfully!");
-//     } catch (error) {
-//       console.log("Upload error:", error);
-//       toast.error(
-//         error instanceof Error ? error.message : "Failed to upload file"
-//       );
-//     } finally {
-//       setIsUploading(false);
-//       setUploadProgress(0);
-//     }
-//   };
-// // const uploadToPinata = async (file: File) => {
-// //   try {
-// //     setIsUploading(true);
-// //     setUploadProgress(0);
-
-// //     // 1️⃣ Get signed URL from your server
-// //     const signedRes = await fetch("/api/pinata/signed-upload-url", {
-// //       method: "POST",
-// //       headers: { "Content-Type": "application/json" },
-// //       body: JSON.stringify({ filename: file.name }),
-// //     });
-
-// //     if (!signedRes.ok) throw new Error("Failed to get signed URL");
-// //     const { data } = await signedRes.json();
-// //     setUploadProgress(33)
-// //     // 2️⃣ Prepare FormData for upload
-// //     const formData = new FormData();
-// //     // Object.entries(fields).forEach(([key, value]) => formData.append(key, value as string));
-// //     formData.append("file", file);
-// //     setUploadProgress(50)
-   
-
-// //     // 3️⃣ Upload directly to Pinata
-// //     const uploadRes = await fetch(data, { method: "POST", body: formData });
-// //     if (!uploadRes.ok) throw new Error("Pinata upload failed");
-// //     const uploadResJson =  await uploadRes.json()
-// //     console.log("upload response",uploadResJson)
-
-// //     const ipfsHash = uploadResJson?.data.cid; // usually included in fields
-// //     const ipfsUrl = `ipfs://${ipfsHash}`;
-// //     setUploadProgress(75)
-// //     await fetch("/api/pinata/upload", {
-// //   method: "POST",
-// //   headers: { "Content-Type": "application/json" },
-// //   body: JSON.stringify({ cid: ipfsHash }),
-// // });
-// //     console.log(ipfsHash,ipfsUrl)
-// //     setUploadProgress(100);
-// //     onUploadComplete(ipfsUrl, `.${file.name.split(".").pop()}`||"" , file.name);
-// //     toast.success("File uploaded successfully!");
-// //   } catch (err) {
-// //     console.error("Upload error:", err);
-// //     toast.error(err instanceof Error ? err.message : "Upload failed");
-// //   } finally {
-// //     setIsUploading(false);
-// //     setUploadProgress(0);
-// //   }
-// // };
-
-//   const handleFile = useCallback(
-//     (file: File) => {
-//       const fileExtension = file.name
-//         .toLowerCase()
-//         .slice(file.name.lastIndexOf("."));
-//       // Accept any video/*, audio/*, image/*, or .md, .pdf, .doc, .docx, .txt
-//       const isMedia = file.type.startsWith("video/") || file.type.startsWith("audio/") || file.type.startsWith("image/");
-//       if (!isMedia && !acceptedTypes.includes(fileExtension)) {
-//         toast.error("Please upload audio, video, image, markdown, pdf, word, or text files only (.md, .pdf, .doc, .docx, .txt, or any video/*, audio/*, image/*)");
-//         return;
-//       }
-
-//       if (file.size > 100 * 1024 * 1024) {
-//         toast.error("File size must be less than 100MB");
-//         return;
-//       }
-
-//       uploadToPinata(file);
-//     },
-//     [acceptedTypes, uploadToPinata]
-//   );
-
-//   const handleDrop = useCallback(
-//     (e: React.DragEvent<HTMLDivElement>) => {
-//       e.preventDefault();
-//       setIsDragging(false);
-
-//       const file = e.dataTransfer.files[0];
-//       if (file) {
-//         handleFile(file);
-//       }
-//     },
-//     [handleFile]
-//   );
-
-//   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-//     e.preventDefault();
-//     setIsDragging(true);
-//   }, []);
-
-//   const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-//     e.preventDefault();
-//     setIsDragging(false);
-//   }, []);
-
-//   const handleFileInput = useCallback(
-//     (e: React.ChangeEvent<HTMLInputElement>) => {
-//       const file = e.target.files?.[0];
-//       if (file) {
-//         handleFile(file);
-//       }
-//     },
-//     [handleFile]
-//   );
-
-//   return (
-//     <div className="space-y-6">
-//       <AnimatePresence mode="wait">
-//         {uploadedFile ? (
-//           <motion.div
-//             initial={{ opacity: 0, y: 10 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             exit={{ opacity: 0, y: -10 }}
-//             className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6"
-//           >
-//             <div className="flex items-start gap-4">
-//               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-500/10">
-//                 {uploadedFile.type.startsWith("video/") ? (
-//                   <FileVideo className="h-6 w-6 text-cyan-500" />
-//                 ) : uploadedFile.type.startsWith("audio/") ? (
-//                   <Music className="h-6 w-6 text-cyan-500" />
-//                 ) : uploadedFile.type.startsWith("image/") ? (
-//                   <img src={uploadedFile.ipfsUrl.replace("ipfs://", "https://ipfs.io/ipfs/")} alt="Uploaded" className="h-6 w-6 object-cover rounded" />
-//                 ) : uploadedFile.type.startsWith("txt/") ? (
-//                   <span className="h-6 w-6 flex items-center justify-center text-cyan-500 font-bold text-lg">TXT</span>
-//                 ) : null}
-//               </div>
-//               <div className="flex-1">
-//                 <div className="flex items-center gap-2 mb-2">
-//                   <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
-//                     {uploadedFile.name}
-//                   </h3>
-//                   <CheckCircle2 className="h-5 w-5 text-cyan-500" />
-//                 </div>
-//                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
-//                   Type: {uploadedFile.type} • Uploaded successfully
-//                 </p>
-//                 <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 font-mono">
-//                   {uploadedFile.ipfsUrl}
-//                 </p>
-//               </div>
-//             </div>
-//           </motion.div>
-//         ) : (
-//           <motion.div
-//             initial={{ opacity: 0 }}
-//             animate={{ opacity: 1 }}
-//             exit={{ opacity: 0 }}
-//             onDrop={handleDrop}
-//             onDragOver={handleDragOver}
-//             onDragLeave={handleDragLeave}
-//             onClick={() => fileInputRef.current?.click()}
-//             className={`
-//               relative cursor-pointer rounded-xl border-2 border-dashed p-12 text-center transition-all duration-300
-//               ${
-//                 isDragging
-//                   ? "border-cyan-500 bg-cyan-500/5 shadow-[0_0_20px_rgba(34,211,238,0.2)]"
-//                   : "border-zinc-300 dark:border-zinc-700 hover:border-cyan-500/50 hover:bg-zinc-50 dark:hover:bg-zinc-900"
-//               }
-//               ${isUploading ? "pointer-events-none opacity-50" : ""}
-//             `}
-//           >
-//             <input
-//               ref={fileInputRef}
-//               type="file"
-//               accept="audio/*,video/*,image/*,.md,.pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
-//               onChange={handleFileInput}
-//               className="hidden"
-//             />
-
-//             {isUploading ? (
-//               <div className="space-y-4">
-//                 <Loader2 className="mx-auto h-12 w-12 animate-spin text-cyan-500" />
-//                 <div>
-//                   <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-//                     Uploading...
-//                   </p>
-//                   <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-//                     <motion.div
-//                       className="h-full bg-cyan-500"
-//                       initial={{ width: "0%" }}
-//                       animate={{ width: `${uploadProgress}%` }}
-//                       transition={{ duration: 0.3 }}
-//                     />
-//                   </div>
-//                 </div>
-//               </div>
-//             ) : (
-//               <>
-//                 <Upload className="mx-auto h-12 w-12 text-zinc-400 dark:text-zinc-500" />
-//                 <div className="mt-4">
-//                   <p className="text-base font-medium text-zinc-900 dark:text-zinc-100">
-//                     Drag & drop your file here
-//                   </p>
-//                   <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-//                     or click to browse
-//                   </p>
-//                   <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500">
-//                     Accepted: Any audio/*, video/*, image/*, .md, .pdf, .doc, .docx, .txt
-//                   </p>
-//                 </div>
-//               </>
-//             )}
-//           </motion.div>
-//         )}
-//       </AnimatePresence>
-//                       <p className="text-sm">Already Have file? <Link href={'/dashboard/create/metadata'} className="text-cyan-400 underline hover:underline-offset-1">Create Metadata</Link></p>
-
-//     </div>
-//   );
-// }
-
 "use client";
 
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, CheckCircle2, Loader2, FileVideo, Music, ImageIcon, FileText } from "lucide-react";
+import { Upload, CheckCircle2, Loader2, FileVideo, Music } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
-import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile } from "@ffmpeg/util";
-
-// Global FFmpeg instance (reused across uploads)
-const ffmpeg = new FFmpeg();
 
 interface FileUploadProps {
   onUploadComplete: (
@@ -344,190 +24,188 @@ export function FileUpload({
   uploadedFile,
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const acceptedDocs = [".md", ".pdf", ".doc", ".docx", ".txt"];
-
-  const convertAndUpload = async (file: File) => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const acceptedTypes = [
+    ".md", ".pdf", ".doc", ".docx", ".txt"
+  ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const uploadToPinata = async (file: File) => {
     try {
-      setIsProcessing(true);
-      setProgress(0);
+      setIsUploading(true);
+      setUploadProgress(0);
 
-      const isAudio = file.type.startsWith("audio/");
-      const isVideo = file.type.startsWith("video/");
-      const isImage = file.type.startsWith("image/");
-      const isDoc = acceptedDocs.some(ext => file.name.toLowerCase().endsWith(ext));
-
-      let outputBlob: Blob;
-      let outputName: string;
-      let finalFileType: string;
-
-      // ────────────────────────────────────────────────
-      // Step 1: Load FFmpeg WASM if needed (only for audio/video)
-      // ────────────────────────────────────────────────
-      if (isAudio || isVideo) {
-        setProgress(5); // Starting
-        if (!ffmpeg.loaded) {
-          await ffmpeg.load({
-            coreURL: "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js",
-            // Use jsDelivr if unpkg is slow in PK: "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js"
-          });
-        }
-        setProgress(30); // WASM loaded
-
-        // Prepare input/output names
-        const ext = file.name.slice(file.name.lastIndexOf("."));
-        const inputName = `input${ext}`;
-        outputName = isAudio ? "output.mp3" : "output.mp4";
-
-        // Write file to virtual FS
-        await ffmpeg.writeFile(inputName, await fetchFile(file));
-
-        // ────────────────────────────────────────────────
-        // Convert
-        // ────────────────────────────────────────────────
-        let args: string[];
-        if (isAudio) {
-          args = ["-i", inputName, "-c:a", "libmp3lame", "-b:a", "128k", outputName];
-        } else {
-          args = ["-i", inputName, "-c", "copy", outputName]; // Fast remux to mp4
-          // For compression: add "-crf 23 -preset fast" instead of copy
-        }
-
-        const exitCode = await ffmpeg.exec(args);
-        if (exitCode !== 0) {
-          throw new Error("Conversion failed");
-        }
-const rawOutput = await ffmpeg.readFile(outputName);
-
-// Normalize to Uint8Array (handles Uint8Array | string safely)
-// let outputData: Uint8Array;
-
-// if (typeof rawOutput === "string") {
-//   // Very unlikely in your case (binary media file), but for completeness
-//   outputData = new TextEncoder().encode(rawOutput);
-// } else {
-//   // The normal case: already Uint8Array
-// outputData = rawOutput.slice();
-// }
-const outputData = new Uint8Array(rawOutput as Uint8Array);
-        outputBlob = new Blob([outputData], {
-          type: isAudio ? "audio/mp3" : "video/mp4",
-        });
-
-        finalFileType = isAudio ? "audio/mp3" : "video/mp4";
-
-        // Cleanup virtual FS
-        await ffmpeg.deleteFile(inputName).catch(() => {});
-        await ffmpeg.deleteFile(outputName).catch(() => {});
-
-        setProgress(70); // Converted
-      } else {
-        // Direct upload for images/docs
-        outputBlob = file;
-        outputName = file.name;
-        finalFileType = isImage
-          ? `image/${file.type.split("/")[1]}`
-          : `txt/${file.name.split(".").pop()?.toLowerCase() || "txt"}`;
-        setProgress(70);
-      }
-
-      // ────────────────────────────────────────────────
-      // Step 2: Upload to Pinata
-      // ────────────────────────────────────────────────
+      // Get signed JWT
       const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
-      if (!jwtRes.ok) throw new Error("Failed to get JWT");
-      const { JWT } = await jwtRes.json();
-
-      const formData = new FormData();
-      formData.append("file", outputBlob, outputName);
-      formData.append("network", "public"); // if needed
-
-      const uploadRes = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${JWT}` },
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        const err = await uploadRes.text();
-        throw new Error(err || "Pinata upload failed");
+      console.log("JWT", jwtRes);
+      if (!jwtRes.ok) {
+        throw new Error("Failed to get upload token");
       }
-
+      const { JWT } = await jwtRes.json();
+    setUploadProgress(33)
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("network","public")
+      console.log("")
+      setUploadProgress(50)
+      // Upload to Pinata
+      const uploadRes = await fetch(
+        "https://api.pinata.cloud/pinning/pinFileToIPFS",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${JWT}`,
+          },
+          body: formData,
+        }
+      );
+      console.log("uploadRes", uploadRes);
+      if (!uploadRes.ok) {
+        const error = await uploadRes.text();
+        throw new Error(error || "Upload failed");
+      }
+      setUploadProgress(77)
       const json = await uploadRes.json();
+      console.log("uploadRes.json()", json);
       const ipfsHash = json.IpfsHash;
       const ipfsUrl = `ipfs://${ipfsHash}`;
 
-      setProgress(100);
-      onUploadComplete(ipfsUrl, finalFileType, file.name);
-      toast.success("File processed & uploaded!");
-    } catch (err) {
-      console.error("Process error:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to process/upload");
+      // Determine file type (audio/type, video/type, image/type, txt/type)
+      let fileType = "other";
+      if (file.type.startsWith("audio/")) fileType = `audio/${file.type.split("/")[1]}`;
+      else if (file.type.startsWith("video/")) fileType = `video/${file.type.split("/")[1]}`;
+      else if (file.type.startsWith("image/")) fileType = `image/${file.type.split("/")[1]}`;
+      else if (
+        file.type === "text/plain" ||
+        file.type === "text/markdown" ||
+        file.type === "application/msword" ||
+        file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ) {
+        // .txt, .md, .doc, .docx
+        const ext = file.name.split(".").pop()?.toLowerCase() || "txt";
+        fileType = `txt/${ext}`;
+      }
+
+      setUploadProgress(100);
+      onUploadComplete(ipfsUrl, fileType, file.name);
+      toast.success("File uploaded successfully!");
+    } catch (error) {
+      console.log("Upload error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to upload file"
+      );
     } finally {
-      setIsProcessing(false);
-      setProgress(0);
+      setIsUploading(false);
+      setUploadProgress(0);
     }
   };
+// const uploadToPinata = async (file: File) => {
+//   try {
+//     setIsUploading(true);
+//     setUploadProgress(0);
+
+//     // 1️⃣ Get signed URL from your server
+//     const signedRes = await fetch("/api/pinata/signed-upload-url", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ filename: file.name }),
+//     });
+
+//     if (!signedRes.ok) throw new Error("Failed to get signed URL");
+//     const { data } = await signedRes.json();
+//     setUploadProgress(33)
+//     // 2️⃣ Prepare FormData for upload
+//     const formData = new FormData();
+//     // Object.entries(fields).forEach(([key, value]) => formData.append(key, value as string));
+//     formData.append("file", file);
+//     setUploadProgress(50)
+   
+
+//     // 3️⃣ Upload directly to Pinata
+//     const uploadRes = await fetch(data, { method: "POST", body: formData });
+//     if (!uploadRes.ok) throw new Error("Pinata upload failed");
+//     const uploadResJson =  await uploadRes.json()
+//     console.log("upload response",uploadResJson)
+
+//     const ipfsHash = uploadResJson?.data.cid; // usually included in fields
+//     const ipfsUrl = `ipfs://${ipfsHash}`;
+//     setUploadProgress(75)
+//     await fetch("/api/pinata/upload", {
+//   method: "POST",
+//   headers: { "Content-Type": "application/json" },
+//   body: JSON.stringify({ cid: ipfsHash }),
+// });
+//     console.log(ipfsHash,ipfsUrl)
+//     setUploadProgress(100);
+//     onUploadComplete(ipfsUrl, `.${file.name.split(".").pop()}`||"" , file.name);
+//     toast.success("File uploaded successfully!");
+//   } catch (err) {
+//     console.error("Upload error:", err);
+//     toast.error(err instanceof Error ? err.message : "Upload failed");
+//   } finally {
+//     setIsUploading(false);
+//     setUploadProgress(0);
+//   }
+// };
 
   const handleFile = useCallback(
     (file: File) => {
-      const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
-      const isMediaOrDoc =
-        file.type.startsWith("video/") ||
-        file.type.startsWith("audio/") ||
-        file.type.startsWith("image/") ||
-        acceptedDocs.includes(ext);
-
-      if (!isMediaOrDoc) {
-        toast.error("Only audio, video, image, .md/.pdf/.doc/.docx/.txt allowed");
+      const fileExtension = file.name
+        .toLowerCase()
+        .slice(file.name.lastIndexOf("."));
+      // Accept any video/*, audio/*, image/*, or .md, .pdf, .doc, .docx, .txt
+      const isMedia = file.type.startsWith("video/") || file.type.startsWith("audio/") || file.type.startsWith("image/");
+      if (!isMedia && !acceptedTypes.includes(fileExtension)) {
+        toast.error("Please upload audio, video, image, markdown, pdf, word, or text files only (.md, .pdf, .doc, .docx, .txt, or any video/*, audio/*, image/*)");
         return;
       }
 
       if (file.size > 100 * 1024 * 1024) {
-        toast.error("File size must be < 100MB");
+        toast.error("File size must be less than 100MB");
         return;
       }
 
-      convertAndUpload(file);
+      uploadToPinata(file);
     },
-    []
+    [acceptedTypes, uploadToPinata]
   );
 
-  // Drag & drop / click handlers (unchanged from your code)
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       setIsDragging(false);
+
       const file = e.dataTransfer.files[0];
-      if (file) handleFile(file);
+      if (file) {
+        handleFile(file);
+      }
     },
     [handleFile]
   );
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
-  };
+  }, []);
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
-  };
+  }, []);
 
   const handleFileInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (file) handleFile(file);
+      if (file) {
+        handleFile(file);
+      }
     },
     [handleFile]
   );
 
-  // ────────────────────────────────────────────────
-  // Render (your UI + minor tweaks for processing state)
-  // ────────────────────────────────────────────────
   return (
     <div className="space-y-6">
       <AnimatePresence mode="wait">
@@ -545,10 +223,10 @@ const outputData = new Uint8Array(rawOutput as Uint8Array);
                 ) : uploadedFile.type.startsWith("audio/") ? (
                   <Music className="h-6 w-6 text-cyan-500" />
                 ) : uploadedFile.type.startsWith("image/") ? (
-                  <ImageIcon className="h-6 w-6 text-cyan-500" />
-                ) : (
-                  <FileText className="h-6 w-6 text-cyan-500" />
-                )}
+                  <img src={uploadedFile.ipfsUrl.replace("ipfs://", "https://ipfs.io/ipfs/")} alt="Uploaded" className="h-6 w-6 object-cover rounded" />
+                ) : uploadedFile.type.startsWith("txt/") ? (
+                  <span className="h-6 w-6 flex items-center justify-center text-cyan-500 font-bold text-lg">TXT</span>
+                ) : null}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
@@ -560,7 +238,7 @@ const outputData = new Uint8Array(rawOutput as Uint8Array);
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
                   Type: {uploadedFile.type} • Uploaded successfully
                 </p>
-                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 font-mono break-all">
+                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 font-mono">
                   {uploadedFile.ipfsUrl}
                 </p>
               </div>
@@ -582,30 +260,30 @@ const outputData = new Uint8Array(rawOutput as Uint8Array);
                   ? "border-cyan-500 bg-cyan-500/5 shadow-[0_0_20px_rgba(34,211,238,0.2)]"
                   : "border-zinc-300 dark:border-zinc-700 hover:border-cyan-500/50 hover:bg-zinc-50 dark:hover:bg-zinc-900"
               }
-              ${isProcessing ? "pointer-events-none opacity-60" : ""}
+              ${isUploading ? "pointer-events-none opacity-50" : ""}
             `}
           >
             <input
               ref={fileInputRef}
               type="file"
-              accept="audio/*,video/*,image/*,.md,.pdf,.doc,.docx,.txt"
+              accept="audio/*,video/*,image/*,.md,.pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
               onChange={handleFileInput}
               className="hidden"
             />
 
-            {isProcessing ? (
+            {isUploading ? (
               <div className="space-y-4">
                 <Loader2 className="mx-auto h-12 w-12 animate-spin text-cyan-500" />
                 <div>
                   <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                    Processing & Uploading...
+                    Uploading...
                   </p>
                   <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
                     <motion.div
                       className="h-full bg-cyan-500"
                       initial={{ width: "0%" }}
-                      animate={{ width: `${progress}%` }}
-                      transition={{ duration: 0.4 }}
+                      animate={{ width: `${uploadProgress}%` }}
+                      transition={{ duration: 0.3 }}
                     />
                   </div>
                 </div>
@@ -621,7 +299,7 @@ const outputData = new Uint8Array(rawOutput as Uint8Array);
                     or click to browse
                   </p>
                   <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500">
-                    Accepted: audio/video/image + .md/.pdf/.doc/.docx/.txt
+                    Accepted: Any audio/*, video/*, image/*, .md, .pdf, .doc, .docx, .txt
                   </p>
                 </div>
               </>
@@ -629,12 +307,8 @@ const outputData = new Uint8Array(rawOutput as Uint8Array);
           </motion.div>
         )}
       </AnimatePresence>
-      <p className="text-sm text-center">
-        Already have file?{" "}
-        <Link href="/dashboard/create/metadata" className="text-cyan-400 underline hover:underline-offset-1">
-          Create Metadata
-        </Link>
-      </p>
+                      <p className="text-sm">Already Have file? <Link href={'/dashboard/create/metadata'} className="text-cyan-400 underline hover:underline-offset-1">Create Metadata</Link></p>
+
     </div>
   );
 }

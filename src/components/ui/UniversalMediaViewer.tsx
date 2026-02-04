@@ -35,9 +35,9 @@ export default function UniversalMediaViewer({
   const src = resolveIpfs(uri, gateway);
 
   // Helper for type detection
-  const isVideo = type.startsWith("video/") || src.endsWith(".mp4");
-  const isAudio = type.startsWith("audio/") || src.endsWith(".mp3");
-  const isImage = type.startsWith("image/") || [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"].some(ext => src.endsWith(ext));
+  const isVideo = type.startsWith("video/") || type===".mp4";
+  const isAudio = type.startsWith("audio/") || ["mp3", ".wav", ".ogg"].includes(type);
+  const isImage = type.startsWith("image/") || [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"].includes(type);
   const isTxt = type === "text/plain" || src.endsWith(".txt");
   const isPdf = type === "application/pdf" || src.endsWith(".pdf");
   const isWord = type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || src.endsWith(".docx");
