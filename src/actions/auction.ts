@@ -63,21 +63,22 @@ export async function getActiveAuctions(filters: {
   endingSoon?: boolean;
 }) {
   const now = new Date();
-
+  console.log("filters", filters);
+  console.log("now", now);
   return db.auction.findMany({
     where: {
       settled: false,
       startTime: { lte: now },
       endTime: { gt: now },
-      nft: {
-        title: filters.search
-          ? { contains: filters.search, mode: "insensitive" }
-          : undefined,
-      },
-      minBid: {
-        gte: filters.minPrice,
-        lte: filters.maxPrice,
-      },
+      // nft: {
+      //   title: filters.search
+      //     ? { contains: filters.search, mode: "insensitive" }
+      //     : undefined,
+      // },
+      // minBid: {
+      //   gte: filters.minPrice ?? undefined,
+      //   lte: filters.maxPrice ?? undefined,
+      // },
     },
     orderBy: filters.endingSoon
       ? { endTime: "asc" }

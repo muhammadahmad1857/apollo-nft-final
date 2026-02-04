@@ -21,6 +21,24 @@ import { ApproveAuctionButton } from "./ApproveButton";
 import { useUser } from "@/hooks/useUser";
 import { useNFT } from "@/hooks/useNft";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const presetDurations = [
+  { label: "1 hour", value: "1" },
+  { label: "6 hours", value: "6" },
+  { label: "24 hours", value: "24" },
+  { label: "3 days", value: "72" },
+  { label: "7 days", value: "168" },
+  { label: "Custom", value: "custom" },
+];
+
+
 interface CreateAuctionButtonProps {
   tokenId: bigint;
   nftId:number;
@@ -94,15 +112,7 @@ useEffect(() => {
 
       // 2️⃣ Wait for blockchain confirmation
       // Poll for receipt
-      let receiptConfirmed = false;
-      while (!receiptConfirmed) {
-        if (isReceiptSuccess) {
-          receiptConfirmed = true;
-          break;
-        }
-        if (receiptError) throw receiptError;
-        await new Promise((r) => setTimeout(r, 1000)); // 1 sec
-      }
+    
 
     
       setOpen(false);
@@ -115,6 +125,14 @@ useEffect(() => {
       setTxHash(undefined);
     }
   };
+  useEffect(() => {
+  if (isReceiptSuccess) {
+    toast.success("Auction created successfully 🎉");
+    setOpen(false);
+    setTxHash(undefined);
+    router.push(`/auction/${Number(nftId)}`);
+  }
+}, [isReceiptSuccess]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -150,14 +168,33 @@ useEffect(() => {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label>Duration (hours)</Label>
-              <Input
-                type="number"
-                placeholder="24"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-              />
-            </div>
+  <Label>Duration</Label>
+
+  <Select
+    value={duration}
+    onValueChange={(val:any) => setDuration(val)}
+  >
+    <SelectTrigger>
+      <SelectValue placeholder="Select auction duration" />
+    </SelectTrigger>
+    <SelectContent>
+      {presetDurations.map((d) => (
+        <SelectItem key={d.value} value={d.value}>
+          {d.label}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+
+  {duration === "custom" && (
+    <Input
+      type="number"
+      placeholder="Enter hours..."
+      onChange={(e) => setDuration(e.target.value)}
+    />
+  )}
+</div>
+
            { !disabled?<Button
               onClick={handleCreateAuction}
               disabled={isTxPending || !minBid || !duration}
