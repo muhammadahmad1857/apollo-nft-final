@@ -197,7 +197,6 @@ const NFTCard = ({
           <div className="px-4 py-2">
             <UniversalMediaViewer
               uri={media}
-              type={""} // If you have the type, pass it here, else UniversalMediaViewer will infer
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="w-full"
               style={{ maxHeight: 192 }}

@@ -5,10 +5,10 @@ import { useEffect, useState } from "react";
 import { Play, X, FileText, File } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { getFileTypeByIPFS } from "@/actions/files";
 
 interface UniversalMediaViewerProps {
   uri: string; // ipfs://... or https://...
-  type: string; // e.g. video/mp4, audio/mp3, image/png, txt/md, doc/docx, pdf, etc
   gateway?: string; // e.g. gateway.pinata.cloud
   className?: string;
   style?: React.CSSProperties;
@@ -23,10 +23,11 @@ function resolveIpfs(uri: string, gateway = process.env.NEXT_PUBLIC_GATEWAY_URL)
 }
 
 // Helper to detect type
-function detectFileType(type: string, name: string): string {
+async function detectFileType(uri:string): Promise<string> {
+    const { type, name } = await getFileTypeByIPFS(uri);
   const ext = name.split(".").pop()?.toLowerCase() || "";
   const mime = type.toLowerCase();
-
+  console.log("Mime",mime,"Ext",ext);
   if (mime.startsWith("audio/") || ["mp3", "wav", "ogg"].includes(ext)) return `audio/${ext || mime.split("/")[1]}`;
   if (mime.startsWith("video/") || ["mp4", "mov", "webm"].includes(ext)) return `video/${ext || mime.split("/")[1]}`;
   if (mime.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext)) return `image/${ext || mime.split("/")[1]}`;
@@ -41,7 +42,6 @@ function detectFileType(type: string, name: string): string {
 
 export default function UniversalMediaViewer({
   uri,
-  type,
   gateway,
   className = "",
   style = {},
@@ -49,8 +49,15 @@ export default function UniversalMediaViewer({
   const [showModal, setShowModal] = useState(false);
   const [text, setText] = useState<string>("");
   const src = resolveIpfs(uri, gateway);
+const [fileType, setFileType] = useState<string>("other");
 
-  const fileType = detectFileType(type, uri);
+useEffect(() => {
+  detectFileType(uri)
+    .then((detected) => {
+      setFileType(detected);
+    })
+    .catch(() => setFileType("other"));
+}, [uri]);
 
   const isVideo = fileType.startsWith("video/");
   const isAudio = fileType.startsWith("audio/");
@@ -59,7 +66,7 @@ export default function UniversalMediaViewer({
   const isPdf = fileType === "pdf";
   const isDoc = fileType === "doc/doc";
   const isDocx = fileType === "doc/docx";
-
+    console.log("UniversalMediaViewer detected type:", fileType);
   // Load text if needed
   useEffect(() => {
     if (isTxt && src) {

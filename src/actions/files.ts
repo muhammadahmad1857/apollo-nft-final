@@ -48,15 +48,15 @@ export async function getFileById(
   });
 }
 
-export async function getFileTypeByIPFS(ipfs: string): Promise<string | null> {
+export async function getFileTypeByIPFS(ipfs: string): Promise<{type: string, name: string}> {
   console.log("IPFS we are getting",ipfs)
   const file = await db.file.findFirst({
     where: { ipfsUrl: ipfs },
-    select: { type: true }, // only fetch the "type" field
+    select: { type: true,filename:true}, // only fetch the "type" field
   });
   console.log("Result we're getting",file)
 
-  return file?.type || null;
+  return {type: file?.type || "unknown", name: file?.filename || "unknown"};
 }
 
 
