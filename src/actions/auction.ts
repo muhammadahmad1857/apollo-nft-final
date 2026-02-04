@@ -70,15 +70,15 @@ export async function getActiveAuctions(filters: {
       settled: false,
       startTime: { lte: now },
       endTime: { gt: now },
-      // nft: {
-      //   title: filters.search
-      //     ? { contains: filters.search, mode: "insensitive" }
-      //     : undefined,
-      // },
-      // minBid: {
-      //   gte: filters.minPrice ?? undefined,
-      //   lte: filters.maxPrice ?? undefined,
-      // },
+      nft: {
+        title: filters.search
+          ? { contains: filters.search, mode: "insensitive" }
+          : undefined,
+      },
+      minBid: {
+        gte: filters.minPrice ?? undefined,
+        lte: filters.maxPrice ?? undefined,
+      },
     },
     orderBy: filters.endingSoon
       ? { endTime: "asc" }
