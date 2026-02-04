@@ -311,8 +311,8 @@ const NFTCard = ({
               mintPrice && (
                 <button
                   onClick={() => setShowBuyConfirm(true)}
-                  className="ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors"
-                  disabled={isPending}
+                  className="ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors disabled:pointer-events-none"
+                  disabled={isPending || address === ownerAddress}
                 >
                   {address === ownerAddress ? isPending ? "Buying..." : "Buy":"Sold"}
                 </button>
