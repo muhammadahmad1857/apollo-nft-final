@@ -12,7 +12,7 @@ export default function AuctionGrid({ auctions }: { auctions: any[] }) {
   if (!auctions.length) {
     return (
       <p className="text-muted-foreground text-center py-10">
-        No active auctions found
+        No active auctions found. Try removing filters
       </p>
     );
   }
@@ -67,7 +67,6 @@ export default function AuctionGrid({ auctions }: { auctions: any[] }) {
                 {/* View Auction Button */}
                 <Button
                   size="sm"
-                  variant="outline"
                   className="pointer-events-none group-hover:bg-primary group-hover:text-primary-foreground transition"
                 >
                   View Auction

@@ -188,6 +188,7 @@ export function usePlaceBid() {
         });
       } catch (err) {
         console.error(err);
+        toast.error(String(err))
         toast.error("Bid confirmed on-chain but DB update failed", {
           id: toastIdRef.current ?? undefined,
         });

@@ -61,6 +61,7 @@ export function CreateAuctionButton({
   const [duration, setDuration] = useState(""); // hours
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
   const toastIdRef = useRef<string | number | null>(null);
+const [customDuration, setCustomDuration] = useState(""); // stores number typed in input
 
   const { settleAuction, isPending: isSettlePending } = useSettleAuction();
 
@@ -139,7 +140,7 @@ export function CreateAuctionButton({
     if (!minBid || !duration) return toast.error("Fill all fields");
 
     try {
-      const durationSec = BigInt(Number(duration) * 3600);
+      const durationSec = BigInt(Number(duration === "custom" ? customDuration : duration) * 3600);
 
       const tx = await createAuctionOnChain(tokenId, durationSec, minBid, user?.id || 0, nftId);
       setTxHash(tx);
@@ -208,7 +209,16 @@ export function CreateAuctionButton({
 
               <Select value={duration} onValueChange={(val: any) => setDuration(val)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select auction duration" />
+                 <SelectValue
+  placeholder={
+    duration === "custom"
+      ? (customDuration ? `${customDuration} hours` : "Custom")
+      : "Select auction duration"
+  }
+/>
+
+            
+    
                 </SelectTrigger>
                 <SelectContent>
                   {presetDurations.map((d) => (
@@ -223,7 +233,7 @@ export function CreateAuctionButton({
                 <Input
                   type="number"
                   placeholder="Enter hours..."
-                  onChange={(e) => setDuration(e.target.value)}
+    onChange={(e) => setCustomDuration(e.target.value)}
                 />
               )}
             </div>
