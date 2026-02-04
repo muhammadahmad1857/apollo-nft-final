@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Music, Play, X } from "lucide-react";
+import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { PinataJSON } from "@/types";
@@ -36,45 +37,7 @@ export function AuctionDetails({
   const ended = new Date() >= new Date(auction.endTime);
   const highestBid = auction.highestBid || auction.minBid;
 
-  const [mediaType, setMediaType] = useState<
-    "video" | "audio" | "image" | "unknown"
-  >("unknown");
-  const [mediaUrl, setMediaUrl] = useState<string>("");
-  const [showFullScreen, setShowFullScreen] = useState(false);
-
-  useEffect(() => {
-    const detectMedia = async () => {
-      if (!auction.nft.tokenUri) return;
-
-      try {
-        const res = await fetch(
-          auction.nft.tokenUri.replace(
-            "ipfs://",
-            `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`,
-          ),
-        );
-        const metadata: PinataJSON = await res.json();
-        const media = metadata.media;
-
-        setMediaUrl(
-          media.startsWith("ipfs://")
-            ? `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${media.replace("ipfs://", "")}`
-            : media,
-        );
-
-        const type = await getFileType(
-          `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${media.replace("ipfs://", "")}`,
-        );
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setMediaType(type as any);
-      } catch (err) {
-        console.error("Failed to load media from tokenUri", err);
-        toast.error("Failed to load NFT media");
-      }
-    };
-
-    detectMedia();
-  }, [auction.nft.tokenUri]);
+  // Remove old mediaType, mediaUrl, showFullScreen, and useEffect
 
   const modalVariants = {
     hidden: { opacity: 0, scale: 0.92 },
@@ -151,28 +114,15 @@ export function AuctionDetails({
           </div>
 
           {/* Media Preview */}
-          {mediaType !== "unknown" && mediaUrl && (
+          {auction.nft.tokenUri && (
             <div className="mt-6">
-              {mediaType === "video" ? (
-                <div className="relative group cursor-pointer">
-                  <video
-                    src={mediaUrl}
-                    controls
-                    className="w-full max-h-96 rounded-xl shadow-lg object-contain"
-                  />
-                  <button
-                    className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition"
-                    onClick={() => setShowFullScreen(true)}
-                  >
-                    <Play size={20} />
-                  </button>
-                </div>
-              ) : mediaType === "audio" ? (
-                <audio controls className="w-full mt-2">
-                  <source src={mediaUrl} />
-                  Your browser does not support the audio element.
-                </audio>
-              ) : null}
+              <UniversalMediaViewer
+                uri={auction.nft.tokenUri}
+                type={""} // If you have the type, pass it here, else UniversalMediaViewer will infer
+                gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
+                className="w-full"
+                style={{ maxHeight: 384 }}
+              />
             </div>
           )}
         </div>
@@ -189,37 +139,7 @@ export function AuctionDetails({
         )}
       </div>
 
-      {/* Fullscreen Video Modal */}
-      <AnimatePresence>
-        {showFullScreen && mediaType === "video" && (
-          <motion.div
-            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-            variants={modalVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            onClick={() => setShowFullScreen(false)}
-          >
-            <div
-              className="relative w-full h-full max-w-7xl max-h-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                className="absolute top-4 right-4 text-white p-3 bg-black/50 rounded-full hover:bg-black/70 transition"
-                onClick={() => setShowFullScreen(false)}
-              >
-                <X size={24} />
-              </button>
-              <video
-                src={mediaUrl}
-                controls
-                autoPlay
-                className="w-full h-full rounded-xl shadow-2xl object-contain"
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Fullscreen Video Modal removed, handled by UniversalMediaViewer */}
     </div>
   );
 }
