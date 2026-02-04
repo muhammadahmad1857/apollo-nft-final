@@ -113,8 +113,7 @@ export default function UploadPage() {
                 Upload File
               </h1>
               <p className="text-zinc-500 dark:text-zinc-400">
-                Upload your music or video file to Pinata and save it to the
-                database
+                Upload your <span className="font-medium">music, video, or image</span> file to Pinata and save it to the database
               </p>
               <motion.div
                 initial={{ width: 0 }}

@@ -114,7 +114,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
             className="w-full h-48 object-cover"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-zinc-400">
+          <div className=" size-48 flex items-center justify-center text-zinc-400">
             <Music size={80} strokeWidth={1} />
           </div>
         )}
