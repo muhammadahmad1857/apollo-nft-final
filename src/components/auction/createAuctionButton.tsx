@@ -16,10 +16,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { useCreateAuction } from "@/hooks/useAuction";
-import { createAuction as createAuctionInDB } from "@/actions/auction";
 import { ApproveAuctionButton } from "./ApproveButton";
 import { useUser } from "@/hooks/useUser";
-import { useNFT } from "@/hooks/useNft";
+import { useSettleAuction } from "@/hooks/useAuction";
+import { getAuctionByNFT } from "@/actions/auction"; // your Prisma fetch
 
 import {
   Select,
@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AuctionModel, BidModel, NFTModel, UserModel } from "@/generated/prisma/models";
 
 const presetDurations = [
   { label: "1 hour", value: "1" },
@@ -38,49 +39,81 @@ const presetDurations = [
   { label: "Custom", value: "custom" },
 ];
 
-
 interface CreateAuctionButtonProps {
   tokenId: bigint;
-  nftId:number;
-  approvedAuction:boolean
-  disabled?: boolean;
+  nftId: number;
+  approvedAuction: boolean;
 }
 
-export function CreateAuctionButton({ tokenId, disabled = false,nftId,approvedAuction }: CreateAuctionButtonProps) {
+export function CreateAuctionButton({
+  tokenId,
+  nftId,
+  approvedAuction,
+}: CreateAuctionButtonProps) {
   const { address } = useAccount();
-  const { data: user, refetch, isLoading: isUserLoading } = useUser(address || "");
-  const { createAuction: createAuctionOnChain, isPending: isTxPending } = useCreateAuction();
+  const { data: user, isLoading: isUserLoading } = useUser(address || "");
+  const { createAuction: createAuctionOnChain, isPending: isTxPending } =
+    useCreateAuction();
   const [isApproved, setIsApproved] = useState(approvedAuction);
   const router = useRouter();
-
   const [open, setOpen] = useState(false);
   const [minBid, setMinBid] = useState("");
   const [duration, setDuration] = useState(""); // hours
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
   const toastIdRef = useRef<string | number | null>(null);
 
+  const { settleAuction, isPending: isSettlePending } = useSettleAuction();
+
+  // Auction fetched from DB
+  const [auction, setAuction] = useState<(AuctionModel & {
+      seller: UserModel;
+      nft: NFTModel;
+      highestBidder: UserModel | null;
+      bids: BidModel[];
+    })
+  | null>(null);
+  const [auctionStatus, setAuctionStatus] = useState<"notStarted" | "ongoing" | "ended">(
+    "notStarted"
+  );
+
+  // fetch auction
+  useEffect(() => {
+    const fetchAuction = async () => {
+      try {
+        const data = await getAuctionByNFT(nftId);
+        if (data) setAuction(data);
+
+        if (data) {
+          const now = new Date();
+          const start = new Date(data.startTime);
+          const end = new Date(data.endTime);
+
+          if (now < start) setAuctionStatus("notStarted");
+          else if (now >= start && now <= end) setAuctionStatus("ongoing");
+          else setAuctionStatus("ended");
+        } else {
+          setAuctionStatus("notStarted");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to fetch auction data");
+      }
+    };
+
+    fetchAuction();
+  }, [nftId]);
+
+  useEffect(() => {
+    setIsApproved(approvedAuction);
+  }, [approvedAuction]);
+
+  // Toast lifecycle for transaction confirmation
   const {
-    data: receipt,
     isSuccess: isReceiptSuccess,
     isLoading: isReceiptLoading,
     error: receiptError,
-  } = useWaitForTransactionReceipt({
-    hash: txHash,
-  });
+  } = useWaitForTransactionReceipt({ hash: txHash });
 
-
-useEffect(() => {
-  setIsApproved(approvedAuction);
-}, [approvedAuction]);
-
-  // Show error if user fetch failed
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      toast.error("Something went wrong while fetching user.");
-    }
-  }, [user, isUserLoading]);
-
-  // Toast lifecycle for transaction confirmation
   useEffect(() => {
     if (txHash && isReceiptLoading && !toastIdRef.current) {
       toastIdRef.current = toast.loading("Waiting for blockchain confirmation...");
@@ -89,6 +122,9 @@ useEffect(() => {
     if (isReceiptSuccess && toastIdRef.current) {
       toast.success("Transaction confirmed on chain ✅", { id: toastIdRef.current });
       toastIdRef.current = null;
+      setTxHash(undefined);
+      setOpen(false);
+      router.push(`/auction/${nftId}`);
     }
 
     if (receiptError && toastIdRef.current) {
@@ -96,7 +132,7 @@ useEffect(() => {
       toastIdRef.current = null;
       setTxHash(undefined);
     }
-  }, [isReceiptLoading, isReceiptSuccess, receiptError, txHash]);
+  }, [isReceiptLoading, isReceiptSuccess, receiptError, txHash, router, nftId]);
 
   const handleCreateAuction = async () => {
     if (!address) return toast.error("Connect your wallet first");
@@ -105,40 +141,41 @@ useEffect(() => {
     try {
       const durationSec = BigInt(Number(duration) * 3600);
 
-      // 1️⃣ Call smart contract
-      const tx = await createAuctionOnChain(tokenId, durationSec, minBid,user?.id||0,nftId);
+      const tx = await createAuctionOnChain(tokenId, durationSec, minBid, user?.id || 0, nftId);
       setTxHash(tx);
       toast.info("Transaction sent! Waiting for confirmation...");
-
-      // 2️⃣ Wait for blockchain confirmation
-      // Poll for receipt
-    
-
-    
-      setOpen(false);
-      setTxHash(undefined);
-
-      // 4️⃣ Redirect to auction page
     } catch (err: any) {
       console.error(err);
       toast.error(err?.message || "Failed to create auction");
-      setTxHash(undefined);
     }
   };
-  useEffect(() => {
-  if (isReceiptSuccess) {
-    toast.success("Auction created successfully 🎉");
-    setOpen(false);
-    setTxHash(undefined);
-    router.push(`/auction/${Number(nftId)}`);
-  }
-}, [isReceiptSuccess]);
 
+  // Decide button to render
+  if (auction) {
+    // Auction exists → show view or settle
+    if (auctionStatus === "ongoing") {
+      return (
+        <Button onClick={() => router.push(`/auction/${auction.id}`)}>View Auction</Button>
+      );
+    } else if (auctionStatus === "ended") {
+      return (
+        <Button
+          onClick={() => settleAuction(BigInt(tokenId), auction.id, auction.highestBidder?.id ?? null)}
+          disabled={isSettlePending}
+        >
+          {isSettlePending ? "Settling..." : "Settle Auction"}
+        </Button>
+      );
+    }
+  }
+
+  // No auction → show create auction dialog
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button disabled={disabled}>Create Auction</Button>
+        <Button disabled={!user}>Create Auction</Button>
       </DialogTrigger>
+
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Create Auction</DialogTitle>
@@ -147,15 +184,14 @@ useEffect(() => {
         {!user ? (
           <p>Loading user...</p>
         ) : !isApproved ? (
-          <ApproveAuctionButton 
-  tokenId={Number(tokenId)} 
-  nftId={nftId} 
-  onSuccess={() => {
-    toast.success("NFT approved for auction ✅");
-    setIsApproved(true); // 🔥 instantly update UI
-  }} 
-/>
-
+          <ApproveAuctionButton
+            tokenId={Number(tokenId)}
+            nftId={nftId}
+            onSuccess={() => {
+              toast.success("NFT approved for auction ✅");
+              setIsApproved(true);
+            }}
+          />
         ) : (
           <div className="space-y-4 mt-2">
             <div className="flex flex-col gap-2">
@@ -168,47 +204,37 @@ useEffect(() => {
               />
             </div>
             <div className="flex flex-col gap-2">
-  <Label>Duration</Label>
+              <Label>Duration</Label>
 
-  <Select
-    value={duration}
-    onValueChange={(val:any) => setDuration(val)}
-  >
-    <SelectTrigger>
-      <SelectValue placeholder="Select auction duration" />
-    </SelectTrigger>
-    <SelectContent>
-      {presetDurations.map((d) => (
-        <SelectItem key={d.value} value={d.value}>
-          {d.label}
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
+              <Select value={duration} onValueChange={(val: any) => setDuration(val)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select auction duration" />
+                </SelectTrigger>
+                <SelectContent>
+                  {presetDurations.map((d) => (
+                    <SelectItem key={d.value} value={d.value}>
+                      {d.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-  {duration === "custom" && (
-    <Input
-      type="number"
-      placeholder="Enter hours..."
-      onChange={(e) => setDuration(e.target.value)}
-    />
-  )}
-</div>
+              {duration === "custom" && (
+                <Input
+                  type="number"
+                  placeholder="Enter hours..."
+                  onChange={(e) => setDuration(e.target.value)}
+                />
+              )}
+            </div>
 
-           { !disabled?<Button
+            <Button
               onClick={handleCreateAuction}
               disabled={isTxPending || !minBid || !duration}
               className="w-full"
             >
-              {isTxPending ? "Creating..." :  "Create Auction"}
+              {isTxPending ? "Creating..." : "Create Auction"}
             </Button>
-            :
-            <Button
-              onClick={()=>router.push(`/auction/${Number(nftId)}`)}
-              className="w-full"
-            >
-              View Auction
-            </Button>}
           </div>
         )}
       </DialogContent>

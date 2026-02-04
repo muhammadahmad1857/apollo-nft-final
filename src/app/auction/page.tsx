@@ -1,24 +1,36 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { getActiveAuctions } from "@/actions/auction";
 import AuctionFilters from "@/components/auction/AuctionFilters";
 import AuctionGrid from "@/components/auction/AuctionGrid";
+import { AuctionModel, BidModel, NFTModel, UserModel } from "@/generated/prisma/models";
 
-export default async function AuctionsPage({
-  searchParams,
-}: {
-  searchParams: {
-    q?: string;
-    min?: string;
-    max?: string;
-    endingSoon?: string;
-  };
-}) {
-  const auctions = await getActiveAuctions({
-    search: searchParams.q,
-    minPrice: searchParams.min ? Number(searchParams.min) : undefined,
-    maxPrice: searchParams.max ? Number(searchParams.max) : undefined,
-    endingSoon: searchParams.endingSoon === "true",
-  });
-  console.log(auctions);
+export default function AuctionsPage() {
+  const searchParams = useSearchParams();
+  const [auctions, setAuctions] = useState<(AuctionModel & {
+      seller: UserModel;
+      nft: NFTModel;
+      highestBidder: UserModel | null;
+    })[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAuctions = async () => {
+      setLoading(true);
+      const data = await getActiveAuctions({
+        search: searchParams.get("q") || undefined,
+        minPrice: searchParams.get("min") ? Number(searchParams.get("min")) : undefined,
+        maxPrice: searchParams.get("max") ? Number(searchParams.get("max")) : undefined,
+        endingSoon: searchParams.get("endingSoon") === "true",
+      });
+      setAuctions(data);
+      setLoading(false);
+    };
+
+    fetchAuctions();
+  }, [searchParams.toString()]); // re-run whenever URL changes
 
   return (
     <div className="container mx-auto pt-24 py-20 space-y-6">
@@ -28,7 +40,12 @@ export default async function AuctionsPage({
       </div>
 
       <AuctionFilters />
-      <AuctionGrid auctions={auctions} />
+
+      {loading ? (
+        <p>Loading auctions...</p>
+      ) : (
+        <AuctionGrid auctions={auctions} />
+      )}
     </div>
   );
 }

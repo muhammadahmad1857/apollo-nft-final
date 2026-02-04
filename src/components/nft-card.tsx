@@ -172,7 +172,6 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
 
             {!nft.isMarketApproved ? (
               <CreateAuctionButton
-                disabled={nft.isDisabled}
                 tokenId={BigInt(nft.tokenId)}
                 approvedAuction={nft.isApproved}
                 nftId={nft.id}
