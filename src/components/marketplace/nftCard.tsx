@@ -96,6 +96,7 @@ const NFTCard = ({
   const { data: user } = useUser(address);
   const [showBuyConfirm, setShowBuyConfirm] = useState(false);
   const [isProcessingBuy, setIsProcessingBuy] = useState(false);
+  const [showShareModal,setShowShareModal] = useState(false)
   const now = new Date();
   const isAuctionActive =
     auction &&
@@ -167,18 +168,7 @@ const NFTCard = ({
             </div>
           )}
         </div>
-        {/* Media Preview (not cover) */}
-        {media && (
-          <div className="px-4 py-2">
-            <UniversalMediaViewer
-              uri={media}
-              type={""} // If you have the type, pass it here, else UniversalMediaViewer will infer
-              gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
-              className="w-full"
-              style={{ maxHeight: 192 }}
-            />
-          </div>
-        )}
+        
 
         {/* Content */}
         <div className="p-5">
@@ -202,33 +192,18 @@ const NFTCard = ({
             </p>
           )}
 
-          {/* Media player / play button */}
-          {realMedia && mediaType !== "unknown" && mediaType !== ".json" ? (
-            mediaType === ".wav" || mediaType === ".mp3" ? (
-              <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-lg p-3 mb-4">
-                <audio
-                  controls
-                  className="w-full h-9"
-                  controlsList="nodownload"
-                >
-                  <source src={media} type="audio/mpeg" />
-                </audio>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowVideoModal(true)}
-                className="w-full py-3.5 bg-linear-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-all mb-4 shadow-sm hover:shadow-md"
-              >
-                <Play size={18} fill="white" />
-                Play Video
-              </button>
-            )
-          ) : (
-            <p className="text-xs text-center text-zinc-500 italic mb-4">
-              No playable media
-            </p>
-          )}
-
+          {/* Media Preview (not cover) */}
+        {media && (
+          <div className="px-4 py-2">
+            <UniversalMediaViewer
+              uri={media}
+              type={""} // If you have the type, pass it here, else UniversalMediaViewer will infer
+              gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
+              className="w-full"
+              style={{ maxHeight: 192 }}
+            />
+          </div>
+        )}
           {/* Actions */}
           <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
             <LikeButton userId={user?.id || 0} tokenId={tokenId} />
