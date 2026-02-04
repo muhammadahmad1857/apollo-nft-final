@@ -114,6 +114,7 @@ const NFTCard = ({
       }
       toast.success("NFT purchased successfully!");
       router.refresh();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       console.error("error in buying", e);
       toast.error(e?.message || "Failed to purchase NFT.");

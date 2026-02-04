@@ -32,6 +32,7 @@ export function CreateAuctionButton({ tokenId, disabled = false,nftId,approvedAu
   const { address } = useAccount();
   const { data: user, refetch, isLoading: isUserLoading } = useUser(address || "");
   const { createAuction: createAuctionOnChain, isPending: isTxPending } = useCreateAuction();
+  const [isApproved, setIsApproved] = useState(approvedAuction);
   const router = useRouter();
 
   const [open, setOpen] = useState(false);
@@ -48,6 +49,11 @@ export function CreateAuctionButton({ tokenId, disabled = false,nftId,approvedAu
   } = useWaitForTransactionReceipt({
     hash: txHash,
   });
+
+
+useEffect(() => {
+  setIsApproved(approvedAuction);
+}, [approvedAuction]);
 
   // Show error if user fetch failed
   useEffect(() => {
@@ -122,8 +128,16 @@ export function CreateAuctionButton({ tokenId, disabled = false,nftId,approvedAu
 
         {!user ? (
           <p>Loading user...</p>
-        ) : !approvedAuction ? (
-          <ApproveAuctionButton tokenId={Number(tokenId)} nftId={nftId} onSuccess={() => router.refresh()} />
+        ) : !isApproved ? (
+          <ApproveAuctionButton 
+  tokenId={Number(tokenId)} 
+  nftId={nftId} 
+  onSuccess={() => {
+    toast.success("NFT approved for auction ✅");
+    setIsApproved(true); // 🔥 instantly update UI
+  }} 
+/>
+
         ) : (
           <div className="space-y-4 mt-2">
             <div className="flex flex-col gap-2">
