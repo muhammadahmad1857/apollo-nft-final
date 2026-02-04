@@ -7,11 +7,11 @@ import FileSelectInput from "@/components/ui/FileSelectInput";
 import { Button } from "@/components/ui/button";
 import { useMintContract } from "@/hooks/useMint";
 import Image from "next/image";
-import { nftABIArray, nftAddress } from "@/lib/wagmi/contracts";
 import { SparklesIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import MintSuccessDialog from "@/components/MintSuccess";
 import { toast } from "sonner";
+import { saveRoyalty, removeRoyalty } from "@/lib/royaltySessionStorage";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 
@@ -82,6 +82,8 @@ export default function MintSingleNFTPage() {
 
       if (success) {
         setShowSuccess(true);
+        removeRoyalty("SINGLE"); // remove after successful mint
+
       }
     } finally {
       // ✅ ALWAYS stop loader (success OR error)
@@ -138,8 +140,11 @@ export default function MintSingleNFTPage() {
                 max={1000}
                 step={10}
                 value={royaltyBps}
-                onChange={(e) => setRoyaltyBps(Number(e.target.value))}
-                className="w-full accent-cyan-500 h-2 rounded-lg appearance-none bg-gray-200 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
+ onChange={(e) => {
+    const val = Number(e.target.value);
+    setRoyaltyBps(val);
+    saveRoyalty(val, "SINGLE"); // save in sessionStorage whenever user updates
+  }}                className="w-full accent-cyan-500 h-2 rounded-lg appearance-none bg-gray-200 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
                 style={{ boxShadow: "0 0 0 2px #06b6d4" }}
               />
               <span className="w-12 text-right text-xs text-gray-500 dark:text-gray-400">
@@ -250,27 +255,25 @@ export default function MintSingleNFTPage() {
 ======================= */
 
 function JsonWithIpfsImages({ data }: { data: any }) {
-  const [hoveredIpfs, setHoveredIpfs] = useState<string | null>(null);
+  const [hoveredImg, setHoveredImg] = useState<string | null>(null);
 
   function renderJson(val: any): React.ReactNode {
     if (typeof val !== "object" || val === null) {
+      // Show image for cover / ipfs images
       if (typeof val === "string" && isIpfsUrl(val)) {
         const imgUrl = val.startsWith("ipfs://")
           ? `${PINATA_GATEWAY}${val.replace("ipfs://", "")}`
           : `${PINATA_GATEWAY}${val.replace(/^ipfs\//, "")}`;
+
         return (
           <span
             className="flex items-center gap-2 group cursor-pointer"
-            onMouseEnter={() => setHoveredIpfs(imgUrl)}
-            onMouseLeave={() => setHoveredIpfs(null)}
-            style={{ position: "relative" }}
+            onMouseEnter={() => setHoveredImg(imgUrl)}
+            onMouseLeave={() => setHoveredImg(null)}
           >
-            <span className="text-xs break-all underline decoration-dotted decoration-cyan-400/60 group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors">
-              {val}
-            </span>
             <Image
               src={imgUrl}
-              alt="ipfs"
+              alt="NFT preview"
               width={32}
               height={32}
               className="rounded shadow transition-transform duration-300 group-hover:scale-110"
@@ -278,36 +281,50 @@ function JsonWithIpfsImages({ data }: { data: any }) {
           </span>
         );
       }
-      return <span className="text-xs">{JSON.stringify(val)}</span>;
+      // Skip non-image strings
+      return null;
     }
+
     if (Array.isArray(val)) {
       return (
-        <div>
+        <div className="space-y-1">
           {val.map((item, i) => (
             <div key={i}>{renderJson(item)}</div>
           ))}
         </div>
       );
     }
+
+    // It's an object
     return (
       <div className="space-y-1">
-        {Object.entries(val).map(([key, value]) => (
-          <div key={key} className="flex items-start gap-1">
-            <strong>{key}:</strong> {renderJson(value)}
-          </div>
-        ))}
+        {Object.entries(val).map(([key, value]) => {
+          // Show cover image prominently
+          if (key.toLowerCase() === "cover" && typeof value === "string") {
+            return renderJson(value);
+          }
+          // Skip media/audio/video for now
+          if (key.toLowerCase().includes("media") || key.toLowerCase().includes("audio") || key.toLowerCase().includes("video")) {
+            return null;
+          }
+          return (
+            <div key={key} className="flex items-start gap-1">
+              <strong>{key}:</strong> {renderJson(value)}
+            </div>
+          );
+        })}
       </div>
     );
   }
 
   return (
-    <div className="relative">
-      {hoveredIpfs && (
+    <div className="relative w-full">
+      {hoveredImg && (
         <div className="mb-4 flex justify-center animate-fade-in-fast">
           <div className="rounded-xl border shadow-lg bg-white dark:bg-black p-2 max-w-xs transition-all duration-300 scale-100 opacity-100">
             <Image
-              src={hoveredIpfs}
-              alt="ipfs preview"
+              src={hoveredImg}
+              alt="NFT preview"
               width={200}
               height={200}
               className="object-contain rounded transition-transform duration-300"
@@ -321,6 +338,7 @@ function JsonWithIpfsImages({ data }: { data: any }) {
     </div>
   );
 }
+
 
 function isIpfsUrl(val: string) {
   return val.startsWith("ipfs://") || val.startsWith("ipfs/");

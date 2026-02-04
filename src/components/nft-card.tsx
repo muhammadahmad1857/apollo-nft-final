@@ -2,7 +2,7 @@
 
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Share, Edit } from "lucide-react";
+import { Share, Edit, Music } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -105,16 +105,22 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
       </div>
 
       <div className="relative">
-        <Image
-          src={nft.image}
-          alt={nft.title}
-          width={400}
-          height={192}
-          className="w-full h-48 object-cover"
-        />
+        {nft.image ? (
+          <Image
+            src={nft.image}
+            alt={nft.title}
+            width={400}
+            height={192}
+            className="w-full h-48 object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-zinc-400">
+            <Music size={80} strokeWidth={1} />
+          </div>
+        )}
         {nft.minted && (
           <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded text-white font-bold bg-cyan-400">
-            Minted
+            Listed
           </span>
         )}
 

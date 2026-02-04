@@ -169,14 +169,15 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
           Mint NFT
         </Button>
 <Button
-          className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
+variant={'secondary'}
+          className="flex-1"
           onClick={() =>
             router.push(
               `/dashboard/batch-mint-nft?file_id=${createdFileId}`
             )
           }
         >
-          Mint NFT
+          Batch Mint NFT
         </Button>
         <Button
           variant="outline"

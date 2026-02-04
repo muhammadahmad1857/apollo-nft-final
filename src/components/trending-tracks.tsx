@@ -4,6 +4,7 @@ import { ArrowRight, Play } from 'lucide-react'
 import { easeOut, motion } from 'framer-motion'
 import Image from 'next/image'
 import { useState } from 'react'
+import Link from 'next/link'
 
 const tracks = [
   {
@@ -145,6 +146,8 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.8, delay: 0.4 }}
         >
+                    <Link href="/marketplace">
+          
           <motion.button
             onClick={() => console.log('Browse all tracks')}
             className="px-8 py-3 bg-primary text-primary-foreground rounded-lg font-semibold flex items-center gap-2 hover:bg-primary/90 transition-colors duration-300"
@@ -159,6 +162,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
               <ArrowRight size={20} />
             </motion.div>
           </motion.button>
+          </Link>
         </motion.div>
       </div>
     </section>

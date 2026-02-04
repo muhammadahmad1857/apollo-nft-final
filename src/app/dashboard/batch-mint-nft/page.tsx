@@ -5,10 +5,10 @@ import { useAccount } from "wagmi";
 import FileMultiSelectInput from "@/components/ui/FileMultiSelectInpt";
 import { Button } from "@/components/ui/button";
 import { useMintContract } from "@/hooks/useMint";
-import { nftABIArray, nftAddress } from "@/lib/wagmi/contracts";
 import { SparklesIcon } from "lucide-react";
 import MintSuccessDialog from "@/components/MintSuccess";
 import { toast } from "sonner";
+import { saveRoyalty, removeRoyalty } from "@/lib/royaltySessionStorage";
 
 export default function BatchMintNFTPage() {
   const { address } = useAccount();
@@ -47,6 +47,8 @@ const totalPriceHuman = !isPriceLoading
 
       if (success) {
         setShowSuccess(true);
+        removeRoyalty("BATCH"); // remove after successful mint
+
       }
     } finally {
       // ✅ ALWAYS stop loader (success OR error)
@@ -99,8 +101,11 @@ const totalPriceHuman = !isPriceLoading
               max={1000}
               step={10}
               value={royaltyBps}
-              onChange={(e) => setRoyaltyBps(Number(e.target.value))}
-              className="w-full accent-cyan-500 h-2 rounded-lg appearance-none bg-gray-200 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
+ onChange={(e) => {
+    const val = Number(e.target.value);
+    setRoyaltyBps(val);
+    saveRoyalty(val, "BATCH"); // save in sessionStorage whenever user updates
+  }}              className="w-full accent-cyan-500 h-2 rounded-lg appearance-none bg-gray-200 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
               style={{ boxShadow: "0 0 0 2px #06b6d4" }}
             />
             <span className="w-12 text-right text-xs text-gray-500 dark:text-gray-400">

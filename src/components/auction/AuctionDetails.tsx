@@ -5,7 +5,7 @@ import { AuctionModel, NFTModel, UserModel } from "@/generated/prisma/models";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Play, X } from "lucide-react";
+import { Music, Play, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { PinataJSON } from "@/types";
@@ -36,7 +36,9 @@ export function AuctionDetails({
   const ended = new Date() >= new Date(auction.endTime);
   const highestBid = auction.highestBid || auction.minBid;
 
-  const [mediaType, setMediaType] = useState<"video" | "audio" | "image" | "unknown">("unknown");
+  const [mediaType, setMediaType] = useState<
+    "video" | "audio" | "image" | "unknown"
+  >("unknown");
   const [mediaUrl, setMediaUrl] = useState<string>("");
   const [showFullScreen, setShowFullScreen] = useState(false);
 
@@ -45,17 +47,24 @@ export function AuctionDetails({
       if (!auction.nft.tokenUri) return;
 
       try {
-        const res = await fetch(auction.nft.tokenUri.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`));
-        const metadata:PinataJSON = await res.json();
+        const res = await fetch(
+          auction.nft.tokenUri.replace(
+            "ipfs://",
+            `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`,
+          ),
+        );
+        const metadata: PinataJSON = await res.json();
         const media = metadata.media;
 
         setMediaUrl(
           media.startsWith("ipfs://")
             ? `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${media.replace("ipfs://", "")}`
-            : media
+            : media,
         );
 
-        const type = await getFileType(`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${media.replace("ipfs://", "")}`);
+        const type = await getFileType(
+          `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${media.replace("ipfs://", "")}`,
+        );
         setMediaType(type as any);
       } catch (err) {
         console.error("Failed to load media from tokenUri", err);
@@ -76,18 +85,29 @@ export function AuctionDetails({
     <div className="bg-white mt-20 dark:bg-zinc-900 shadow-lg rounded-2xl p-6 flex flex-col lg:flex-row gap-6">
       {/* NFT Image */}
       <div className="shrink-0 w-full lg:w-64 h-64 relative rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
-        <Image
-          src={auction.nft.imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
-          alt={auction.nft.name}
-          fill
-          className="object-cover"
-        />
+        {auction.nft.imageUrl ? (
+          <Image
+            src={auction.nft.imageUrl.replace(
+              "ipfs://",
+              `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`,
+            )}
+            alt={auction.nft.name}
+            fill
+            className="object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-zinc-400">
+            <Music size={80} strokeWidth={1} />
+          </div>
+        )}
       </div>
 
       {/* Auction Details */}
       <div className="flex-1 flex flex-col justify-between space-y-4">
         <div>
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">{auction.nft.name}</h1>
+          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
+            {auction.nft.name}
+          </h1>
           <p className="text-zinc-600 dark:text-zinc-400 mt-1 line-clamp-3">
             {auction.nft.description || "No description available."}
           </p>
@@ -95,11 +115,19 @@ export function AuctionDetails({
           {/* Seller Info */}
           <div className="mt-4 flex items-center gap-3">
             <Avatar className="w-12 h-12">
-              <AvatarImage src={auction.seller.avatarUrl ?? ""} alt={auction.seller.name} />
-              <AvatarFallback>{auction.seller.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarImage
+                src={auction.seller.avatarUrl ?? ""}
+                alt={auction.seller.name}
+              />
+              <AvatarFallback>
+                {auction.seller.name.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
             </Avatar>
             <div className="text-sm text-zinc-700 dark:text-zinc-300">
-              Seller: <span className="font-medium">{auction.seller.name || auction.seller.walletAddress}</span>
+              Seller:{" "}
+              <span className="font-medium">
+                {auction.seller.name || auction.seller.walletAddress}
+              </span>
             </div>
           </div>
 
@@ -114,7 +142,9 @@ export function AuctionDetails({
               <p className="text-zinc-500 dark:text-zinc-400">Highest Bid</p>
             </div>
             <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-3 text-center col-span-2">
-              <p className="font-semibold">{new Date(auction.endTime).toLocaleString()}</p>
+              <p className="font-semibold">
+                {new Date(auction.endTime).toLocaleString()}
+              </p>
               <p className="text-zinc-500 dark:text-zinc-400">Ends At</p>
             </div>
           </div>
@@ -169,7 +199,10 @@ export function AuctionDetails({
             exit="exit"
             onClick={() => setShowFullScreen(false)}
           >
-            <div className="relative w-full h-full max-w-7xl max-h-full" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="relative w-full h-full max-w-7xl max-h-full"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 className="absolute top-4 right-4 text-white p-3 bg-black/50 rounded-full hover:bg-black/70 transition"
                 onClick={() => setShowFullScreen(false)}

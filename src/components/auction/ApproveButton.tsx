@@ -26,7 +26,7 @@ export function ApproveAuctionButton({ nftId, disabled = false, onSuccess,tokenI
   const handleApproveAuction = useCallback(async () => {
     setIsApproving(true);
     try {
-       approveForAllWrite({
+      approveForAllWrite({
         address: nftAddress,
         abi: nftABIArray,
         functionName: "approve",
@@ -55,7 +55,7 @@ export function ApproveAuctionButton({ nftId, disabled = false, onSuccess,tokenI
     }
 
     if (approveReceiptError && toastIdRef.current) {
-      toast.error(approveReceiptError?.message || "Approval failed", { id: toastIdRef.current });
+      toast.error(approveReceiptError?.message || "Approval failed or canceled by You.", { id: toastIdRef.current });
       toastIdRef.current = null;
     }
   }, [isApproveConfirming, approveSuccess, approveReceiptError, nftId, onSuccess]);

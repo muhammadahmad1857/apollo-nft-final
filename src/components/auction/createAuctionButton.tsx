@@ -189,7 +189,6 @@ const [customDuration, setCustomDuration] = useState(""); // stores number typed
             tokenId={Number(tokenId)}
             nftId={nftId}
             onSuccess={() => {
-              toast.success("NFT approved for auction ✅");
               setIsApproved(true);
             }}
           />
