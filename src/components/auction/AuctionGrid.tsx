@@ -7,6 +7,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { Music } from "lucide-react";
 
 export default function AuctionGrid({ auctions }: { auctions: any[] }) {
   if (!auctions.length) {
@@ -31,14 +33,17 @@ export default function AuctionGrid({ auctions }: { auctions: any[] }) {
           >
             <Card className="hover:shadow-lg transition cursor-pointer h-full flex flex-col">
               <CardHeader className="p-0">
-                <img
+               {auction.nft.imageUrl? <Image
                   src={auction.nft.imageUrl.replace(
                     "ipfs://",
                     `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`
                   )}
                   alt={auction.nft.title}
                   className="h-56 w-full object-cover rounded-t-lg"
-                />
+                  layout="fill"
+                />: <div className="absolute inset-0 flex items-center justify-center text-zinc-400">
+              <Music size={80} strokeWidth={1} />
+            </div>}
               </CardHeader>
 
               <CardContent className="p-4 space-y-2 flex-1">
