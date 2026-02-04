@@ -118,7 +118,6 @@ export function AuctionDetails({
             <div className="mt-6">
               <UniversalMediaViewer
                 uri={auction.nft.tokenUri}
-                type={""} // If you have the type, pass it here, else UniversalMediaViewer will infer
                 gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
                 className="w-full"
                 style={{ maxHeight: 384 }}
