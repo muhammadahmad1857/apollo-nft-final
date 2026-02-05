@@ -1,3 +1,4 @@
+'use client';
 import { getUserAuctionHistory } from "@/actions/auction-history";
 import { PendingAmountCard } from "@/components/dashboard/PendingAmountCard";
 import { AuctionHistoryList } from "@/components/dashboard/AuctionHistoryList";

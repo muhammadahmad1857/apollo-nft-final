@@ -1,8 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAccount } from "wagmi";
-import { useState } from "react";
-import { toast } from "sonner";
 
 export function PendingAmountCard({ pendingAmount, onWithdraw, isWithdrawing }: {
   pendingAmount: number;
