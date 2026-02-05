@@ -211,8 +211,7 @@ const NFTCard = ({
                   className="ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors disabled:pointer-events-none"
                   disabled={isPending || address === ownerAddress}
                 >
-                  {address === ownerAddress ? isPending ? "Buying..." : "Buy":"Sold"}
-                  {String(address === ownerAddress)}
+                  {!(address === ownerAddress) ? isPending ? "Buying..." : "Buy":"Sold"}
                 </button>
               )
             )}

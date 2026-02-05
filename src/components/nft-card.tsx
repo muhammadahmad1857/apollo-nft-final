@@ -110,6 +110,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
             Listed
           </span>
         )}
+        <div className="w-full dark:bg-white bg-black h-0.5 py-1"></div>
         {/* Media Preview (not cover) */}
         {nft.tokenUri && (
           <div className="px-4 py-2">
