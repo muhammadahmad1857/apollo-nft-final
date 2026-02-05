@@ -9,8 +9,6 @@ import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 
 import { UniversalMediaIcon } from "../ui/UniversalMediaIcon";
 
-
-
 export function AuctionDetails({
   auction,
   onSettle,
@@ -21,10 +19,13 @@ export function AuctionDetails({
   const ended = new Date() >= new Date(auction.endTime);
   const highestBid = auction.highestBid || auction.minBid;
 
- 
-
   // Countdown timer state
-  const [timeLeft, setTimeLeft] = useState<{days:number, hours:number, minutes:number, seconds:number} | null>(null);
+  const [timeLeft, setTimeLeft] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  } | null>(null);
 
   useEffect(() => {
     function updateCountdown() {
@@ -57,7 +58,10 @@ export function AuctionDetails({
             className="object-cover"
           />
         ) : (
-         <UniversalMediaIcon tokenUri={auction.nft.tokenUri || ""} className="w-full h-full object-cover" />
+          <UniversalMediaIcon
+            tokenUri={auction.nft.tokenUri || ""}
+            className="w-full h-full object-cover"
+          />
         )}
       </div>
 
@@ -83,7 +87,7 @@ export function AuctionDetails({
               </AvatarFallback>
             </Avatar>
             <div className="text-sm text-zinc-700 dark:text-zinc-300">
-              Seller: {" "}
+              Seller:{" "}
               <span className="font-medium">
                 {auction.seller.name || auction.seller.walletAddress}
               </span>
@@ -104,25 +108,71 @@ export function AuctionDetails({
               <div className="flex gap-2 items-center justify-center mt-2 mb-1">
                 {/* Outstanding Countdown Timer Design */}
                 <div className="flex gap-2 text-center">
-                  <div className="rounded-lg px-3 py-2 shadow-md">
-                    <div className="text-2xl font-bold font-mono">{timeLeft?.days ?? 0}</div>
+                  <div
+                    className="rounded-xl px-4 py-2 
+bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md
+shadow-[0_10px_25px_rgba(0,0,0,0.15)] 
+dark:shadow-[0_0_25px_rgba(255,255,255,0.08)]
+border border-zinc-200/60 dark:border-zinc-700/60
+hover:shadow-[0_15px_35px_rgba(0,0,0,0.25)]
+dark:hover:shadow-[0_0_35px_rgba(255,255,255,0.15)]
+transition-all duration-300"
+                  >
+                    <div className="text-2xl font-bold font-mono">
+                      {timeLeft?.days ?? 0}
+                    </div>
                     <div className="text-xs tracking-wider">Days</div>
                   </div>
-                  <div className="rounded-lg px-3 py-2 shadow-md">
-                    <div className="text-2xl font-bold font-mono">{timeLeft?.hours ?? 0}</div>
+                  <div
+                    className="rounded-xl px-4 py-2 
+bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md
+shadow-[0_10px_25px_rgba(0,0,0,0.15)] 
+dark:shadow-[0_0_25px_rgba(255,255,255,0.08)]
+border border-zinc-200/60 dark:border-zinc-700/60
+hover:shadow-[0_15px_35px_rgba(0,0,0,0.25)]
+dark:hover:shadow-[0_0_35px_rgba(255,255,255,0.15)]
+transition-all duration-300"
+                  >
+                    <div className="text-2xl font-bold font-mono">
+                      {timeLeft?.hours ?? 0}
+                    </div>
                     <div className="text-xs tracking-wider">Hours</div>
                   </div>
-                  <div className="rounded-lg px-3 py-2 shadow-md">
-                    <div className="text-2xl font-bold font-mono">{timeLeft?.minutes ?? 0}</div>
+                  <div
+                    className="rounded-xl px-4 py-2 
+bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md
+shadow-[0_10px_25px_rgba(0,0,0,0.15)] 
+dark:shadow-[0_0_25px_rgba(255,255,255,0.08)]
+border border-zinc-200/60 dark:border-zinc-700/60
+hover:shadow-[0_15px_35px_rgba(0,0,0,0.25)]
+dark:hover:shadow-[0_0_35px_rgba(255,255,255,0.15)]
+transition-all duration-300"
+                  >
+                    <div className="text-2xl font-bold font-mono">
+                      {timeLeft?.minutes ?? 0}
+                    </div>
                     <div className="text-xs tracking-wider">Minutes</div>
                   </div>
-                  <div className="rounded-lg px-3 py-2 shadow-md">
-                    <div className="text-2xl font-bold font-mono">{timeLeft?.seconds ?? 0}</div>
+                  <div
+                    className="rounded-xl px-4 py-2 
+bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md
+shadow-[0_10px_25px_rgba(0,0,0,0.15)] 
+dark:shadow-[0_0_25px_rgba(255,255,255,0.08)]
+border border-zinc-200/60 dark:border-zinc-700/60
+hover:shadow-[0_15px_35px_rgba(0,0,0,0.25)]
+dark:hover:shadow-[0_0_35px_rgba(255,255,255,0.15)]
+transition-all duration-300"
+                  >
+                    <div className="text-2xl font-bold font-mono">
+                      {timeLeft?.seconds ?? 0}
+                    </div>
                     <div className="text-xs tracking-wider">Seconds</div>
                   </div>
                 </div>
               </div>
-              <p className="text-zinc-500 dark:text-zinc-400 text-sm pt-1 font-medium">Auction Ends In</p>
+              <p className="text-zinc-500 dark:text-zinc-400 text-sm pt-1 font-medium">
+                Auction Ends In
+              </p>
             </div>
           </div>
           {/* Media Preview */}
