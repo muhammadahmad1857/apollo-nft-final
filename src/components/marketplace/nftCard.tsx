@@ -111,19 +111,13 @@ const NFTCard = ({
   return (
     <>
       <motion.div
-        className="group relative rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+        className="group  rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        {/* Status badge */}
-
-        {isAuctionActive && (
-          <div className="absolute top-3 left-3 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
-            Auction Live
-          </div>
-        )}
+      
 
         {/* Media preview (cover image) */}
         <div className="aspect-square relative bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
@@ -135,9 +129,17 @@ const NFTCard = ({
               className="object-cover group-hover:scale-105 transition-transform duration-700"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
+
           ) : (
            <UniversalMediaIcon  tokenUri={media} className="w-full h-full object-cover" />
           )}
+            {/* Status badge */}
+
+        {isAuctionActive && (
+          <div className="absolute top-3 left-3 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+            Auction Live
+          </div>
+        )}
         </div>
         
 

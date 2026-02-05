@@ -219,17 +219,54 @@ export default function UniversalMediaViewer({
     );
   }
 
-  // ===== PDF =====
-  if (isPdf) {
-    return (
+ // ===== PDF =====
+if (isPdf) {
+  return (
+    <>
       <div
-        className={`w-full h-96 bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-hidden ${className}`}
+        className={`relative w-full h-96 bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-hidden cursor-pointer ${className}`}
         style={style}
+        onClick={() => setShowModal(true)}
       >
-        <iframe src={src} title="PDF Preview" className="w-full h-full border-none rounded-xl" />
+        <iframe
+          src={src}
+          title="PDF Preview"
+          className="w-full h-full border-none rounded-xl pointer-events-none"
+        />
       </div>
-    );
-  }
+
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowModal(false)}
+          >
+            <div className="relative w-full max-w-5xl h-full" onClick={(e) => e.stopPropagation()}>
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="absolute top-4 right-4 text-white bg-black/50 hover:bg-black/70"
+                onClick={() => setShowModal(false)}
+              >
+                <X size={24} />
+              </Button>
+              <iframe
+                src={src}
+                title="PDF Fullscreen"
+                className="w-full h-full border-none rounded-xl"
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
 
   // ===== Word (.doc/.docx) =====
   if (isDoc || isDocx) {
