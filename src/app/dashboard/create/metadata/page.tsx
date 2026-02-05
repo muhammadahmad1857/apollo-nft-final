@@ -140,7 +140,7 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
     metadata.name.trim() !== "" && metadata.title.trim() !== "";
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+    <div className="min-h-screen relative bg-zinc-50 dark:bg-zinc-950">
 
       <div className="mx-auto max-w-4xl px-6 py-12">
         {showActions && createdFileId && (
@@ -243,7 +243,7 @@ variant={'secondary'}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.1 }}
-              className="fixed bottom-0 left-0 right-0 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-sm z-40"
+              className="absolute bottom-0 left-0 right-0 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-sm z-40"
             >
               <div className="mx-auto max-w-4xl px-6 py-4">
                 <div className="flex items-center justify-between">
