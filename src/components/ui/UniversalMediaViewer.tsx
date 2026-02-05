@@ -35,7 +35,7 @@ async function detectFileType(uri:string): Promise<string> {
   if (["txt", "md"].includes(ext) || mime === "text/plain" || mime === "text/markdown") return ext === "md" ? "txt/md" : "txt/txt";
   if (ext === "doc" || mime === "application/msword") return "doc/doc";
   if (ext === "docx" || mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "doc/docx";
-  if (ext === "pdf" || mime === "application/pdf") return "pdf";
+  if (ext === "pdf" || mime === "application/pdf"||mime==="pdf") return "pdf";
 
   return "other";
 }
