@@ -4,6 +4,7 @@ import * as React from "react"
 import {
   AudioWaveform,
   Bot,
+  ChartAreaIcon,
   Command,
   Files,
   GalleryVerticalEnd,
@@ -115,15 +116,18 @@ const data = {
       icon: ShoppingCart,
       
     },
+     {
+      title: "Auction History",
+      url: "/auction-activity",
+      icon: ChartAreaIcon,
+      
+    },
     {
       title: "User Settings",
       url: "/dashboard/user",
       icon: User,
      items: [
-        {
-          title: "Settings",
-          url: "/dashboard/user-details",
-        },
+       
         {
           title: "Edit profile",
           url: "/dashboard/edit-profile",

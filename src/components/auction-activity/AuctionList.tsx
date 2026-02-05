@@ -49,7 +49,7 @@ export default function AuctionList({ auctions, loading, userId }: AuctionListPr
         const userLastBid = a.userLastBid ?? 0;
 
         return (
-          <div key={a.auction.id} className="flex flex-col md:flex-row bg-white rounded-lg shadow p-4 gap-4 w-full">
+          <div key={a.auction.id} className="flex flex-col md:flex-row bg-white dark:bg-zinc-900 rounded-lg shadow p-4 gap-4 w-full">
             {/* NFT Image */}
             <div className="w-full md:w-32 h-32 shrink-0">
               <Image
@@ -64,27 +64,27 @@ export default function AuctionList({ auctions, loading, userId }: AuctionListPr
             {/* NFT & Auction Info */}
             <div className="flex-1 flex flex-col justify-between">
               <div className="mb-2">
-                <h3 className="font-bold text-lg">{a.auction.nft.name}</h3>
+                <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-100">{a.auction.nft.name}</h3>
                 <p className="text-sm text-muted-foreground">Token ID: {a.auction.nft.tokenId}</p>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
                 <div>
                   <span className="text-muted-foreground">Min Bid:</span>{" "}
-                  <span className="font-medium">{a.auction.minBid} APOLLO</span>
+                  <span className="font-medium text-zinc-900 dark:text-zinc-100">{a.auction.minBid} APOLLO</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Highest Bid:</span>{" "}
-                  <span className="font-medium">{a.auction.highestBid ?? 0} APOLLO</span>
+                  <span className="font-medium text-zinc-900 dark:text-zinc-100">{a.auction.highestBid ?? 0} APOLLO</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Your Last Bid:</span>{" "}
-                  <span className="font-medium">{userLastBid} APOLLO</span>
+                  <span className="font-medium text-zinc-900 dark:text-zinc-100">{userLastBid} APOLLO</span>
                 </div>
               </div>
 
               <div className="flex items-center justify-between mt-2">
-                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100">
+                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-zinc-800 dark:text-zinc-100">
                   {statusBadge}
                 </span>
                 <span className="text-sm text-muted-foreground">{timerText}</span>
