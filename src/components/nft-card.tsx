@@ -101,7 +101,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
           {nft.title}
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span><Heart fill="red" color="red"/> <p>{nft.likes?.length || 0}</p></span>
+          <span><Heart fill="red" color="red"/></span> <p>{nft.likes?.length || 0}</p>
         </div>
         </div>
 
