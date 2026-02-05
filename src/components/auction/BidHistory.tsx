@@ -21,7 +21,7 @@ export function BidHistory({ bids }: { bids: (BidModel & { bidder: UserModel })[
             className="flex justify-between items-center p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition"
           >
             <span className="text-gray-800 dark:text-gray-200 font-medium">
-              {bid.bidder.name || bid.bidder.walletAddress}
+              {bid.bidder.walletAddress}
             </span>
             <span className="text-cyan-600 dark:text-cyan-400 font-semibold">
               {bid.amount} APOLLO

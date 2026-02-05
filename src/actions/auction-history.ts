@@ -1,59 +1,69 @@
 "use server";
-import { db } from "@/lib/prisma";
-import { getAddress } from "viem";
-import { auctionAddress, auctionABIArray } from "@/lib/wagmi/contracts";
-import { readContract } from "@wagmi/core";
 
-export async function getUserAuctionHistory(userAddress: string) {
-  if (!userAddress) return { auctions: [], pendingAmount: 0 };
-  const address = getAddress(userAddress);
-  // Find user by wallet address
-  const user = await db.user.findUnique({
-    where: { walletAddress: address },
+import { db as prisma } from "@/lib/prisma";
+import { AuctionHistory } from "@/types/";
+
+export async function getAuctionHistory(walletAddress: string): Promise<AuctionHistory[]> {
+  if (!walletAddress) return [];
+
+  // 1️⃣ Find user
+  const user = await prisma.user.findUnique({
+    where: { walletAddress },
     select: { id: true },
   });
-  if (!user) return { auctions: [], pendingAmount: 0 };
 
-  // All bids by user
-  const bids = await db.bid.findMany({
-    where: { bidderId: user.id },
-    include: {
-      auction: {
-        include: {
-          nft: true,
-          seller: true,
-          highestBidder: true,
-        },
+  if (!user) return [];
+  const userId = user.id;
+
+  // 2️⃣ Fetch auctions where user has bids
+  const auctions = await prisma.auction.findMany({
+    where: {
+      bids: {
+        some: { bidderId: userId },
       },
+    },
+    include: {
+      nft: true,
+      bids: {
+        orderBy: { createdAt: "asc" }, // important for last bid
+      },
+    },
+    orderBy: {
+      endTime: "desc",
     },
   });
 
-  // Group by auction
-  const auctionMap = new Map<number, { auction: typeof bids[0]["auction"]; userBids: typeof bids }>();
-  for (const bid of bids) {
-    if (!bid.auction) continue;
-    if (!auctionMap.has(bid.auction.id)) {
-      auctionMap.set(bid.auction.id, { auction: bid.auction, userBids: [] });
-    }
-    auctionMap.get(bid.auction.id)!.userBids.push(bid);
-  }
+  const now = new Date();
 
-  // Compose auction history
-  const auctions = Array.from(auctionMap.values()).map(({ auction, userBids }) => {
-    const userHighestBid = Math.max(...userBids.map(b => b.amount));
-    const won = auction.highestBidderId === user.id && auction.settled;
-    const canSettle = auction.highestBidderId === user.id && !auction.settled && new Date(auction.endTime) < new Date();
+  // 3️⃣ Map Prisma → AuctionHistory
+  const history: AuctionHistory[] = auctions.map((auction) => {
+    const isEnded = auction.endTime < now;
+    const canSettle = isEnded && !auction.settled;
+
+    const userBids = auction.bids.filter((b) => b.bidderId === userId);
+    const userLastBid = userBids.length ? userBids[userBids.length - 1].amount : null;
+
+    const status: AuctionHistory["status"] = auction.settled
+      ? "settled"
+      : isEnded
+      ? "ended"
+      : "active";
+
+    const timeLeft = isEnded ? 0 : auction.endTime.getTime() - now.getTime();
+
     return {
-      auction,
-      userHighestBid,
-      won,
+      auction: {
+        ...auction,
+        nft: auction.nft,
+        bids: auction.bids,
+      },
+      userLastBid,
+      status,
+      isEnded,
       canSettle,
-      nft: auction.nft,
-      seller: auction.seller,
-      highestBid: auction.highestBid,
-      highestBidder: auction.highestBidder,
+      timeLeft,
     };
   });
-    
-  return { auctions };
+
+  return history;
 }

@@ -1,5 +1,8 @@
 // Centralized types for Apollo NFT project
 
+import { AuctionModel, BidModel, NFTModel } from "@/generated/prisma/models";
+import { db } from "@/lib/prisma";
+
 export interface FileFromDB {
   type: string;
   ipfsUrl: string;
@@ -38,4 +41,19 @@ export interface PinataJSON{
   cover?:string,
   media:string,
   title:string
+}
+
+
+export interface AuctionHistory {
+  auction: AuctionModel & {
+    nft: NFTModel;
+    bids: BidModel[];
+  };
+
+  // derived fields (IMPORTANT)
+  userLastBid: number | null;
+  status: "active" | "ended" | "settled";
+  isEnded: boolean;
+  canSettle: boolean;
+  timeLeft: number;
 }
