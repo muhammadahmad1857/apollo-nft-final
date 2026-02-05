@@ -229,7 +229,7 @@ const NFTCard = ({
                   disabled={isPending || address === ownerAddress}
                 >
                   {address === ownerAddress ? isPending ? "Buying..." : "Buy":"Sold"}
-                  {address === ownerAddress}
+                  {String(address === ownerAddress)}
                 </button>
               )
             )}

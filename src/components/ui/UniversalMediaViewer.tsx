@@ -39,7 +39,6 @@ async function detectFileType(uri:string): Promise<string> {
 
   return "other";
 }
-
 export default function UniversalMediaViewer({
   uri,
   gateway,
@@ -48,16 +47,17 @@ export default function UniversalMediaViewer({
 }: UniversalMediaViewerProps) {
   const [showModal, setShowModal] = useState(false);
   const [text, setText] = useState<string>("");
+  const [fileType, setFileType] = useState<string>("other");
+  const [loading, setLoading] = useState(true); // <-- loading state
   const src = resolveIpfs(uri, gateway);
-const [fileType, setFileType] = useState<string>("other");
 
-useEffect(() => {
-  detectFileType(uri)
-    .then((detected) => {
-      setFileType(detected);
-    })
-    .catch(() => setFileType("other"));
-}, [uri]);
+  useEffect(() => {
+    setLoading(true);
+    detectFileType(uri)
+      .then((detected) => setFileType(detected))
+      .catch(() => setFileType("other"))
+      .finally(() => setLoading(false));
+  }, [uri]);
 
   const isVideo = fileType.startsWith("video/");
   const isAudio = fileType.startsWith("audio/");
@@ -66,16 +66,28 @@ useEffect(() => {
   const isPdf = fileType === "pdf";
   const isDoc = fileType === "doc/doc";
   const isDocx = fileType === "doc/docx";
-    console.log("UniversalMediaViewer detected type:", fileType);
+
   // Load text if needed
   useEffect(() => {
     if (isTxt && src) {
+      setLoading(true);
       fetch(src)
         .then((res) => res.text())
         .then(setText)
-        .catch(() => setText("Failed to load text file."));
+        .catch(() => setText("Failed to load text file."))
+        .finally(() => setLoading(false));
     }
   }, [isTxt, src]);
+
+  // ===== Loader =====
+  if (loading) {
+    return (
+      <div
+        className={`w-full h-64 bg-zinc-200 dark:bg-zinc-700 animate-pulse rounded-xl ${className}`}
+        style={style}
+      />
+    );
+  }
 
   // ===== Image =====
   if (isImage) {
