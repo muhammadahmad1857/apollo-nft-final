@@ -7,7 +7,7 @@ import CustomSelect from "./CustomSelect";
 import type { FileFromDB } from "@/types";
 import { getFilesByWallet } from "@/actions/files";
 import { FileModel } from "@/generated/prisma/models";
-import { filterFilesByExtension } from "@/lib/FilterFiles";
+import { filterFilesByExtension } from "@/lib/filterFiles";
 
 interface FileSelectInputProps {
   walletId: string;
