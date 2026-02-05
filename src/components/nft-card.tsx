@@ -39,7 +39,25 @@ interface NFTCardProps {
 export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
   const router = useRouter();
   // Remove old mediaType, mediaUrl, showVideo, and useEffect
+  const [mediaUrl, setMediaUrl] = useState("");
+ useEffect(() => {
+    if (!nft.tokenUri) return;
 
+    const detect = async () => {
+      try {
+        const res = await fetch(nft.tokenUri);
+        const json = await res.json();
+        const media = json.media;
+        if (!media) return;
+        setMediaUrl(media);
+
+      } catch (e) {
+        console.error("Media settling failed", e);
+      }
+    };
+
+    detect();
+  }, [nft.tokenUri]);
   const handleShare = () => {
     if (!nft.minted) {
       toast.info("List this NFT first to share");
@@ -94,10 +112,10 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
           </span>
         )}
         {/* Media Preview (not cover) */}
-        {nft.tokenUri && (
+        {mediaUrl && (
           <div className="px-4 py-2">
             <UniversalMediaViewer
-              uri={nft.tokenUri}
+              uri={mediaUrl}
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="w-full"
               style={{ maxHeight: 192 }}

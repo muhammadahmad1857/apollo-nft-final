@@ -47,35 +47,6 @@ export interface NFTCardProps {
   };
 }
 
-async function detectFileTypeFromHEAD(url: string): Promise<string> {
-  try {
-    const gatewayUrl = url.startsWith("ipfs://")
-      ? `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${url.replace(
-          "ipfs://",
-          "",
-        )}`
-      : url;
-
-    const res = await fetch(gatewayUrl, { method: "HEAD" });
-    const contentType = res.headers.get("content-type");
-
-    if (!contentType) return "unknown";
-
-    if (contentType.includes("video")) return ".mp4";
-    if (contentType.includes("audio")) {
-      if (contentType.includes("wav")) return ".wav";
-      if (contentType.includes("mpeg")) return ".mp3";
-      return ".audio";
-    }
-    if (contentType.includes("image")) return ".image";
-
-    return "unknown";
-  } catch (err) {
-    console.error("HEAD type detection failed", err);
-    return "unknown";
-  }
-}
-
 const NFTCard = ({
   title,
   cover,
@@ -97,6 +68,25 @@ const NFTCard = ({
   const [showBuyConfirm, setShowBuyConfirm] = useState(false);
   const [isProcessingBuy, setIsProcessingBuy] = useState(false);
   const [showShareModal,setShowShareModal] = useState(false)
+    const [mediaUrl, setMediaUrl] = useState("");
+ useEffect(() => {
+    if (!media) return;
+
+    const detect = async () => {
+      try {
+        const res = await fetch(media);
+        const json = await res.json();
+        const media_url = json.media;
+        if (!media_url) return;
+        setMediaUrl(media_url);
+
+      } catch (e) {
+        console.error("Media settling failed", e);
+      }
+    };
+
+    detect();
+  }, [media]);
   const now = new Date();
   const isAuctionActive =
     auction &&
@@ -193,10 +183,10 @@ const NFTCard = ({
           )}
 
           {/* Media Preview (not cover) */}
-        {media && (
+        {mediaUrl && (
           <div className="px-4 py-2">
             <UniversalMediaViewer
-              uri={media}
+              uri={mediaUrl}
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="w-full"
               style={{ maxHeight: 192 }}
@@ -239,6 +229,7 @@ const NFTCard = ({
                   disabled={isPending || address === ownerAddress}
                 >
                   {address === ownerAddress ? isPending ? "Buying..." : "Buy":"Sold"}
+                  {address === ownerAddress}
                 </button>
               )
             )}

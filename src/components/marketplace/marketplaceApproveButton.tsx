@@ -39,7 +39,7 @@ export function ApproveMarketButton({
     confirmations: 1,
   });
 
-  const handleApproveMarket = useCallback(async () => {
+  const handleApproveMarket = async () => {
     try {
       const hash = await writeContractAsync({
         address: nftAddress,
@@ -56,7 +56,7 @@ export function ApproveMarketButton({
       console.error(err);
       toast.error(err?.shortMessage || err?.message || "Approval failed");
     }
-  }, [writeContractAsync]);
+  };
 
   /* -----------------------------
      TX Lifecycle
