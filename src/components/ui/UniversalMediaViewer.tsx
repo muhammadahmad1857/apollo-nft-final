@@ -53,29 +53,36 @@ export default function UniversalMediaViewer({
   const [fileType, setFileType] = useState<string>("other");
   const [loading, setLoading] = useState(true);
 
-  // Fetch the token JSON and extract media field
+  // Fetch the media URI, prioritizing 'uri' over 'tokenUri'
   useEffect(() => {
-    if (!tokenUri) return;
     setLoading(true);
 
     const fetchMedia = async () => {
       try {
-        if(uri){ setMediaUri(uri);return;} // if uri is provided, use it directly;
-        const resolvedUri = resolveIpfs(tokenUri, gateway);
-        const res = await fetch(resolvedUri);
-        if (!res.ok) throw new Error("Failed to fetch token JSON");
-        const data = await res.json();
-        const media = data.media; // this should be ipfs://... or https://...
-        setMediaUri(media);
+        if (uri) {
+          setMediaUri(uri);
+          return;
+        }
+        if (tokenUri) {
+          const resolvedUri = resolveIpfs(tokenUri, gateway);
+          const res = await fetch(resolvedUri);
+          if (!res.ok) throw new Error("Failed to fetch token JSON");
+          const data = await res.json();
+          const media = data.media; // this should be ipfs://... or https://...
+          setMediaUri(media);
+        } else {
+          setMediaUri("");
+        }
       } catch (err) {
         console.error("Failed to load token JSON:", err);
+        setMediaUri("");
       } finally {
         setLoading(false);
       }
     };
 
     fetchMedia();
-  }, [tokenUri, gateway]);
+  }, [tokenUri, gateway, uri]);
 
   // Detect file type once mediaUri is available
   useEffect(() => {

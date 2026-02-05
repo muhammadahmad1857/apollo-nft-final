@@ -20,34 +20,41 @@ export function UniversalMediaIcon({ tokenUri, gateway,uri, className = "", styl
     let isMounted = true;
 
     const fetchMediaAndDetectType = async () => {
-      if (!tokenUri && !uri) return;
-      if(uri){
-        const detected = await detectFileType(uri);
-        if (isMounted) {
-          setFileType(detected);
-          setLoading(false);
+      if (uri && uri.trim() !== "") {
+        setLoading(true);
+        try {
+          const detected = await detectFileType(uri);
+          if (isMounted) setFileType(detected);
+        } catch (err) {
+          if (isMounted) setFileType("other");
+        } finally {
+          if (isMounted) setLoading(false);
         }
         return;
       }
-      if (isMounted) setLoading(true);
+      if (tokenUri) {
+        setLoading(true);
+        try {
+          // 1️⃣ Fetch the token JSON
+          const resolvedTokenUri = resolveIpfs(tokenUri as string, gateway);
+          const res = await fetch(resolvedTokenUri);
+          if (!res.ok) throw new Error("Failed to fetch token JSON");
+          const data = await res.json();
+          const mediaUri = data.media; // actual IPFS URL
 
-      try {
-        // 1️⃣ Fetch the token JSON
-        const resolvedTokenUri = resolveIpfs(tokenUri as string, gateway);
-        const res = await fetch(resolvedTokenUri);
-        if (!res.ok) throw new Error("Failed to fetch token JSON");
-        const data = await res.json();
-        const mediaUri = data.media; // actual IPFS URL
-
-        // 2️⃣ Detect file type
-        const detected = await detectFileType(mediaUri);
-        if (isMounted) setFileType(detected);
-      } catch (err) {
-        console.error("Failed to fetch or detect media type:", err);
-        if (isMounted) setFileType("other");
-      } finally {
-        if (isMounted) setLoading(false);
+          // 2️⃣ Detect file type
+          const detected = await detectFileType(mediaUri);
+          if (isMounted) setFileType(detected);
+        } catch (err) {
+          console.error("Failed to fetch or detect media type:", err);
+          if (isMounted) setFileType("other");
+        } finally {
+          if (isMounted) setLoading(false);
+        }
+        return;
       }
+      // If neither uri nor tokenUri is provided
+      setLoading(false);
     };
 
     fetchMediaAndDetectType();

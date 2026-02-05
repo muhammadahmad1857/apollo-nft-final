@@ -40,6 +40,7 @@ model NFT {
   name String
   title String
   imageUrl String
+  mediaUrl String @default("")
   description String
   ownerId     Int
   tokenUri    String

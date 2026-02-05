@@ -73,7 +73,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
             className="w-full h-48 object-cover"
           />
         ) : (
-         <UniversalMediaIcon tokenUri={nft.tokenUri} className="w-full h-48 object-cover" />
+         <UniversalMediaIcon tokenUri={nft.tokenUri} uri={nft.mediaUrl} className="w-full h-48 object-cover" />
         )}
         {nft.isListed && (
           <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded text-white font-bold bg-cyan-400">
@@ -86,6 +86,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
           <div className="px-4 py-2">
             <UniversalMediaViewer
               tokenUri={nft.tokenUri}
+              uri={nft.mediaUrl}
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="w-full"
               style={{ maxHeight: 192 }}

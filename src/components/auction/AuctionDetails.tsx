@@ -65,6 +65,7 @@ export function AuctionDetails({
         ) : (
           <UniversalMediaIcon
             tokenUri={auction.nft.tokenUri || ""}
+            uri={auction.nft.mediaUrl||""}
             className="w-full h-full object-cover"
           />
         )}
@@ -185,6 +186,7 @@ transition-all duration-300"
             <div className="mt-6">
               <UniversalMediaViewer
                 tokenUri={auction.nft.tokenUri}
+                uri={auction.nft.mediaUrl}
                 gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
                 className="w-full"
                 style={{ maxHeight: 384 }}

@@ -37,6 +37,7 @@ export interface NFTCardProps {
   mintPrice?: number; // in wei
   showBuyButton?: boolean;
   showEditRoyaltyButton?: boolean;
+  token:string;
   nftId: number;
   ownerAddress:string;
   auction?: {
@@ -52,7 +53,7 @@ const NFTCard = ({
   title,
   cover,
   ownerAddress,
-  media,
+  token,
   tokenId,
   name,
   description,
@@ -61,6 +62,7 @@ const NFTCard = ({
   showEditRoyaltyButton,
   auction,
   nftId,
+  media
 }: NFTCardProps) => {
   const { buyNFT, isPending } = useBuyNFT();
   const router = useRouter();
@@ -131,7 +133,7 @@ const NFTCard = ({
             />
 
           ) : (
-           <UniversalMediaIcon  tokenUri={media} className="w-full h-full object-cover" />
+           <UniversalMediaIcon  tokenUri={token} uri={media} className="w-full h-full object-cover" />
           )}
             {/* Status badge */}
 
@@ -169,7 +171,8 @@ const NFTCard = ({
         {media && (
           <div className="px-4 py-2">
             <UniversalMediaViewer
-              tokenUri={media}
+              tokenUri={token}
+              uri={media}
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="w-full"
               style={{ maxHeight: 192 }}

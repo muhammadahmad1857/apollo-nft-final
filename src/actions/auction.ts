@@ -140,3 +140,27 @@ export async function settleAuction(auctionId: number): Promise<PrismaAuction> {
 export async function deleteAuction(id: number): Promise<PrismaAuction> {
   return db.auction.delete({ where: { id } });
 }
+
+export async function fetchUserAuctions(walletAddress: string) {
+  if (!walletAddress) return [];
+
+  const auctions = await db.auction.findMany({
+    where: {
+      OR: [
+        { seller: { walletAddress } },
+        { highestBidder: { walletAddress } }
+      ],
+    },
+    include: {
+      nft: true,
+      highestBidder: true,
+      seller: true,
+      bids: { orderBy: { amount: "desc" } },
+    },
+    orderBy: { endTime: "desc" },
+  });
+
+  return auctions;
+}
+
+

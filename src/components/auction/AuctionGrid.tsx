@@ -54,7 +54,7 @@ export default function AuctionGrid({
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-zinc-400">
-                   <UniversalMediaIcon tokenUri={auction.nft.tokenUri || ""} className="w-16 h-16" />
+                   <UniversalMediaIcon tokenUri={auction.nft.tokenUri || ""} uri={auction.nft.mediaUrl || ""} className="w-16 h-16" />
                   </div>
                 )}
               </CardHeader>

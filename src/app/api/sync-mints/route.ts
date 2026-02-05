@@ -108,6 +108,7 @@ export async function GET() {
             ownerId: creator.id,
             mintPrice:0.1,
             imageUrl: meta.cover || "",
+            mediaUrl:meta.media || "",
           },
 
         });
