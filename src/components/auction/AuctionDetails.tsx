@@ -80,11 +80,11 @@ export function AuctionDetails({
           {/* Auction Stats */}
           <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
             <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-3 text-center">
-              <p className="font-semibold">{auction.minBid} Apollo</p>
+              <p className="font-semibold">{auction.minBid} APOLLO</p>
               <p className="text-zinc-500 dark:text-zinc-400">Minimum Bid</p>
             </div>
             <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-3 text-center">
-              <p className="font-semibold">{highestBid} Apollo</p>
+              <p className="font-semibold">{highestBid} APOLLO</p>
               <p className="text-zinc-500 dark:text-zinc-400">Highest Bid</p>
             </div>
             <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-3 text-center col-span-2">

@@ -191,7 +191,7 @@ export function useMintContract() {
     if (writeError) {
       const msg = (writeError as BaseError).shortMessage || writeError.message;
       toast.error(
-        msg.includes("insufficient funds") ? "Not enough ETH ⛽" : msg,
+        msg.includes("insufficient funds") ? "Not enough APOLLO ⛽" : msg,
       );
       rejectRef.current?.(false);
       resolveRef.current = null;

@@ -24,7 +24,7 @@ export function BidHistory({ bids }: { bids: (BidModel & { bidder: UserModel })[
               {bid.bidder.name || bid.bidder.walletAddress}
             </span>
             <span className="text-cyan-600 dark:text-cyan-400 font-semibold">
-              {bid.amount} Apollo
+              {bid.amount} APOLLO
             </span>
           </li>
         ))}

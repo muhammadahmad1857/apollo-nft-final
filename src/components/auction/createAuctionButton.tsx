@@ -195,7 +195,7 @@ const [customDuration, setCustomDuration] = useState(""); // stores number typed
         ) : (
           <div className="space-y-4 mt-2">
             <div className="flex flex-col gap-2">
-              <Label>Minimum Bid (Apollo)</Label>
+              <Label>Minimum Bid (APOLLO)</Label>
               <Input
                 type="number"
                 placeholder="0.01"

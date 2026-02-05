@@ -13,7 +13,7 @@ export function BidInput({ onPlaceBid,isDisabled }: { onPlaceBid: (bidEth: strin
     <div className="flex items-center space-x-2">
       <Input
         type="number"
-        placeholder="Your bid in ETH"
+        placeholder="Your bid in APOLLO"
         value={bid}
         onChange={(e) => setBid(e.target.value)}
       />

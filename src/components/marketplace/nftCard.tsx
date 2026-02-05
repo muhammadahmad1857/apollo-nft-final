@@ -160,7 +160,7 @@ const NFTCard = ({
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3">
               Price:{" "}
               <span className="font-semibold">
-                {mintPrice.toFixed(4)} Apollo
+                {mintPrice.toFixed(4)} APOLLO
               </span>
             </p>
           )}
@@ -255,7 +255,7 @@ const NFTCard = ({
             <DialogTitle>Confirm Purchase</DialogTitle>
             <DialogDescription>
               You are about to pay{" "}
-              <strong>{mintPrice?.toFixed(4)} Apollo</strong> for this NFT.
+              <strong>{mintPrice?.toFixed(4)} APOLLO</strong> for this NFT.
               <br />
               This action cannot be undone.
             </DialogDescription>

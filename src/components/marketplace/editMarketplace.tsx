@@ -151,7 +151,7 @@ setMarketApproved(true);
 
       {isListed && (
         <div>
-          <Label>Price (Apollo)</Label>
+          <Label>Price (APOLLO)</Label>
           <Input
             type="number"
             value={priceEth}
@@ -172,7 +172,7 @@ setMarketApproved(true);
       {listing && listing[0] !== ZERO_ADDRESS && (
         <p className="text-sm text-muted-foreground">
           On-chain price:{" "}
-          <strong>{Number(listing[1])} Apollo</strong>
+          <strong>{Number(listing[1])} APOLLO</strong>
         </p>
       )}
 

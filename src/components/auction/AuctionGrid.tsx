@@ -66,7 +66,7 @@ export default function AuctionGrid({
                 </p>
 
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">{currentBid} Apollo</span>
+                  <span className="font-medium">{currentBid} APOLLO</span>
                   <Badge variant="secondary">Live</Badge>
                 </div>
               </CardContent>
