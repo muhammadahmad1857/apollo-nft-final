@@ -1,3 +1,4 @@
+"use client";
 import { Music, Video, Image as ImageIcon, FileText, File, File as FileDoc, PcCaseIcon as FilePdf } from "lucide-react";
 import { useEffect, useState } from "react";
 import { detectFileType, resolveIpfs } from "./UniversalMediaViewer";
