@@ -2,7 +2,7 @@
 
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Share, Edit, Music } from "lucide-react";
+import { Share, Edit, Music, Heart } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -125,11 +125,13 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
       </div>
 
       <div className="p-4 flex flex-col gap-2">
+        <div className="flex justify-between items-center">
         <div className="font-semibold text-lg truncate" title={nft.title}>
           {nft.title}
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>❤ {nft.likes}</span>
+          <span><Heart color="red"/> {nft.likes}</span>
+        </div>
         </div>
 
         {owner && (
