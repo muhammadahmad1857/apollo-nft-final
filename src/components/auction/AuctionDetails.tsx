@@ -9,12 +9,13 @@ import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 
 import { UniversalMediaIcon } from "../ui/UniversalMediaIcon";
 
+
 export function AuctionDetails({
   auction,
   onSettle,
 }: {
   auction: AuctionModel & { nft: NFTModel; seller: UserModel };
-  onSettle: () => void;
+  onSettle: () => Promise<void> | void;
 }) {
   const ended = new Date() >= new Date(auction.endTime);
   const highestBid = auction.highestBid || auction.minBid;
@@ -26,6 +27,10 @@ export function AuctionDetails({
     minutes: number;
     seconds: number;
   } | null>(null);
+
+  // Local state for settle button
+  const [settleLoading, setSettleLoading] = useState(false);
+  const [settledLocally, setSettledLocally] = useState(false);
 
   useEffect(() => {
     function updateCountdown() {
@@ -189,13 +194,32 @@ transition-all duration-300"
         </div>
 
         {/* Action Button */}
-        {ended && !auction.settled && (
+        {ended && !auction.settled && !settledLocally && (
           <Button
-            onClick={onSettle}
+            onClick={async () => {
+              setSettleLoading(true);
+              try {
+                await onSettle();
+                setSettledLocally(true);
+              } finally {
+                setSettleLoading(false);
+              }
+            }}
             variant="destructive"
             className="mt-4 w-full lg:w-48 self-start"
+            disabled={settleLoading}
           >
-            Settle Auction
+            {settleLoading ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                Settling...
+              </span>
+            ) : (
+              "Settle Auction"
+            )}
           </Button>
         )}
       </div>

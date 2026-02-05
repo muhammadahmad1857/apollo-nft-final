@@ -9,7 +9,7 @@ export function AuctionStatus({ auction }: { auction: AuctionModel}) {
 
   return (
     <div className="p-4  rounded flex justify-between items-center">
-      <p>Status: {ended ? "Ended" : "Active"}</p>
+      <p>Status: {auction.settled ? "Settled" : ended ? "Ended" : "Active"}</p>
       <p>Current Highest Bid: {highestBid} APOLLO</p>
     </div>
   );
