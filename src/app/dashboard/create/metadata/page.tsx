@@ -187,7 +187,7 @@ variant={'secondary'}
           View Files
         </Button>
       </div>
-      <div>
+      <div className="mt-1 flex items-center justify-center">
         <p>Or create another <Link href="/dashboard/create/file-upload" className="text-cyan-400 underline hover:underline-offset-1">File</Link></p>
       </div>
     </div>
