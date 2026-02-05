@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import MultiSelect from "./MultiSelect";
 import { getFilesByWallet } from "@/actions/files";
 import { FileModel } from "@/generated/prisma/models";
+import { filterFilesByExtension } from "@/lib/FilterFiles";
 
 interface FileSelectInputProps {
   walletId: string;
@@ -30,15 +31,9 @@ const FileMultiSelectInput = ({
     const fetchFiles = async () => {
       setIsLoading(true);
       try {
+        const allFiles = await getFilesByWallet(walletId);
+        const filteredFiles = filterFilesByExtension(allFiles, fileExtensions);
        
-        
-       let filteredFiles:FileModel[] = await getFilesByWallet(walletId);
-if (fileExtensions?.length) {
-          filteredFiles = filteredFiles.filter((file) =>
-            fileExtensions.includes(file.type)
-          );
-        }
-
         setFiles(filteredFiles);
       } catch (err) {
         console.error("Failed to fetch files:", err);
@@ -58,7 +53,7 @@ if (fileExtensions?.length) {
   const options = files.map((file) => ({
     value: file.ipfsUrl,
     label: file.filename,
-    isListed:file.isMinted
+    isListed: file.isMinted,
   }));
 
   return (

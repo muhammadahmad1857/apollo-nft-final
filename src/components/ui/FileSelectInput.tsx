@@ -7,6 +7,7 @@ import CustomSelect from "./CustomSelect";
 import type { FileFromDB } from "@/types";
 import { getFilesByWallet } from "@/actions/files";
 import { FileModel } from "@/generated/prisma/models";
+import { filterFilesByExtension } from "@/lib/FilterFiles";
 
 interface FileSelectInputProps {
   walletId: string;
@@ -38,21 +39,8 @@ const FileSelectInput = ({
       setIsLoading(true)
       try {
         const allFiles =  await getFilesByWallet(walletId);
-        let filteredFiles = allFiles;
-         if (fileExtensions && fileExtensions.length > 0) {
-          const excludeExtensions = fileExtensions.filter((ext) => ext.startsWith("!")).map((ext) => ext.slice(1).toLowerCase());
-          const includeExtensions = fileExtensions.filter((ext) => !ext.startsWith("!")).map((ext) => ext.toLowerCase());
-
-          filteredFiles = allFiles.filter((file) => {
-            const ext = file.filename.split(".").pop()?.toLowerCase() || "";
-            // Exclude first
-            if (excludeExtensions.includes(ext)) return false;
-            // Include only if includeExtensions is specified
-            if (includeExtensions.length > 0) return includeExtensions.includes(ext);
-            // Otherwise include all
-            return true;
-          });
-        }
+        const filteredFiles = filterFilesByExtension(allFiles, fileExtensions);
+       
         setFiles(filteredFiles);
       } catch (error) {
         console.error("Failed to fetch files:", error);
