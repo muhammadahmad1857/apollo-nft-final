@@ -1,6 +1,8 @@
 "use server";
 import { db } from "@/lib/prisma";
 import { getAddress } from "viem";
+import { auctionAddress, auctionABIArray } from "@/lib/wagmi/contracts";
+import { readContract } from "@wagmi/core";
 
 export async function getUserAuctionHistory(userAddress: string) {
   if (!userAddress) return { auctions: [], pendingAmount: 0 };
@@ -52,9 +54,6 @@ export async function getUserAuctionHistory(userAddress: string) {
       highestBidder: auction.highestBidder,
     };
   });
-
-  // TODO: Fetch pendingAmount from contract (stubbed as 0 for now)
-  const pendingAmount = 0;
-
-  return { auctions, pendingAmount };
+    
+  return { auctions };
 }
