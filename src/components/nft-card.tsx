@@ -110,7 +110,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
             Listed
           </span>
         )}
-        <div className="w-full dark:bg-white bg-black h-0.5 py-1"></div>
+        <div className="w-full dark:bg-white bg-black h-0.5 my-0.5"></div>
         {/* Media Preview (not cover) */}
         {nft.tokenUri && (
           <div className="px-4 py-2">
@@ -130,7 +130,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
           {nft.title}
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span><Heart color="red"/> {nft.likes}</span>
+          <span><Heart fill="red" color="red"/> <p>{nft.likes}</p></span>
         </div>
         </div>
 

@@ -109,7 +109,7 @@ export default function Page() {
   </Button>
 </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2  gap-6">
             {filteredNFTs.map((nft) => (
               <NFTCard
                 key={nft.id}

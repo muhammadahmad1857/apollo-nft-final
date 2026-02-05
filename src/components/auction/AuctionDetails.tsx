@@ -110,25 +110,25 @@ export function AuctionDetails({
               <div className="flex gap-2 items-center justify-center mt-2 mb-1">
                 {/* Outstanding Countdown Timer Design */}
                 <div className="flex gap-2 text-center">
-                  <div className="bg-linear-to-br from-yellow-400 to-pink-500 text-white rounded-lg px-3 py-2 shadow-md">
+                  <div className="rounded-lg px-3 py-2 shadow-md">
                     <div className="text-2xl font-bold font-mono">{timeLeft?.days ?? 0}</div>
                     <div className="text-xs tracking-wider">Days</div>
                   </div>
-                  <div className="bg-linear-to-br from-blue-400 to-purple-500 text-white rounded-lg px-3 py-2 shadow-md">
+                  <div className="rounded-lg px-3 py-2 shadow-md">
                     <div className="text-2xl font-bold font-mono">{timeLeft?.hours ?? 0}</div>
                     <div className="text-xs tracking-wider">Hours</div>
                   </div>
-                  <div className="bg-linear-to-br from-green-400 to-teal-500 text-white rounded-lg px-3 py-2 shadow-md">
+                  <div className="rounded-lg px-3 py-2 shadow-md">
                     <div className="text-2xl font-bold font-mono">{timeLeft?.minutes ?? 0}</div>
                     <div className="text-xs tracking-wider">Minutes</div>
                   </div>
-                  <div className="bg-linear-to-br from-red-400 to-orange-500 text-white rounded-lg px-3 py-2 shadow-md">
+                  <div className="rounded-lg px-3 py-2 shadow-md">
                     <div className="text-2xl font-bold font-mono">{timeLeft?.seconds ?? 0}</div>
                     <div className="text-xs tracking-wider">Seconds</div>
                   </div>
                 </div>
               </div>
-              <p className="text-zinc-500 dark:text-zinc-400 text-xs font-medium">Auction Ends In</p>
+              <p className="text-zinc-500 dark:text-zinc-400 text-sm pt-1 font-medium">Auction Ends In</p>
             </div>
           </div>
           {/* Media Preview */}

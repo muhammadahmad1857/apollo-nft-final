@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useConnection } from "wagmi";
+import { toast } from "sonner";
 
 export function BidInput({ onPlaceBid, isDisabled, minBid }: { onPlaceBid: (bidEth: string) => void, isDisabled: boolean, minBid: number }) {
   const [bid, setBid] = useState("");
@@ -14,6 +15,7 @@ export function BidInput({ onPlaceBid, isDisabled, minBid }: { onPlaceBid: (bidE
     if (isDisabled) return;
     const bidValue = parseFloat(bid);
     if (isNaN(bidValue) || bidValue < minBid) {
+      toast.error(`Bid must be at least ${minBid} APOLLO`);
       setError(`Bid must be at least ${minBid} APOLLO`);
       return;
     }
@@ -35,7 +37,7 @@ export function BidInput({ onPlaceBid, isDisabled, minBid }: { onPlaceBid: (bidE
           }}
         />
         <Button
-          disabled={isDisabled || (!isConnected && !isConnecting)}
+          disabled={isDisabled || (!isConnected && !isConnecting) || !bid}
           onClick={handleBid}
         >
           Place Bid
