@@ -28,8 +28,8 @@ interface MarketplaceListingProps {
 export function MarketplaceListing({ token }: MarketplaceListingProps) {
   const { address } = useAccount();
   const { data: user, isLoading: isUserLoading } = useUser(address || "");
-  const router = useRouter()
   const { listNFT } = useListNFT();
+  const [marketApproved, setMarketApproved] = useState(token.isMarketApproved);
   const { cancelListing, isPending: cancelPending } = useCancelListing();
   const { data: listing, refetch } = useListing(
     BigInt(token.tokenId)
@@ -121,12 +121,14 @@ export function MarketplaceListing({ token }: MarketplaceListingProps) {
     );
   }
 
-  if (!token.approvedMarket) {
+  if (!marketApproved) {
     return (
       <ApproveMarketButton
         nftId={token.id}
         tokenId={token.tokenId}
-        onSuccess={router.refresh}
+        onSuccess={()=>{
+setMarketApproved(true);
+        }}
       />
     );
   }
