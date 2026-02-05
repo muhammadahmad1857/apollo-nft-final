@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { AuctionModel, NFTModel, UserModel } from "@/generated/prisma/models";
 import { UniversalMediaIcon } from "../ui/UniversalMediaIcon";
+import { Separator } from "../ui/separator";
 
 export default function AuctionGrid({
   auctions,
@@ -40,7 +41,7 @@ export default function AuctionGrid({
             className="group"
           >
             <Card className="hover:shadow-lg transition cursor-pointer h-full flex flex-col">
-              <CardHeader className="p-0 min-h-56 relative">
+              <CardHeader className="p-0 min-h-56 relative dark:bg-gray-900 bg-gray-100">
                 {auction.nft.imageUrl ? (
                   <Image
                     src={auction.nft.imageUrl.replace(
@@ -57,7 +58,7 @@ export default function AuctionGrid({
                   </div>
                 )}
               </CardHeader>
-
+<Separator />
               <CardContent className="p-4 space-y-2 flex-1">
                 <h3 className="text-lg font-semibold">{auction.nft.title}</h3>
 
