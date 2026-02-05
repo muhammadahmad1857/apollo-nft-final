@@ -16,20 +16,20 @@ import { useUpdateNFT } from "@/hooks/useNft";
 import { ApproveMarketButton } from "@/components/marketplace/marketplaceApproveButton";
 import { useUser } from "@/hooks/useUser";
 import { useAccount } from "wagmi";
-import { useRouter } from "next/navigation";
+import { NFTModel } from "@/generated/prisma/models";
 
 const ZERO_ADDRESS =
   "0x0000000000000000000000000000000000000000";
 
 interface MarketplaceListingProps {
-  token: any;
+  token: NFTModel;
 }
 
 export function MarketplaceListing({ token }: MarketplaceListingProps) {
   const { address } = useAccount();
   const { data: user, isLoading: isUserLoading } = useUser(address || "");
   const { listNFT } = useListNFT();
-  const [marketApproved, setMarketApproved] = useState(token.isMarketApproved);
+  const [marketApproved, setMarketApproved] = useState(token.approvedMarket);
   const { cancelListing, isPending: cancelPending } = useCancelListing();
   const { data: listing } = useListing(
     BigInt(token.tokenId)

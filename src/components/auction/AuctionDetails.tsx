@@ -21,13 +21,7 @@ export function AuctionDetails({
   const ended = new Date() >= new Date(auction.endTime);
   const highestBid = auction.highestBid || auction.minBid;
 
-  // Remove old mediaType, mediaUrl, showFullScreen, and useEffect
-
-  const modalVariants = {
-    hidden: { opacity: 0, scale: 0.92 },
-    visible: { opacity: 1, scale: 1, transition: { duration: 0.35 } },
-    exit: { opacity: 0, scale: 0.92, transition: { duration: 0.25 } },
-  };
+ 
 
   // Countdown timer state
   const [timeLeft, setTimeLeft] = useState<{days:number, hours:number, minutes:number, seconds:number} | null>(null);

@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Share, Edit, ShoppingCart } from "lucide-react";
 import { NFTCard } from "@/components/nft-card";
 import { useUser } from "@/hooks/useUser"; // your wagmi-based hook
 import { truncateAddress } from "@/lib/truncate";
@@ -18,7 +17,7 @@ import Loader from "@/components/loader";
 export default function Page() {
   const router = useRouter();
   const {address} = useAccount()
-  const { data: user,isLoading,error } = useUser(address||""); // gets current logged-in wallet
+  const { data: user, } = useUser(address||""); // gets current logged-in wallet
   const [nfts, setNFTs] = React.useState<(NFTModel & { likes?: NFTLikeModel[],auction?: AuctionModel|null, owner?: UserModel })[]>([]);
   const [search, setSearch] = React.useState("");
   const [filterMinted, setFilterMinted] = React.useState(false);
@@ -113,18 +112,7 @@ export default function Page() {
             {filteredNFTs.map((nft) => (
               <NFTCard
                 key={nft.id}
-                nft={{
-                  title: nft.title,
-                  likes: nft.likes?.length ?? 0,
-                  image: nft.imageUrl.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`),
-                  minted: nft.isListed,
-                  id: nft.id,
-                  tokenId: nft.tokenId,
-                  isDisabled: nft.auction ? true:false,
-                  isApproved:nft.approvedAuction,
-                  isMarketApproved:nft.approvedMarket,
-                  tokenUri: nft.tokenUri.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)
-                }}
+                nft={nft}
                 owner={nft.ownerId === user.id}
                 
               />

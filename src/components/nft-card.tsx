@@ -2,12 +2,11 @@
 
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Share, Edit, Music, Heart } from "lucide-react";
+import { Share, Edit,  Heart } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { CreateAuctionButton } from "./auction/createAuctionButton";
-import { useEffect, useState } from "react";
 import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 import { MarketplaceListing } from "./marketplace/editMarketplace"; // our modal component
 import {
@@ -19,48 +18,19 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { UniversalMediaIcon } from "./ui/UniversalMediaIcon";
+import { NFTLikeModel, NFTModel } from "@/generated/prisma/models";
 
 interface NFTCardProps {
-  nft: {
-    id: number;
-    title: string;
-    likes: number;
-    image: string;
-    minted: boolean;
-    isApproved: boolean;
-    tokenId: number;
-    isDisabled: boolean;
-    isMarketApproved: boolean;
-    tokenUri: string;
-  };
+  nft: NFTModel & { likes?: NFTLikeModel[]};
   owner?: boolean;
   onBuy?: () => void;
 }
 
 export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
   const router = useRouter();
-  // Remove old mediaType, mediaUrl, showVideo, and useEffect
-  const [mediaUrl, setMediaUrl] = useState("");
- useEffect(() => {
-    if (!nft.tokenUri) return;
 
-    const detect = async () => {
-      try {
-        const res = await fetch(nft.tokenUri);
-        const json = await res.json();
-        const media = json.media;
-        if (!media) return;
-        setMediaUrl(media);
-
-      } catch (e) {
-        console.error("Media settling failed", e);
-      }
-    };
-
-    detect();
-  }, [nft.tokenUri]);
   const handleShare = () => {
-    if (!nft.minted) {
+    if (!nft.isListed) {
       toast.info("List this NFT first to share");
       return;
     }
@@ -94,9 +64,9 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
       </div>
 
       <div className="relative">
-        {nft.image ? (
+        {nft.imageUrl ? (
           <Image
-            src={nft.image}
+            src={nft.imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
             alt={nft.title}
             width={400}
             height={192}
@@ -105,7 +75,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
         ) : (
          <UniversalMediaIcon tokenUri={nft.tokenUri} className="w-full h-48 object-cover" />
         )}
-        {nft.minted && (
+        {nft.isListed && (
           <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded text-white font-bold bg-cyan-400">
             Listed
           </span>
@@ -130,7 +100,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
           {nft.title}
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span><Heart fill="red" color="red"/> <p>{nft.likes}</p></span>
+          <span><Heart fill="red" color="red"/> <p>{nft.likes?.length || 0}</p></span>
         </div>
         </div>
 
@@ -144,7 +114,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
                   size="sm"
                   className="flex items-center gap-2"
                 >
-                  <Edit /> Edit Listing
+                  <Edit /> Add  to marketplace
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-xl w-full">
@@ -156,10 +126,10 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
               </DialogContent>
             </Dialog>
 
-            {!nft.isMarketApproved ? (
+            {!nft.approvedMarket ? (
               <CreateAuctionButton
                 tokenId={BigInt(nft.tokenId)}
-                approvedAuction={nft.isApproved}
+                approvedAuction={nft.approvedAuction}
                 nftId={nft.id}
               />
             ) : (

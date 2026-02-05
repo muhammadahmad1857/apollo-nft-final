@@ -8,7 +8,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Music } from "lucide-react";
 import { AuctionModel, NFTModel, UserModel } from "@/generated/prisma/models";
 import { UniversalMediaIcon } from "../ui/UniversalMediaIcon";
 
