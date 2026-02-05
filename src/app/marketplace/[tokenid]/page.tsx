@@ -9,6 +9,7 @@ import NFTInteractiveContent from "@/components/marketplace/nftPage";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { NotFound } from "@/components/notFound";
+import { UniversalMediaIcon } from "@/components/ui/UniversalMediaIcon";
 
 // Force dynamic rendering + light ISR
 export const dynamic = "force-dynamic";
@@ -141,9 +142,7 @@ const detectMediaType = async (url: string) => {
                   priority
                 />
               ) : (
-                <div className="aspect-square flex items-center justify-center text-zinc-600">
-                  <Music size={120} strokeWidth={1} />
-                </div>
+                <UniversalMediaIcon uri={media} className="w-full aspect-square" />
               )}
             </div>
 

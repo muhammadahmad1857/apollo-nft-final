@@ -7,6 +7,7 @@ import { useAccount } from "wagmi";
 import ShareModal from "./ShareModel";
 import LikeButton from "./nftLikes";
 import { toggleNFTLike, checkIfUserLikedNFT, getNFTLikesByNFT } from "@/actions/nft-likes";
+import UniversalMediaViewer from "../ui/UniversalMediaViewer";
 
 interface NFTInteractiveContentProps {
   tokenId: number;
@@ -23,7 +24,6 @@ export default function NFTInteractiveContent({ tokenId, media, title, name }: N
   const [loadingLike, setLoadingLike] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [mediaType, setMediaType] = useState<"audio" | "video" | "unknown">("unknown");
 
   // Load initial like state and count
   useEffect(() => {
@@ -48,22 +48,7 @@ export default function NFTInteractiveContent({ tokenId, media, title, name }: N
     };
   }, [tokenId, user?.id]);
 
-  // Detect media type
-  useEffect(() => {
-    const detectMediaType = async (url: string) => {
-      if (!url) return;
-      try {
-        const response = await fetch(url, { method: "HEAD" });
-        if (!response.ok) throw new Error("HEAD request failed");
-        const contentType = response.headers.get("content-type")?.toLowerCase() || "";
-        if (contentType.startsWith("audio/")) setMediaType("audio");
-        else if (contentType.startsWith("video/")) setMediaType("video");
-      } catch (err) {
-        console.warn("Media type detection failed:", err);
-      }
-    };
-    detectMediaType(media);
-  }, [media]);
+
 
   // Handle like toggle
   const handleLike = async () => {
@@ -91,21 +76,8 @@ export default function NFTInteractiveContent({ tokenId, media, title, name }: N
     <>
       {/* Media Controls */}
       <div className="mt-8 flex flex-wrap gap-4 justify-center sm:justify-start">
-        {mediaType === "audio" && media && (
-          <audio controls className="w-full max-w-md" controlsList="nodownload">
-            <source src={media} type="audio/mpeg" />
-          </audio>
-        )}
-
-        {mediaType === "video" && media && (
-          <button
-            onClick={() => setShowVideo(true)}
-            className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-medium rounded-lg flex items-center gap-2 shadow-lg transition-all"
-          >
-            <Play size={20} fill="currentColor" />
-            Play Video
-          </button>
-        )}
+       <UniversalMediaViewer uri={media} className="w-full max-w-md rounded-lg shadow-lg" />
+        
 
         <button
           onClick={handleLike}

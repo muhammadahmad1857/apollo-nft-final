@@ -438,7 +438,6 @@ export default function FileDetailPage() {
           <div className="px-4 py-2">
             <UniversalMediaViewer
               uri={file.ipfsUrl}
-              
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="w-full"
               style={{ maxHeight: 192 }}

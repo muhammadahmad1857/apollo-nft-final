@@ -8,13 +8,14 @@ import { Button } from "@/components/ui/button";
 import { getFileTypeByIPFS } from "@/actions/files";
 
 interface UniversalMediaViewerProps {
-  uri: string; // ipfs://... or https://...
+  tokenUri?: string; // now we pass the NFT token URI (points to JSON)
   gateway?: string; // e.g. gateway.pinata.cloud
   className?: string;
   style?: React.CSSProperties;
+  uri?: string; 
 }
 
-function resolveIpfs(uri: string, gateway = process.env.NEXT_PUBLIC_GATEWAY_URL) {
+export function resolveIpfs(uri: string, gateway = process.env.NEXT_PUBLIC_GATEWAY_URL) {
   if (!uri) return "";
   if (uri.startsWith("ipfs://")) {
     return `https://${gateway}/ipfs/${uri.replace("ipfs://", "")}`;
@@ -23,41 +24,70 @@ function resolveIpfs(uri: string, gateway = process.env.NEXT_PUBLIC_GATEWAY_URL)
 }
 
 // Helper to detect type
-async function detectFileType(uri:string): Promise<string> {
-    const { type, name } = await getFileTypeByIPFS(uri);
+export async function detectFileType(uri: string): Promise<string> {
+  const { type, name } = await getFileTypeByIPFS(uri);
   const ext = name.split(".").pop()?.toLowerCase() || "";
   const mime = type.toLowerCase();
-  console.log("Mime",mime,"Ext",ext);
+
   if (mime.startsWith("audio/") || ["mp3", "wav", "ogg"].includes(ext)) return `audio/${ext || mime.split("/")[1]}`;
   if (mime.startsWith("video/") || ["mp4", "mov", "webm"].includes(ext)) return `video/${ext || mime.split("/")[1]}`;
   if (mime.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext)) return `image/${ext || mime.split("/")[1]}`;
-
   if (["txt", "md"].includes(ext) || mime === "text/plain" || mime === "text/markdown") return ext === "md" ? "txt/md" : "txt/txt";
   if (ext === "doc" || mime === "application/msword") return "doc/doc";
   if (ext === "docx" || mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "doc/docx";
-  if (ext === "pdf" || mime === "application/pdf"||mime==="pdf") return "pdf";
+  if (ext === "pdf" || mime === "application/pdf" || mime === "pdf") return "pdf";
 
   return "other";
 }
+
 export default function UniversalMediaViewer({
+  tokenUri,
   uri,
   gateway,
   className = "",
   style = {},
 }: UniversalMediaViewerProps) {
+  const [mediaUri, setMediaUri] = useState<string>(""); // actual media url
   const [showModal, setShowModal] = useState(false);
   const [text, setText] = useState<string>("");
   const [fileType, setFileType] = useState<string>("other");
-  const [loading, setLoading] = useState(true); // <-- loading state
-  const src = resolveIpfs(uri, gateway);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch the token JSON and extract media field
   useEffect(() => {
+    if (!tokenUri) return;
     setLoading(true);
-    detectFileType(uri)
+
+    const fetchMedia = async () => {
+      try {
+        if(uri){ setMediaUri(uri);return;} // if uri is provided, use it directly;
+        const resolvedUri = resolveIpfs(tokenUri, gateway);
+        const res = await fetch(resolvedUri);
+        if (!res.ok) throw new Error("Failed to fetch token JSON");
+        const data = await res.json();
+        const media = data.media; // this should be ipfs://... or https://...
+        setMediaUri(media);
+      } catch (err) {
+        console.error("Failed to load token JSON:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMedia();
+  }, [tokenUri, gateway]);
+
+  // Detect file type once mediaUri is available
+  useEffect(() => {
+    if (!mediaUri) return;
+    setLoading(true);
+    detectFileType(mediaUri)
       .then((detected) => setFileType(detected))
       .catch(() => setFileType("other"))
       .finally(() => setLoading(false));
-  }, [uri]);
+  }, [mediaUri]);
+
+  const src = resolveIpfs(mediaUri, gateway);
 
   const isVideo = fileType.startsWith("video/");
   const isAudio = fileType.startsWith("audio/");
@@ -79,7 +109,6 @@ export default function UniversalMediaViewer({
     }
   }, [isTxt, src]);
 
-  // ===== Loader =====
   if (loading) {
     return (
       <div
@@ -88,7 +117,6 @@ export default function UniversalMediaViewer({
       />
     );
   }
-
   // ===== Image =====
   if (isImage) {
     return (

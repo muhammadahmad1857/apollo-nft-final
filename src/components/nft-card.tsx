@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
+import { UniversalMediaIcon } from "./ui/UniversalMediaIcon";
 
 interface NFTCardProps {
   nft: {
@@ -102,9 +103,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
             className="w-full h-48 object-cover"
           />
         ) : (
-          <div className=" size-48 flex items-center justify-center text-zinc-400">
-            <Music size={80} strokeWidth={1} />
-          </div>
+         <UniversalMediaIcon tokenUri={nft.tokenUri} className="w-full h-48 object-cover" />
         )}
         {nft.minted && (
           <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded text-white font-bold bg-cyan-400">
@@ -112,10 +111,10 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
           </span>
         )}
         {/* Media Preview (not cover) */}
-        {mediaUrl && (
+        {nft.tokenUri && (
           <div className="px-4 py-2">
             <UniversalMediaViewer
-              uri={mediaUrl}
+              tokenUri={nft.tokenUri}
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="w-full"
               style={{ maxHeight: 192 }}

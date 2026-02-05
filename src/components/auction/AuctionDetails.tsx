@@ -5,27 +5,11 @@ import { AuctionModel, NFTModel, UserModel } from "@/generated/prisma/models";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Music, Play, X } from "lucide-react";
 import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
-import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
-import { PinataJSON } from "@/types";
 
-async function getFileType(url: string) {
-  try {
-    const res = await fetch(url, { method: "HEAD" });
-    const contentType = res.headers.get("content-type");
+import { UniversalMediaIcon } from "../ui/UniversalMediaIcon";
 
-    if (!contentType) return "unknown";
-    if (contentType.includes("video")) return "video";
-    if (contentType.includes("audio")) return "audio";
-    if (contentType.includes("image")) return "image";
-    return "unknown";
-  } catch (err) {
-    console.error("Failed to detect file type", err);
-    return "unknown";
-  }
-}
+
 
 export function AuctionDetails({
   auction,
@@ -60,9 +44,7 @@ export function AuctionDetails({
             className="object-cover"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-zinc-400">
-            <Music size={80} strokeWidth={1} />
-          </div>
+         <UniversalMediaIcon tokenUri={auction.nft.tokenUri || ""} className="w-full h-full object-cover" />
         )}
       </div>
 
@@ -112,12 +94,11 @@ export function AuctionDetails({
               <p className="text-zinc-500 dark:text-zinc-400">Ends At</p>
             </div>
           </div>
-
           {/* Media Preview */}
           {auction.nft.tokenUri && (
             <div className="mt-6">
               <UniversalMediaViewer
-                uri={auction.nft.tokenUri}
+                tokenUri={auction.nft.tokenUri}
                 gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
                 className="w-full"
                 style={{ maxHeight: 384 }}

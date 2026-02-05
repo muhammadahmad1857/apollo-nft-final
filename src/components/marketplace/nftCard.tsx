@@ -24,6 +24,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { UniversalMediaIcon } from "../ui/UniversalMediaIcon";
 
 export interface NFTCardProps {
   title: string;
@@ -68,25 +69,7 @@ const NFTCard = ({
   const [showBuyConfirm, setShowBuyConfirm] = useState(false);
   const [isProcessingBuy, setIsProcessingBuy] = useState(false);
   const [showShareModal,setShowShareModal] = useState(false)
-    const [mediaUrl, setMediaUrl] = useState("");
- useEffect(() => {
-    if (!media) return;
-
-    const detect = async () => {
-      try {
-        const res = await fetch(media);
-        const json = await res.json();
-        const media_url = json.media;
-        if (!media_url) return;
-        setMediaUrl(media_url);
-
-      } catch (e) {
-        console.error("Media settling failed", e);
-      }
-    };
-
-    detect();
-  }, [media]);
+ 
   const now = new Date();
   const isAuctionActive =
     auction &&
@@ -153,9 +136,7 @@ const NFTCard = ({
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-zinc-400">
-              <Music size={80} strokeWidth={1} />
-            </div>
+           <UniversalMediaIcon  tokenUri={media} className="w-full h-full object-cover" />
           )}
         </div>
         
@@ -183,10 +164,10 @@ const NFTCard = ({
           )}
 
           {/* Media Preview (not cover) */}
-        {mediaUrl && (
+        {media && (
           <div className="px-4 py-2">
             <UniversalMediaViewer
-              uri={mediaUrl}
+              tokenUri={media}
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="w-full"
               style={{ maxHeight: 192 }}

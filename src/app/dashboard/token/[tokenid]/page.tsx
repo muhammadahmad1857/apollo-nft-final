@@ -13,6 +13,7 @@ import { getUserById } from "@/actions/users";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Loader from "@/components/loader";
+import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 
 
 export default function TokenDetailsPage() {
@@ -129,13 +130,7 @@ export default function TokenDetailsPage() {
                         <span className="text-xs underline text-cyan-600 cursor-pointer">Hover to preview</span>
                       </Tooltip.TooltipTrigger>
                       <Tooltip.TooltipContent sideOffset={8}>
-                        {media.endsWith('.mp3') || media.endsWith('.wav') ? (
-                          <audio src={media} controls className="max-w-xs" />
-                        ) : media.endsWith('.mp4') || media.endsWith('.webm') ? (
-                          <video src={media} controls className="max-h-40 max-w-xs rounded-md border" />
-                        ) : (
-                          <span>Unsupported media</span>
-                        )}
+                        <UniversalMediaViewer uri={media} className="w-40 h-40 object-cover" />
                       </Tooltip.TooltipContent>
                     </Tooltip.Tooltip>
                   </Tooltip.TooltipProvider>
