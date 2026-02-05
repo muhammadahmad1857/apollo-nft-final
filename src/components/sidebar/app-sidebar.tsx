@@ -118,7 +118,7 @@ const data = {
     },
      {
       title: "Auction History",
-      url: "/auction-activity",
+      url: "/dashboard/auction-activity",
       icon: ChartAreaIcon,
       
     },
