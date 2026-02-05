@@ -196,25 +196,36 @@ const NFTCard = ({
                 {isPending ? "Buying..." : "Buy"}
               </button>
             )} */}
-            {isAuctionActive ? (
-              <button
-                onClick={() => router.push(`/auction/${nftId}`)}
-                className="ml-auto px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
-              >
-                View Auction
-              </button>
-            ) : (
-              showBuyButton &&
-              mintPrice && (
-                <button
-                  onClick={() => setShowBuyConfirm(true)}
-                  className="ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors disabled:pointer-events-none"
-                  disabled={isPending || address === ownerAddress}
-                >
-                  {!(address === ownerAddress) ? isPending ? "Buying..." : "Buy":"Sold"}
-                </button>
-              )
-            )}
+           {
+  !address ? (
+    <p className="text-sm text-foreground">Connect your wallet to buy</p>
+  ) : isAuctionActive ? (
+    <button
+      onClick={() => router.push(`/auction/${nftId}`)}
+      className="ml-auto px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+    >
+      View Auction
+    </button>
+  ) : (
+    showBuyButton && mintPrice && (
+      <button
+        onClick={() => setShowBuyConfirm(true)}
+        className="ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors disabled:pointer-events-none"
+        disabled={isPending || !address || address === ownerAddress}
+      >
+        {address === ownerAddress
+          ? "Sold"
+          : isPending
+          ? "Buying..."
+          : "Buy"
+        }
+      </button>
+    )
+  )
+}
+
+            
+
 
             {showEditRoyaltyButton && (
               <button
