@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Music } from "lucide-react";
 import { AuctionModel, NFTModel, UserModel } from "@/generated/prisma/models";
+import { UniversalMediaIcon } from "../ui/UniversalMediaIcon";
 
 export default function AuctionGrid({
   auctions,
@@ -40,7 +41,7 @@ export default function AuctionGrid({
             className="group"
           >
             <Card className="hover:shadow-lg transition cursor-pointer h-full flex flex-col">
-              <CardHeader className="p-0">
+              <CardHeader className="p-0 relative">
                 {auction.nft.imageUrl ? (
                   <Image
                     src={auction.nft.imageUrl.replace(
@@ -49,11 +50,11 @@ export default function AuctionGrid({
                     )}
                     alt={auction.nft.title}
                     className="h-56 w-full object-cover rounded-t-lg"
-                    layout="fill"
+                    fill
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-zinc-400">
-                    <Music size={80} strokeWidth={1} />
+                   <UniversalMediaIcon tokenUri={auction.nft.tokenUri || ""} className="w-16 h-16" />
                   </div>
                 )}
               </CardHeader>

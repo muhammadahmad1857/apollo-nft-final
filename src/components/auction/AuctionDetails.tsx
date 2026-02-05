@@ -29,6 +29,25 @@ export function AuctionDetails({
     exit: { opacity: 0, scale: 0.92, transition: { duration: 0.25 } },
   };
 
+  // Countdown timer state
+  const [timeLeft, setTimeLeft] = useState<{days:number, hours:number, minutes:number, seconds:number} | null>(null);
+
+  useEffect(() => {
+    function updateCountdown() {
+      const now = new Date();
+      const end = new Date(auction.endTime);
+      const diff = Math.max(0, end.getTime() - now.getTime());
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((diff / (1000 * 60)) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+      setTimeLeft({ days, hours, minutes, seconds });
+    }
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [auction.endTime]);
+
   return (
     <div className="bg-white mt-20 dark:bg-zinc-900 shadow-lg rounded-2xl p-6 flex flex-col lg:flex-row gap-6">
       {/* NFT Image */}
@@ -70,7 +89,7 @@ export function AuctionDetails({
               </AvatarFallback>
             </Avatar>
             <div className="text-sm text-zinc-700 dark:text-zinc-300">
-              Seller:{" "}
+              Seller: {" "}
               <span className="font-medium">
                 {auction.seller.name || auction.seller.walletAddress}
               </span>
@@ -87,11 +106,29 @@ export function AuctionDetails({
               <p className="font-semibold">{highestBid} APOLLO</p>
               <p className="text-zinc-500 dark:text-zinc-400">Highest Bid</p>
             </div>
-            <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-3 text-center col-span-2">
-              <p className="font-semibold">
-                {new Date(auction.endTime).toLocaleString()}
-              </p>
-              <p className="text-zinc-500 dark:text-zinc-400">Ends At</p>
+            <div className="col-span-2 flex flex-col items-center justify-center">
+              <div className="flex gap-2 items-center justify-center mt-2 mb-1">
+                {/* Outstanding Countdown Timer Design */}
+                <div className="flex gap-2 text-center">
+                  <div className="bg-linear-to-br from-yellow-400 to-pink-500 text-white rounded-lg px-3 py-2 shadow-md">
+                    <div className="text-2xl font-bold font-mono">{timeLeft?.days ?? 0}</div>
+                    <div className="text-xs tracking-wider">Days</div>
+                  </div>
+                  <div className="bg-linear-to-br from-blue-400 to-purple-500 text-white rounded-lg px-3 py-2 shadow-md">
+                    <div className="text-2xl font-bold font-mono">{timeLeft?.hours ?? 0}</div>
+                    <div className="text-xs tracking-wider">Hours</div>
+                  </div>
+                  <div className="bg-linear-to-br from-green-400 to-teal-500 text-white rounded-lg px-3 py-2 shadow-md">
+                    <div className="text-2xl font-bold font-mono">{timeLeft?.minutes ?? 0}</div>
+                    <div className="text-xs tracking-wider">Minutes</div>
+                  </div>
+                  <div className="bg-linear-to-br from-red-400 to-orange-500 text-white rounded-lg px-3 py-2 shadow-md">
+                    <div className="text-2xl font-bold font-mono">{timeLeft?.seconds ?? 0}</div>
+                    <div className="text-xs tracking-wider">Seconds</div>
+                  </div>
+                </div>
+              </div>
+              <p className="text-zinc-500 dark:text-zinc-400 text-xs font-medium">Auction Ends In</p>
             </div>
           </div>
           {/* Media Preview */}
