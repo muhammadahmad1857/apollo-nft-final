@@ -31,7 +31,7 @@ export function MarketplaceListing({ token }: MarketplaceListingProps) {
   const { listNFT } = useListNFT();
   const [marketApproved, setMarketApproved] = useState(token.isMarketApproved);
   const { cancelListing, isPending: cancelPending } = useCancelListing();
-  const { data: listing, refetch } = useListing(
+  const { data: listing } = useListing(
     BigInt(token.tokenId)
   ) as { data?: [string, string]; refetch: () => void };
 
@@ -51,8 +51,7 @@ export function MarketplaceListing({ token }: MarketplaceListingProps) {
       token.mintPrice ? Number(token.mintPrice).toString() : ""
     );
 
-    refetch();
-  }, [token, refetch]);
+  }, [token]);
 
   /** -------------------------------
    * Save logic
@@ -71,7 +70,6 @@ export function MarketplaceListing({ token }: MarketplaceListingProps) {
         });
 
         toast.success("NFT unlisted");
-        refetch();
         return;
       }
 
@@ -89,7 +87,6 @@ export function MarketplaceListing({ token }: MarketplaceListingProps) {
       });
       
       toast.success("Marketplace updated");
-      refetch();
     } catch (err: any) {
       toast.error("Marketplace update failed", {
         description: err?.message,

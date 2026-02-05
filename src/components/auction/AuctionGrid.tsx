@@ -41,7 +41,7 @@ export default function AuctionGrid({
             className="group"
           >
             <Card className="hover:shadow-lg transition cursor-pointer h-full flex flex-col">
-              <CardHeader className="p-0 relative">
+              <CardHeader className="p-0 min-h-36 relative">
                 {auction.nft.imageUrl ? (
                   <Image
                     src={auction.nft.imageUrl.replace(
@@ -49,7 +49,7 @@ export default function AuctionGrid({
                       `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`,
                     )}
                     alt={auction.nft.title}
-                    className="h-56 w-full object-cover rounded-t-lg"
+                    className="min-h-36 w-full object-cover rounded-t-lg"
                     fill
                   />
                 ) : (
