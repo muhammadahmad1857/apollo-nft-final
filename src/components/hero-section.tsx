@@ -150,10 +150,17 @@ export default function HeroSection() {
               className="relative w-full h-full max-w-md"
             >
               <Image
-                src={theme === 'dark' ? '/apollo-hero.png' : '/apollo-hero-dark.png'}
+                src={'/apollo-hero.png'}
                 alt="Music NFT Vinyl Records"
                 fill
-                className="object-contain"
+                className="object-contain hidden dark:block"
+                priority
+              />
+               <Image
+                src={'/apollo-hero-dark.png'}
+                alt="Music NFT Vinyl Records"
+                fill
+                className="object-contain dark:hidden"
                 priority
               />
             </motion.div>

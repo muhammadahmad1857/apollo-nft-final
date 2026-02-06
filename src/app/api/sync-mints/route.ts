@@ -106,7 +106,7 @@ export async function GET() {
             isListed: false,
             creatorId: creator.id,
             ownerId: creator.id,
-            mintPrice:0.1,
+            mintPrice:0,
             imageUrl: meta.cover || "",
             mediaUrl:meta.media || "",
           },
