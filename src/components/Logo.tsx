@@ -8,17 +8,27 @@ const Logo = ({width=110,height=50,show=true}:{width?:number,height?:number,show
 
   console.log("resolvedTheme:", resolvedTheme);
   return (
-    <Link href={'/'}>
+    <Link href={'/'} className={show ? "block" : "hidden"}>
     <Image
 
-      className={`w-${width} h-${height} object-contain ${show ? "block" : "hidden"}`}
+      className={`w-${width} h-${height} object-contain  dark:hidden block`}
       width={width}
       height={height}
       src={
-        resolvedTheme === "dark"
-          ? "/logo-light.png"  
-          : "/logo-dark.png"
+        "/logo-dark.png"
       }
+
+      alt="Logo"
+    />
+      <Image
+
+      className={`w-${width} h-${height} object-contain  dark:block hidden`}
+      width={width}
+      height={height}
+      src={
+        "/logo-light.png"
+      }
+      
       alt="Logo"
     />
     </Link>
