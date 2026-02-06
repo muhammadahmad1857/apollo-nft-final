@@ -6,6 +6,7 @@ import SkeletonCards from "./SekeletonCards";
 import { Button } from "../ui/button";
 import { getAllNFTs } from "@/actions/nft"; // server-side Prisma function
 import type { AuctionModel, NFTModel as PrismaNFT, UserModel } from "@/generated/prisma/models";
+import { getAblyClient } from "@/lib/ablyClient";
 
 const PAGE_SIZE = 12;
 
@@ -31,11 +32,40 @@ console.log("data",data)
       setLoading(false);
     }
   };
-
-  useEffect(() => {
+ useEffect(() => {
     loadMints();
-  }, []);
 
+    const ably = getAblyClient();
+    const channel = ably.channels.get("nft.*"); // Subscribe to **all NFTs**
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = (msg: any) => {
+      const { action, nft } = msg.data;
+      console.log("Realtime NFT event:", action, nft);
+
+      setMints((prev) => {
+        switch (action) {
+          case "create":
+            return [nft, ...prev];
+          case "update":
+          case "transfer":
+          case "approveAuction":
+          case "approveMarket":
+            return prev.map((m) => (m.id === nft.id ? { ...m, ...nft } : m));
+          case "delete":
+            return prev.filter((m) => m.id !== nft.id);
+          default:
+            return prev;
+        }
+      });
+    };
+
+    channel.subscribe("update", handler);
+
+    return () => {
+      channel.unsubscribe("update", handler);
+    };
+  }, []);
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

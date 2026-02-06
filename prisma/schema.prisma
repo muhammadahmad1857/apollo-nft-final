@@ -111,3 +111,14 @@ model File {
 
   user       User?    @relation(fields: [walletId], references: [walletAddress], onDelete: Cascade)
 }
+
+model Outbox {
+  id        String   @id @default(uuid())
+  entity    String   // "NFT", "Auction", "Bid", "NFTLike"
+  entityId  Int      // ID of the entity changed
+  action    String   // "create", "update", "delete", "like", "bid"
+  payload   Json     // Optional: include full object or just the diff
+  createdAt DateTime @default(now())
+  processed Boolean  @default(false) // Mark true after event sent to Ably
+}
+

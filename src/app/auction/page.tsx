@@ -6,6 +6,7 @@ import { getActiveAuctions } from "@/actions/auction";
 import AuctionFilters from "@/components/auction/AuctionFilters";
 import AuctionGrid from "@/components/auction/AuctionGrid";
 import { AuctionModel,  NFTModel, UserModel } from "@/generated/prisma/models";
+import { getAblyClient } from "@/lib/ablyClient";
 
 export default function AuctionsPage() {
   const searchParams = useSearchParams();
@@ -16,21 +17,54 @@ export default function AuctionsPage() {
     })[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAuctions = async () => {
-      setLoading(true);
-      const data = await getActiveAuctions({
-        search: searchParams.get("q") || undefined,
-        minPrice: searchParams.get("min") ? Number(searchParams.get("min")) : undefined,
-        maxPrice: searchParams.get("max") ? Number(searchParams.get("max")) : undefined,
-        endingSoon: searchParams.get("endingSoon") === "true",
-      });
-      setAuctions(data);
-      setLoading(false);
-    };
+useEffect(() => {
+  const fetchAuctions = async () => {
+    setLoading(true);
+    const data = await getActiveAuctions({
+      search: searchParams.get("q") || undefined,
+      minPrice: searchParams.get("min") ? Number(searchParams.get("min")) : undefined,
+      maxPrice: searchParams.get("max") ? Number(searchParams.get("max")) : undefined,
+      endingSoon: searchParams.get("endingSoon") === "true",
+    });
+    setAuctions(data);
+    setLoading(false);
+  };
 
-    fetchAuctions();
-  }, [searchParams]); // re-run whenever URL changes
+  fetchAuctions();
+
+  // -----------------------------
+  // Realtime subscription
+  // -----------------------------
+  const ably = getAblyClient();
+
+  // 1️⃣ Option A: Subscribe to all auctions globally
+  const globalChannel = ably.channels.get("auctions.all");
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleGlobal = (msg: any) => {
+    const { action, auction } = msg.data;
+    setAuctions((prev) => {
+      switch (action) {
+        case "create":
+          return [auction, ...prev];
+        case "update":
+        case "highestBidUpdated":
+          return prev.map((a) => (a.id === auction.id ? { ...a, ...auction } : a));
+        case "settled":
+        case "delete":
+          return prev.filter((a) => a.id !== auction.id);
+        default:
+          return prev;
+      }
+    });
+  };
+
+  globalChannel.subscribe("update", handleGlobal);
+
+  return () => {
+    globalChannel.unsubscribe("update", handleGlobal);
+  };
+}, [searchParams]);
 
   return (
     <div className="container mx-auto pt-24 py-20 space-y-6">

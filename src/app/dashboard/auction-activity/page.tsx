@@ -7,6 +7,7 @@ import { useAccount } from "wagmi";
 import { getAuctionHistory } from "@/actions/auction-history";
 import { AuctionHistory as AuctionHistoryType } from "@/types";
 import { useUser } from "@/hooks/useUser";
+import { getAblyClient } from "@/lib/ablyClient";
 
 // Components
 import AuctionTabs from "@/components/auction-activity/AuctionTabs";
@@ -23,21 +24,45 @@ export default function AuctionHistoryPage() {
   const [filteredAuctions, setFilteredAuctions] = useState<AuctionHistoryType[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch history when address changes
-  useEffect(() => {
-    if (!address) return;
+ useEffect(() => {
+  if (!address) return;
 
-    setLoading(true);
-    getAuctionHistory(address)
-      .then((data) => {
-        setAuctionHistory(data);
-        setFilteredAuctions(data); // default = all
-      })
-      .catch((err) => {
-        console.error("Failed to fetch auction history:", err);
-      })
-      .finally(() => setLoading(false));
-  }, [address]);
+  setLoading(true);
+  getAuctionHistory(address)
+    .then((data) => {
+      setAuctionHistory(data);
+      setFilteredAuctions(data);
+    })
+    .catch((err) => console.error("Failed to fetch auction history:", err))
+    .finally(() => setLoading(false));
+
+  const ably = getAblyClient();
+  // Subscribe to user-specific channel
+  const userChannel = ably.channels.get(`user.${userId}.auctions`);
+
+  const handleRealtime = (msg: any) => {
+    const { action, auction } = msg.data;
+    setAuctionHistory((prev) => {
+      switch (action) {
+        case "bidPlaced":
+          // Update bid info
+          return prev.map((a) => (a.id === auction.id ? { ...a, ...auction } : a));
+        case "auctionSettled":
+          return prev.map((a) => (a.id === auction.id ? { ...a, ...auction } : a));
+        case "newAuction":
+          return [auction, ...prev];
+        default:
+          return prev;
+      }
+    });
+  };
+
+  userChannel.subscribe("update", handleRealtime);
+
+  return () => {
+    userChannel.unsubscribe("update", handleRealtime);
+  };
+}, [address, userId]);
 
   if (!isConnected)
     return (

@@ -10,6 +10,7 @@ import {
   getNFTLikesByNFT,
   getNFTLikesByUser,
 } from "@/actions/nft-likes"; 
+import { getAblyClient } from "@/lib/ablyClient";
 
 interface LikeButtonProps {
   tokenId: number;
@@ -40,29 +41,50 @@ export default function LikeButton({
   const simpleClassName = `flex items-center gap-1.5 transition-colors ${className} ${
     liked ? "text-red-500" : "text-zinc-500 hover:text-red-400"
   }`;
+useEffect(() => {
+  let mounted = true;
 
-  useEffect(() => {
-    let mounted = true;
+  (async () => {
+    try {
+      const likes = await getNFTLikesByNFT(tokenId);
+      if (mounted) setCount(likes.length);
 
-    (async () => {
-      try {
-        const likes = await getNFTLikesByNFT(tokenId);
-        if (mounted) setCount(likes.length);
-
-        if (userId) {
-          const userLikes = await getNFTLikesByUser(userId);
-          const hasLiked = userLikes.some((like) => like.nftId === tokenId);
-          if (mounted) setLiked(hasLiked);
-        }
-      } catch (err) {
-        console.error("Failed to fetch likes:", err);
+      if (userId) {
+        const userLikes = await getNFTLikesByUser(userId);
+        const hasLiked = userLikes.some((like) => like.nftId === tokenId);
+        if (mounted) setLiked(hasLiked);
       }
-    })();
+    } catch (err) {
+      console.error("Failed to fetch likes:", err);
+    }
+  })();
 
-    return () => {
-      mounted = false;
-    };
-  }, [tokenId, userId]);
+  // -----------------------------
+  // Subscribe to Realtime Likes
+  // -----------------------------
+  const ably = getAblyClient();
+  const channel = ably.channels.get(`nft.${tokenId}`);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleRealtime = (msg: any) => {
+    if (!mounted) return;
+
+    const { action } = msg.data;
+    if (action === "like") {
+      setCount((prev) => prev + 1);
+    } else if (action === "unlike") {
+      setCount((prev) => Math.max(prev - 1, 0));
+    }
+  };
+
+  channel.subscribe("like", handleRealtime);
+
+  return () => {
+    mounted = false;
+    channel.unsubscribe("like", handleRealtime);
+  };
+}, [tokenId, userId]);
+
 
   const handleToggle = async () => {
     if (!userId) {
