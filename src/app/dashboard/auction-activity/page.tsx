@@ -46,9 +46,9 @@ export default function AuctionHistoryPage() {
       switch (action) {
         case "bidPlaced":
           // Update bid info
-          return prev.map((a) => (a.id === auction.id ? { ...a, ...auction } : a));
+          return prev.map((a) => (a.auction.id === auction.id ? { ...a, ...auction } : a));
         case "auctionSettled":
-          return prev.map((a) => (a.id === auction.id ? { ...a, ...auction } : a));
+          return prev.map((a) => (a.auction.id === auction.id ? { ...a, ...auction } : a));
         case "newAuction":
           return [auction, ...prev];
         default:
