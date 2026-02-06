@@ -63,7 +63,7 @@ export default function TrendingArtists() {
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.8 }}
         >
-          Trending Artists
+          Trending Sellers
         </motion.h2>
 
         <motion.div 
@@ -133,7 +133,7 @@ export default function TrendingArtists() {
             whileHover={{ gap: 12 }}
             whileTap={{ scale: 0.95 }}
           >
-            Browse All Artists
+            Browse All
             <motion.div
               animate={{ x: [0, 4, 0] }}
               transition={{ duration: 2, repeat: Infinity }}

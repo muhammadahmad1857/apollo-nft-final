@@ -64,7 +64,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.8 }}
         >
-          {isRecent ? "Recent" : "Trending"} Tracks
+          {isRecent ? "Recent" : "Trending"} NFTs
         </motion.h2>
 
         <motion.div 
@@ -154,7 +154,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
             whileHover={{ gap: 12 }}
             whileTap={{ scale: 0.95 }}
           >
-            Browse All Tracks
+            Browse All NFTs
             <motion.div
               animate={{ x: [0, 4, 0] }}
               transition={{ duration: 2, repeat: Infinity }}

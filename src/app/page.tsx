@@ -1,7 +1,7 @@
 'use client'
 
 import Header from '@/components/header'
-import HeroSection from '@/components/sidebar/hero-section'
+import HeroSection from '@/components/hero-section'
 import TrendingTracks from '@/components/trending-tracks'
 import TrendingArtists from '@/components/trending-artists'
 import HowItWorks from '@/components/how-it-works'

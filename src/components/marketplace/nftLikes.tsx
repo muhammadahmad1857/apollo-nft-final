@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   createNFTLike,
@@ -100,12 +101,16 @@ export default function LikeButton({
       className={showText ? classNameText : simpleClassName}
       aria-label={liked ? "Unlike" : "Like"}
     >
-      <Heart
-        size={20}
-        className="transition-transform"
-        fill={liked ? "currentColor" : "none"}
-        stroke={liked ? "currentColor" : "currentColor"}
-      />
+      {loading ? (
+        <Loader2 size={20} className="animate-spin" />
+      ) : (
+        <Heart
+          size={20}
+          className="transition-transform"
+          fill={liked ? "currentColor" : "none"}
+          stroke={liked ? "currentColor" : "currentColor"}
+        />
+      )}
       {showText && `${count} ${count === 1 ? "Like" : "Likes"}`}
     </button>
   );
