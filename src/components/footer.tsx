@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import Logo from "./Logo";
-import { Twitter, Mail } from "lucide-react";
+import Image from "next/image";
 
 const socialLinks = [
-  { icon: Twitter, href: "https://twitter.com/apollonft", label: "Twitter" },
-  { icon: Mail, href: "mailto:hello@apollonft.io", label: "Email" },
+  { image: "/X_logo_2023_(white).png",darkImg:"/x_logo_dark.png", href: "https://twitter.com/apollonft", label: "Twitter" },
+  { image: "/THE ALLEY-01_edited(2).png",darkImg:"/The_Alley_dark.png", href: "https://www.thealley.io/group/blaqclouds-inc/discussion", label: "Alley" },
 ];
 
 export default function Footer() {
@@ -14,7 +14,7 @@ export default function Footer() {
     <footer className="bg-background text-primary py-10 px-4 border-t border-border">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-10 md:gap-16 flex-wrap">
         {/* Logo and Description */}
-        <div className="flex-1 min-w-[220px]">
+        <div className="flex-1 min-w-55">
           <div className="flex items-center gap-2 mb-3">
             <Logo width={110} height={50} />
           </div>
@@ -23,7 +23,6 @@ export default function Footer() {
           </p>
           <div className="flex gap-3">
             {socialLinks.map((social) => {
-              const Icon = social.icon;
               return (
                 <a
                   key={social.label}
@@ -33,7 +32,8 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Icon size={20} />
+                  <Image src={social.image} alt={social.label} width={20} height={20} className="dark:block hidden"/>
+                  <Image src={social.darkImg} alt={social.label} width={20} height={20} className="block dark:hidden" />
                 </a>
               );
             })}

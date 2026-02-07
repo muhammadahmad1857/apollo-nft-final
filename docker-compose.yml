@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: apollo-nft-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Set your managed DB connection string here or use a .env file
+      - DATABASE_URL=your-managed-db-connection-string
+    volumes:
+      - ./:/app
