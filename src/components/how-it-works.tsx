@@ -7,7 +7,7 @@ const steps = [
   {
     id: 1,
     title: 'Mint NFT',
-    description: 'Create and mint your own music NFTs with custom metadata and royalty settings',
+    description: 'Create and mint your own NFTs with custom metadata and royalty settings',
     icon: Sparkle,
   },
   {
@@ -62,7 +62,7 @@ export default function HowItWorks() {
             How It Works
           </motion.h2>
           <motion.p className="text-lg sm:text-xl text-primary/80" variants={itemVariants}>
-            Three simple steps to start your music NFT journey
+            Three simple steps to start your Amazing NFT journey
           </motion.p>
         </motion.div>
 

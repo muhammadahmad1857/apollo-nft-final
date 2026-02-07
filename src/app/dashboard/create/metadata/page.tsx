@@ -38,7 +38,7 @@ const [showActions, setShowActions] = useState(false);
 
   const saveMetadata = async () => {
     if (!metadata.name || !metadata.title || !metadata.musicTrackUrl) {
-      toast.error("Please fill in name and music track url");
+      toast.error("Please fill in name or Select a file");
       return;
     }
 

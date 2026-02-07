@@ -58,7 +58,7 @@ export default function CreatePage() {
                       Upload File
                     </h2>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                      Upload your music or video file to Pinata and save it to
+                      Upload your NFT file to Pinata and save it to
                       the database
                     </p>
                   </div>
