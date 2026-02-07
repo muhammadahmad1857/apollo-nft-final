@@ -6,17 +6,20 @@ import { easeOut, motion } from 'framer-motion'
 const steps = [
   {
     id: 1,
-    title: 'Music Only Currency Native',
+    title: 'Mint NFT',
+    description: 'Create and mint your own music NFTs with custom metadata and royalty settings',
     icon: Music,
   },
   {
     id: 2,
-    title: 'Built For Artists',
+    title: 'List for Auction or Marketplace',
+    description: 'List your NFTs for auction with bidding or sell directly on the marketplace',
     icon: Mic2,
   },
   {
     id: 3,
-    title: 'Trade, Collect or Unlock Perks',
+    title: 'All Set',
+    description: 'Start earning, trading, and unlocking exclusive perks from your collection',
     icon: Zap,
   },
 ]
@@ -91,7 +94,8 @@ export default function HowItWorks() {
                   >
                     <Icon className="w-8 h-8 text-primary-foreground" />
                   </motion.div>
-                  <h3 className="text-xl font-bold">{step.title}</h3>
+                  <h3 className="text-xl font-bold mb-2">{step.title}</h3>
+                  <p className="text-sm text-primary-foreground/80">{step.description}</p>
                 </motion.div>
 
                 {/* Step number badge */}
