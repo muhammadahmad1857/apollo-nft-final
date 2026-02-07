@@ -1,6 +1,6 @@
 'use client'
 
-import { Music, Mic2, Zap } from 'lucide-react'
+import { Zap, Sparkle, ShoppingBasket } from 'lucide-react'
 import { easeOut, motion } from 'framer-motion'
 
 const steps = [
@@ -8,13 +8,13 @@ const steps = [
     id: 1,
     title: 'Mint NFT',
     description: 'Create and mint your own music NFTs with custom metadata and royalty settings',
-    icon: Music,
+    icon: Sparkle,
   },
   {
     id: 2,
     title: 'List for Auction or Marketplace',
     description: 'List your NFTs for auction with bidding or sell directly on the marketplace',
-    icon: Mic2,
+    icon: ShoppingBasket,
   },
   {
     id: 3,

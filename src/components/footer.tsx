@@ -32,8 +32,8 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Image src={social.image} alt={social.label} width={20} height={20} className="dark:block hidden"/>
-                  <Image src={social.darkImg} alt={social.label} width={20} height={20} className="block dark:hidden" />
+                  <Image src={social.image} alt={social.label} width={40} height={40} className="dark:block hidden"/>
+                  <Image src={social.darkImg} alt={social.label} width={40} height={40} className="block dark:hidden" />
                 </a>
               );
             })}
