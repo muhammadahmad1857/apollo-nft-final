@@ -1,14 +1,23 @@
-version: '3.8'
+version: "3.8"
 
 services:
   app:
     build: .
-    container_name: apollo-nft-app
+    env_file:
+      - .env
+    container_name: apollonft
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.apollonft.rule=Host(`apollonft.io`)"
+      - "traefik.http.routers.apollonft.entrypoints=websecure"
+      - "traefik.http.routers.apollonft.tls=true"
+      - "traefik.http.routers.apollonft.tls.certresolver=myresolver"
+    networks:
+      - traefik
     ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      # Set your managed DB connection string here or use a .env file
-      - DATABASE_URL=your-managed-db-connection-string
-    volumes:
-      - ./:/app
+      - "3000:3000" # optional if using Traefik only
+
+networks:
+  traefik:
+    external: true
