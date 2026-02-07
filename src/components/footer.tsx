@@ -5,7 +5,7 @@ import Logo from "./Logo";
 import Image from "next/image";
 
 const socialLinks = [
-  { image: "/X_logo_2023_(white).png",darkImg:"/x_logo_dark.png", href: "https://twitter.com/apollonft", label: "Twitter" },
+  { image: "/X_logo_2023_(white).png",darkImg:"/x_logo_dark.png", href: "https://x.com/Blaqclouds_wy", label: "Twitter" },
   { image: "/THE ALLEY-01_edited(2).png",darkImg:"/The_Alley_dark.png", href: "https://www.thealley.io/group/blaqclouds-inc/discussion", label: "Alley" },
 ];
 
@@ -79,8 +79,8 @@ export default function Footer() {
         <div className="flex-1 min-w-[160px]">
           <h3 className="font-bold text-lg mb-3">Company</h3>
           <ul className="space-y-2">
-            <li><Link href="#" className="hover:underline">apollonft, Inc.</Link></li>
-            <li><a href="mailto:hello@apollonft.io" className="hover:underline">hello@apollonft.io</a></li>
+            <li><Link href="#" className="hover:underline">BLAQclouds, Inc.</Link></li>
+            <li><a href="mailto:hello@blaqclouds.io" className="hover:underline">hello@blaqclouds.io</a></li>
             <li><a href="tel:+16106214804" className="hover:underline">610-621-4804</a></li>
             <li><Link href="/privacy" className="hover:underline">Privacy Policy</Link></li>
             <li><Link href="/terms" className="hover:underline">Terms of Service</Link></li>
@@ -90,9 +90,9 @@ export default function Footer() {
 
       {/* Bottom Bar */}
       <div className="border-t border-gray-800 mt-8 pt-4 text-center text-xs space-y-2 md:space-y-0 md:flex md:flex-col md:items-center">
-        <span>© 2026 Apollo Cash · Powered by apollonft, Inc. All rights reserved.</span>
+        <span>© 2026 Apollo NFT · Powered by BLAQclouds, Inc. All rights reserved.</span>
         <span>
-          apollonft, Inc. is registered with FINCEN as an MSB (Money Service Business). BSA ID: 31000313564202
+          BLAQclouds, Inc. is registered with FINCEN as an MSB (Money Service Business). BSA ID: 31000313564202
         </span>
         <span className="flex flex-wrap justify-center gap-1">
           <Link href="https://shopwithcrypto.io" target="_blank" className="text-blue-400 hover:underline">ShopwithCrypto.io</Link>,
