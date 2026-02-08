@@ -34,7 +34,7 @@ export default function Header() {
             className="flex items-center gap-3"
             whileHover={{ scale: 1.05 }}
           >
-            <Logo/>
+            <Logo height={60} width={130}/>
             {/* <motion.h1 
               className="text-xl font-bold tracking-tight"
               initial={{ opacity: 0, x: -20 }}
