@@ -83,11 +83,10 @@ export default function MintSingleNFTPage() {
         royaltyBps,
       });
 
-      if (success) {
         setShowSuccess(true);
         removeRoyalty("SINGLE"); // remove after successful mint
 
-      }
+      
     } finally {
       // ✅ ALWAYS stop loader (success OR error)
       setIsMinting(false);
@@ -246,6 +245,8 @@ export default function MintSingleNFTPage() {
         </div>
       </div>
       <MintSuccessDialog
+
+
         open={showSuccess}
         onClose={() => setShowSuccess(false)}
       />

@@ -20,6 +20,8 @@ import { ApproveAuctionButton } from "./ApproveButton";
 import { useUser } from "@/hooks/useUser";
 import { useSettleAuction } from "@/hooks/useAuction";
 import { getAuctionByNFT } from "@/actions/auction"; // your Prisma fetch
+import { CalendarIcon } from "lucide-react";
+import { differenceInHours, format, startOfDay } from "date-fns";
 
 import {
   Select,
@@ -28,6 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { AuctionModel, BidModel, NFTModel, UserModel } from "@/generated/prisma/models";
 
 const presetDurations = [
@@ -61,7 +65,7 @@ export function CreateAuctionButton({
   const [duration, setDuration] = useState(""); // hours
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
   const toastIdRef = useRef<string | number | null>(null);
-const [customDuration, setCustomDuration] = useState(""); // stores number typed in input
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
 
   const { settleAuction, isPending: isSettlePending } = useSettleAuction();
 
@@ -140,7 +144,18 @@ const [customDuration, setCustomDuration] = useState(""); // stores number typed
     if (!minBid || !duration) return toast.error("Fill all fields");
 
     try {
-      const durationSec = BigInt(Number(duration === "custom" ? customDuration : duration) * 3600);
+      let durationHours = 0;
+
+      if (duration === "custom") {
+        if (!customEndDate) return toast.error("Pick an end date");
+
+        durationHours = differenceInHours(customEndDate, new Date());
+        if (durationHours <= 0) return toast.error("End date must be in the future");
+      } else {
+        durationHours = Number(duration);
+      }
+
+      const durationSec = BigInt(durationHours * 3600);
 
       const tx = await createAuctionOnChain(tokenId, durationSec, minBid, user?.id || 0, nftId);
       setTxHash(tx);
@@ -206,18 +221,23 @@ const [customDuration, setCustomDuration] = useState(""); // stores number typed
             <div className="flex flex-col gap-2">
               <Label>Duration</Label>
 
-              <Select value={duration} onValueChange={(val: any) => setDuration(val)}>
+              <Select
+                value={duration}
+                onValueChange={(val: any) => {
+                  setDuration(val);
+                  if (val !== "custom") setCustomEndDate(undefined);
+                }}
+              >
                 <SelectTrigger>
-                 <SelectValue
-  placeholder={
-    duration === "custom"
-      ? (customDuration ? `${customDuration} hours` : "Custom")
-      : "Select auction duration"
-  }
-/>
-
-            
-    
+                  <SelectValue
+                    placeholder={
+                      duration === "custom"
+                        ? customEndDate
+                          ? format(customEndDate, "PPP")
+                          : "Pick end date"
+                        : "Select auction duration"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {presetDurations.map((d) => (
@@ -229,11 +249,30 @@ const [customDuration, setCustomDuration] = useState(""); // stores number typed
               </Select>
 
               {duration === "custom" && (
-                <Input
-                  type="number"
-                  placeholder="Enter hours..."
-    onChange={(e) => setCustomDuration(e.target.value)}
-                />
+                <div className="space-y-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {customEndDate ? format(customEndDate, "PPP") : "Pick an end date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={customEndDate}
+                        onSelect={setCustomEndDate}
+                        disabled={(date) => date < startOfDay(new Date())}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {customEndDate && (
+                    <p className="text-xs text-muted-foreground">
+                      Duration: {Math.max(0, differenceInHours(customEndDate, new Date()))} hours
+                    </p>
+                  )}
+                </div>
               )}
             </div>
 

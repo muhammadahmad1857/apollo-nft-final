@@ -46,11 +46,11 @@ const totalPriceHuman = !isPriceLoading
         isBatch: true,
       });
 
-      if (success) {
+      // if (success) {
         setShowSuccess(true);
         removeRoyalty("BATCH"); // remove after successful mint
 
-      }
+      // }
     } finally {
       // ✅ ALWAYS stop loader (success OR error)
       setIsMinting(false);

@@ -24,20 +24,60 @@ export function resolveIpfs(uri: string, gateway = process.env.NEXT_PUBLIC_GATEW
 }
 
 // Helper to detect type
+// Helper to fetch content-type from IPFS URL headers
+async function fetchContentTypeFromIPFS(uri: string): Promise<string> {
+  try {
+    const response = await fetch(uri, { method: "HEAD" });
+    const contentType = response.headers.get("content-type")?.toLowerCase().trim() || "";
+    console.log("fetchContentTypeFromIPFS:", { uri, contentType });
+    return contentType;
+  } catch (err) {
+    console.warn("Failed to fetch content-type from IPFS:", err);
+    return "";
+  }
+}
+
 export async function detectFileType(uri: string): Promise<string> {
-  const { type, name } = await getFileTypeByIPFS(uri);
-  const ext = name.split(".").pop()?.toLowerCase() || "";
-  const mime = type.toLowerCase();
+  try {
+    let type = "";
+    let name = "";
 
-  if (mime.startsWith("audio/") || ["mp3", "wav", "ogg"].includes(ext)) return `audio/${ext || mime.split("/")[1]}`;
-  if (mime.startsWith("video/") || ["mp4", "mov", "webm"].includes(ext)) return `video/${ext || mime.split("/")[1]}`;
-  if (mime.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext)) return `image/${ext || mime.split("/")[1]}`;
-  if (["txt", "md"].includes(ext) || mime === "text/plain" || mime === "text/markdown") return ext === "md" ? "txt/md" : "txt/txt";
-  if (ext === "doc" || mime === "application/msword") return "doc/doc";
-  if (ext === "docx" || mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "doc/docx";
-  if (ext === "pdf" || mime === "application/pdf" || mime === "pdf") return "pdf";
+    // Try to get from getFileTypeByIPFS first
+    try {
+      const result = await getFileTypeByIPFS(uri);
+      type = result?.type?.toLowerCase().trim() || "";
+      name = result?.name?.toLowerCase().trim() || "";
+      console.log("detectFileType (from DB):", { type, name });
+    } catch (err) {
+      console.warn("getFileTypeByIPFS failed, fetching from IPFS headers:", err);
+    }
 
-  return "other";
+    // If type is not found, fetch content-type directly from IPFS
+    if (!type) {
+      const resolvedUri = resolveIpfs(uri);
+      type = await fetchContentTypeFromIPFS(resolvedUri);
+      console.log("detectFileType (from IPFS headers):", { type });
+    }
+
+    const ext = name.split(".").pop() || "";
+    const mime = type;
+
+    console.log("detectFileType final:", { uri, ext, mime });
+
+    if (mime.startsWith("audio/") || ["mp3", "wav", "ogg"].includes(ext)) return `audio/${ext || mime.split("/")[1]}`;
+    if (mime.startsWith("video/") || ["mp4", "mov", "webm"].includes(ext)) return `video/${ext || mime.split("/")[1]}`;
+    if (mime.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext)) return `image/${ext || mime.split("/")[1]}`;
+    if (["txt", "md"].includes(ext) || mime === "text/plain" || mime === "text/markdown") return ext === "md" ? "txt/md" : "txt/txt";
+    if (ext === "doc" || mime === "application/msword") return "doc/doc";
+    if (ext === "docx" || mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "doc/docx";
+    if (ext === "pdf" || mime === "application/pdf" || mime === "pdf") return "pdf";
+
+    console.log("detectFileType: No match, returning other");
+    return "other";
+  } catch (err) {
+    console.error("detectFileType error:", err);
+    return "other";
+  }
 }
 
 export default function UniversalMediaViewer({

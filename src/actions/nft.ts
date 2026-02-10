@@ -99,6 +99,7 @@ export async function transferOwnership(
       approvedMarket: false,
       approvedAuction: false,
       owner: {
+        
         connect: {
           id: newOwnerId,
         },
