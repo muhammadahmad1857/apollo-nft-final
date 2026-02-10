@@ -37,7 +37,7 @@ export function MarketplaceListing({ token }: MarketplaceListingProps) {
 
   const updateNFT = useUpdateNFT();
 
-  const [isListed, setIsListed] = useState(false);
+  const [isListed, setIsListed] = useState(token.isListed??false);
   const [priceEth, setPriceEth] = useState("");
 
   /** -------------------------------
@@ -178,7 +178,7 @@ setMarketApproved(true);
         disabled={cancelPending || updateNFT.isPending}
         onClick={handleSaveListing}
       >
-        Save Marketplace
+        {token.isListed?"Remove from marketplace":"Add to marketplace"}
       </Button>
     </div>
   );

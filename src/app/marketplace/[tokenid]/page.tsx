@@ -10,6 +10,7 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { NotFound } from "@/components/notFound";
 import { UniversalMediaIcon } from "@/components/ui/UniversalMediaIcon";
+import { getNFTByTokenId } from "@/actions/nft";
 
 // Force dynamic rendering + light ISR
 export const dynamic = "force-dynamic";
@@ -40,7 +41,8 @@ export default async function NFTDetailPage({
   let metadata: any = null;
   let owner: `0x${string}` | null = null;
   let mediaType: "audio" | "video" | "unknown" = "unknown";
-const detectMediaType = async (url: string) => {
+  const dbNft = await getNFTByTokenId(tokenId);
+  const detectMediaType = async (url: string) => {
     if (!url) return;
 
     try {
@@ -184,6 +186,8 @@ const detectMediaType = async (url: string) => {
               title={title}
               name={artist}
               media={media}
+              mintPrice={dbNft?.mintPrice}
+              ownerAddress={owner}
             />
 
             {/* Optional extra info */}

@@ -4,26 +4,50 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
 import { useAccount } from "wagmi";
+import { useBuyNFT } from "@/hooks/useMarketplace";
 import ShareModal from "./ShareModel";
 import LikeButton from "./nftLikes";
 import { toggleNFTLike, checkIfUserLikedNFT, getNFTLikesByNFT } from "@/actions/nft-likes";
 import UniversalMediaViewer from "../ui/UniversalMediaViewer";
+import { parseEther } from "viem";
+import { transferOwnership } from "@/actions/nft";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface NFTInteractiveContentProps {
   tokenId: number;
   media: string;
   title: string;
   name: string;
+  mintPrice?: number;
+  ownerAddress?: string | null;
 }
 
-export default function NFTInteractiveContent({ tokenId, media, title, name }: NFTInteractiveContentProps) {
+export default function NFTInteractiveContent({
+  tokenId,
+  media,
+  title,
+  name,
+  mintPrice,
+  ownerAddress,
+}: NFTInteractiveContentProps) {
   const { address } = useAccount();
   const { data: user, isLoading: loadingUser } = useUser(address);
+  const { buyNFT, isPending } = useBuyNFT();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [loadingLike, setLoadingLike] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showBuyConfirm, setShowBuyConfirm] = useState(false);
+  const [isProcessingBuy, setIsProcessingBuy] = useState(false);
 
   // Load initial like state and count
   useEffect(() => {
@@ -72,6 +96,21 @@ export default function NFTInteractiveContent({ tokenId, media, title, name }: N
     }
   };
 
+  const handleBuy = async () => {
+    if (!mintPrice) return toast.error("Mint price not available");
+
+    try {
+      await buyNFT(BigInt(tokenId), parseEther(String(mintPrice)));
+      if (user?.id) {
+        await transferOwnership(tokenId, user.id);
+      }
+      toast.success("NFT purchased successfully!");
+    } catch (err: any) {
+      console.error("error in buying", err);
+      toast.error(err?.message || "Failed to purchase NFT.");
+    }
+  };
+
   return (
     <>
       {/* Media Controls */}
@@ -99,6 +138,25 @@ export default function NFTInteractiveContent({ tokenId, media, title, name }: N
           <Share size={18} />
           <span className="text-sm font-medium">Share</span>
         </button>
+
+        {mintPrice !== undefined && (
+          !address ? (
+            <p className="text-sm text-foreground">Connect your wallet to buy</p>
+          ) : (
+            <button
+              onClick={() => setShowBuyConfirm(true)}
+              className="px-6 py-3 rounded-lg font-medium bg-cyan-600 text-white hover:bg-cyan-700 transition-colors disabled:pointer-events-none"
+              disabled={isPending || address === ownerAddress}
+            >
+              {address === ownerAddress
+                ? "Sold"
+                : isPending
+                ? "Buying..."
+                : "Buy"
+              }
+            </button>
+          )
+        )}
       </div>
 
       {/* Fullscreen Video Modal */}
@@ -120,6 +178,52 @@ export default function NFTInteractiveContent({ tokenId, media, title, name }: N
       )}
 
       <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} tokenId={tokenId} title={title} name={name} />
+
+      <Dialog open={showBuyConfirm} onOpenChange={setShowBuyConfirm}>
+        <DialogContent className="sm:max-w-100">
+          <DialogHeader>
+            <DialogTitle>Confirm Purchase</DialogTitle>
+            <DialogDescription>
+              You are about to pay{" "}
+              <strong>{mintPrice?.toFixed(4)} APOLLO</strong> for this NFT.
+              <br />
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4 text-center">
+            <p className="text-xs text-zinc-500">
+              Wallet: {address?.slice(0, 6)}...{address?.slice(-4)}
+            </p>
+          </div>
+
+          <DialogFooter className="mt-6 flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setShowBuyConfirm(false)}
+              disabled={isProcessingBuy}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={async () => {
+                try {
+                  setIsProcessingBuy(true);
+                  await handleBuy();
+                  setShowBuyConfirm(false);
+                } finally {
+                  setIsProcessingBuy(false);
+                }
+              }}
+              disabled={isProcessingBuy}
+            >
+              {isProcessingBuy ? "Processing..." : "Confirm & Pay"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
