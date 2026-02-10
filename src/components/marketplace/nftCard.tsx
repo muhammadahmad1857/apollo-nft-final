@@ -98,8 +98,12 @@ const NFTCard = ({
     }
   };
 
-  const handleEditRoyalty = () => {
-    router.push(`/dashboard/token/${tokenId}/edit`);
+  const handleCardClick = () => {
+    if (isAuctionActive) {
+      router.push(`/auction/${nftId}`);
+    } else {
+      router.push(`/marketplace/${tokenId}`);
+    }
   };
 
   // Remove old mediaType, showVideoModal, showShareModal, realMedia, and useEffects
@@ -113,11 +117,12 @@ const NFTCard = ({
   return (
     <>
       <motion.div
-        className="group  rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+        className="group cursor-pointer rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
+        onClick={handleCardClick}
       >
       
 
@@ -181,9 +186,14 @@ const NFTCard = ({
         )}
           {/* Actions */}
           <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
-            <LikeButton userId={user?.id || 0} tokenId={tokenId} />
+            <div onClick={(e) => e.stopPropagation()}>
+              <LikeButton userId={user?.id || 0} tokenId={tokenId} />
+            </div>
             <button
-              onClick={() => setShowShareModal(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowShareModal(true);
+              }}
               className="flex items-center gap-1.5 text-zinc-500 hover:text-blue-500 transition-colors"
               aria-label="Share"
             >
@@ -204,7 +214,10 @@ const NFTCard = ({
     <p className="text-sm text-foreground">Connect your wallet to buy</p>
   ) : isAuctionActive ? (
     <button
-      onClick={() => router.push(`/auction/${nftId}`)}
+      onClick={(e) => {
+        e.stopPropagation();
+        router.push(`/auction/${nftId}`);
+      }}
       className="ml-auto px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
     >
       View Auction
@@ -212,7 +225,10 @@ const NFTCard = ({
   ) : (
     showBuyButton && mintPrice && (
       <button
-        onClick={() => setShowBuyConfirm(true)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowBuyConfirm(true);
+        }}
         className="ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors disabled:pointer-events-none"
         disabled={isPending || !address || address === ownerAddress}
       >
@@ -232,7 +248,10 @@ const NFTCard = ({
 
             {showEditRoyaltyButton && (
               <button
-                onClick={handleEditRoyalty}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/dashboard/token/${tokenId}/edit`);
+                }}
                 className="ml-auto px-4 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors"
               >
                 Edit Listing
@@ -274,14 +293,18 @@ const NFTCard = ({
             <Button
               variant="outline"
               className="flex-1"
-              onClick={() => setShowBuyConfirm(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowBuyConfirm(false);
+              }}
               disabled={isProcessingBuy}
             >
               Cancel
             </Button>
             <Button
               className="flex-1"
-              onClick={async () => {
+              onClick={async (e) => {
+                e.stopPropagation();
                 try {
                   setIsProcessingBuy(true);
                   await handleBuy();

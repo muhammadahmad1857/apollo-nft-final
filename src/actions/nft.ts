@@ -41,8 +41,11 @@ export async function getAllNFTs(): Promise<
 
 export async function getNFTByTokenId(
   tokenId: number,
-): Promise<PrismaNFT | null> {
-  return db.nFT.findUnique({ where: { tokenId } });
+): Promise<(PrismaNFT & { owner: UserModel | null }) | null> {
+  return db.nFT.findUnique({
+    where: { tokenId },
+    include: { owner: true },
+  });
 }
 
 export async function getNFTsByCreator(

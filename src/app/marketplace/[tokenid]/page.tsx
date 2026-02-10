@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import {Music, ExternalLink, } from "lucide-react";
-import { createPublicClient, http } from "viem";
-import {  nftABIArray,nftAddress } from "@/lib/wagmi/contracts"; // ← adjust path
+import { ExternalLink } from "lucide-react";
+import { nftABIArray, nftAddress } from "@/lib/wagmi/contracts";
 import Link from "next/link";
 import NFTInteractiveContent from "@/components/marketplace/nftPage";
 import Header from "@/components/header";
@@ -29,85 +28,55 @@ export default async function NFTDetailPage({
   params: Promise<{ tokenid: string }>;
 }) {
   const tokenId = Number((await params).tokenid);
-  console.log(tokenId,(await params).tokenid)
   if (isNaN(tokenId) || tokenId < 1) {
-    return <div className="flex flex-col items-center justify-center"><NotFound title="No NFT FOUND" link="/dashboard"/></div>;
-  };
-
-  const publicClient = createPublicClient({
-    transport: http("https://mainnet-rpc.apolloscan.io"),
-  });
+    return (
+      <div className="flex flex-col items-center justify-center">
+        <NotFound title="No NFT FOUND" link="/dashboard" />
+      </div>
+    );
+  }
 
   let metadata: any = null;
   let owner: `0x${string}` | null = null;
-  let mediaType: "audio" | "video" | "unknown" = "unknown";
+
   const dbNft = await getNFTByTokenId(tokenId);
-  const detectMediaType = async (url: string) => {
-    if (!url) return;
 
-    try {
-      const response = await fetch(url, { method: "HEAD" });
-      if (!response.ok) throw new Error("HEAD request failed");
+  if (!dbNft) {
+    return (
+      <div className="flex flex-col items-center justify-center">
+        <NotFound title="No NFT FOUND" link="/dashboard" />
+      </div>
+    );
+  }
 
-      const contentType =
-        response.headers.get("content-type")?.toLowerCase() || "";
+  // Get owner address from DB
+  if (dbNft.owner?.walletAddress) {
+    owner = dbNft.owner.walletAddress as `0x${string}`;
+  }
 
-      if (contentType.startsWith("audio/")) {
-        mediaType = "audio"
-        console.log("Media tis audio")
-      } else if (contentType.startsWith("video/")) {
-        mediaType="video";
-        console.log("Media tis video")
-
-      } else {
-        // Fallback to extension
-       mediaType='unknown'
-        console.log("Media tis unknown")
-
-      }
-    } catch (err) {
-      console.warn("Media type detection failed:", err);
-       mediaType='unknown'
-    }
-  };
+  // Fetch metadata from tokenUri
   try {
-    const uri = (await publicClient.readContract({
-      address: nftAddress,
-      abi: nftABIArray,
-      functionName: "tokenURI",
-      args: [BigInt(tokenId)],
-    })) as string;
-
-    const httpUri = uri.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`);
+    const tokenUri = dbNft.tokenUri;
+    const httpUri = tokenUri.replace(
+      "ipfs://",
+      `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`
+    );
     const res = await fetch(httpUri, { next: { revalidate: 60 } });
 
     if (res.ok) {
       metadata = await res.json();
     }
-
-    // Optional: get current owner
-    try {
-      owner = (await publicClient.readContract({
-        address: nftAddress,
-        abi: nftABIArray,
-        functionName: "ownerOf",
-        args: [BigInt(tokenId)],
-      })) as `0x${string}`;
-    } catch {
-      // token might not exist or contract doesn't have ownerOf
-    }
-
-    // Simple media type detection (extension based)
-    const mediaUrl = (metadata?.media || "")
-      .replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`);
-    if (mediaUrl) {
-        console.log("Detecting media type for url",mediaUrl)
-      detectMediaType(mediaUrl)
-    }
   } catch (err) {
-    console.error("Error loading NFT:", err);
+    console.error("Error loading metadata:", err);
   }
-  console.log("Metadata",metadata,mediaType)
+
+  if (!metadata) {
+    return (
+      <div className="flex flex-col items-center justify-center">
+        <NotFound title="No NFT FOUND" link="/dashboard" />
+      </div>
+    );
+  }
   if (!metadata) return <div className="flex flex-col items-center justify-center"><NotFound title="No NFT FOUND" link="/dashboard"/></div>;;
 
   const title = metadata.title || `NFT #${tokenId}`;
@@ -188,6 +157,7 @@ export default async function NFTDetailPage({
               media={media}
               mintPrice={dbNft?.mintPrice}
               ownerAddress={owner}
+              tokenUri={dbNft.tokenUri}
             />
 
             {/* Optional extra info */}

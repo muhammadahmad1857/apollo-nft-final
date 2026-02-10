@@ -28,6 +28,7 @@ interface NFTInteractiveContentProps {
   name: string;
   mintPrice?: number;
   ownerAddress?: string | null;
+  tokenUri:string
 }
 
 export default function NFTInteractiveContent({
@@ -37,6 +38,7 @@ export default function NFTInteractiveContent({
   name,
   mintPrice,
   ownerAddress,
+  tokenUri
 }: NFTInteractiveContentProps) {
   const { address } = useAccount();
   const { data: user, isLoading: loadingUser } = useUser(address);
@@ -115,7 +117,7 @@ export default function NFTInteractiveContent({
     <>
       {/* Media Controls */}
       <div className="mt-8 flex flex-wrap gap-4 justify-center sm:justify-start">
-       <UniversalMediaViewer uri={media} className="w-full max-w-md rounded-lg shadow-lg" />
+       <UniversalMediaViewer uri={media} tokenUri={tokenUri} className="w-full max-w-md rounded-lg shadow-lg" />
         
 
         <button
