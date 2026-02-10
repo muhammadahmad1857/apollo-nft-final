@@ -80,6 +80,7 @@ const NFTCard = ({
     new Date(auction.endTime) >= now;
 
   console.log("nft.media", cover);
+  console.log("NFT title received:", title);
 
   const handleBuy = async () => {
     if (!mintPrice) return toast.error("Mint price not available");

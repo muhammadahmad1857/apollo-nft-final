@@ -86,7 +86,7 @@ export default async function NFTDetailPage({
     .replace("ipfs://",  `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`);
   const media = (metadata.media || "")
     .replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`);
-
+console.log("metadata", metadata,"tokenUri", dbNft.tokenUri);
   return (
     <main className="min-h-screen py-12 px-4 md:px-8 lg:px-16">
       <Header/>
