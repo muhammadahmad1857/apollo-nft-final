@@ -50,7 +50,7 @@ export default function NFTInteractiveContent({
   const [showShareModal, setShowShareModal] = useState(false);
   const [showBuyConfirm, setShowBuyConfirm] = useState(false);
   const [isProcessingBuy, setIsProcessingBuy] = useState(false);
-
+console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPrice, ownerAddress, tokenUri });
   // Load initial like state and count
   useEffect(() => {
     let mounted = true;
@@ -102,6 +102,7 @@ export default function NFTInteractiveContent({
     if (!mintPrice) return toast.error("Mint price not available");
 
     try {
+      
       await buyNFT(BigInt(tokenId), parseEther(String(mintPrice)));
       if (user?.id) {
         await transferOwnership(tokenId, user.id);
