@@ -129,7 +129,7 @@ export default function AuctionPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-10 space-y-8">
+    <div className="max-w-5xl mx-auto py-10 space-y-8 px-4">
       <AuctionDetails auction={auction} onSettle={handleSettle} />
       <AuctionStatus auction={auction} />
      { new Date() < new Date(auction.endTime)&&<BidInput isDisabled={(auction.seller.walletAddress === address)||auction.settled || new Date() >= new Date(auction.endTime)} onPlaceBid={handlePlaceBid} minBid={auction.highestBid || auction.minBid} />}

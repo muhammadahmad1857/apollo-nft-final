@@ -58,7 +58,7 @@ export default function HeroSection() {
   const { resolvedTheme:theme } = useTheme()
 
   return (
-    <section className="pt-32 pb-12 px-4 sm:px-6 lg:px-8 bg-linear-to-br from-background via-background to-muted">
+    <section className="pt-32 pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <motion.div 
           className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center"
@@ -70,7 +70,7 @@ export default function HeroSection() {
           {/* Left Content */}
           <motion.div className="space-y-8" variants={itemVariants}>
             <motion.div 
-              className="inline-block px-4 py-2 bg-muted rounded-full text-sm font-medium"
+              className="glass inline-block px-4 py-2 rounded-full text-sm font-medium border-white/30"
               variants={itemVariants}
             >
               Immersive NFT Marketplace

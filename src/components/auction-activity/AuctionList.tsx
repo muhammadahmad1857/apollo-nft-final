@@ -84,7 +84,7 @@ export default function AuctionList({ auctions, loading, userId }: AuctionListPr
         return (
           <div
             key={a.auction.id}
-            className="flex flex-col md:flex-row bg-white dark:bg-zinc-900 rounded-lg shadow p-4 gap-4 w-full"
+            className="glass-card border-white/20 flex flex-col md:flex-row rounded-lg shadow p-4 gap-4 w-full"
           >
             {/* NFT Image */}
             <div className="w-full md:w-32 h-32 shrink-0">

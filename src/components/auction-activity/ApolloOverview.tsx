@@ -105,24 +105,24 @@ export default function ApolloOverview({ auctionHistory = [] }: ApolloOverviewPr
 
       {/* Stats Boxes */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="p-4 bg-white dark:bg-zinc-900 rounded-lg shadow flex flex-col items-center">
+        <div className="glass-card border-white/20 p-4 rounded-lg shadow flex flex-col items-center">
           <span className="text-sm text-muted-foreground">Pending Apollo</span>
           <span className="text-xl font-bold text-orange-600">{pendingApollo.toFixed(2)}</span>
         </div>
 
-        <div className="p-4 bg-white dark:bg-zinc-900 rounded-lg shadow flex flex-col items-center">
+        <div className="glass-card border-white/20 p-4 rounded-lg shadow flex flex-col items-center">
           <span className="text-sm text-muted-foreground">Auctions Won</span>
-          <span className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{auctionsWon}</span>
+          <span className="text-xl font-bold">{auctionsWon}</span>
         </div>
 
-        <div className="p-4 bg-white dark:bg-zinc-900 rounded-lg shadow flex flex-col items-center">
+        <div className="glass-card border-white/20 p-4 rounded-lg shadow flex flex-col items-center">
           <span className="text-sm text-muted-foreground">Active Bids</span>
-          <span className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{activeAuctions}</span>
+          <span className="text-xl font-bold">{activeAuctions}</span>
         </div>
 
-        <div className="p-4 bg-white dark:bg-zinc-900 rounded-lg shadow flex flex-col items-center">
+        <div className="glass-card border-white/20 p-4 rounded-lg shadow flex flex-col items-center">
           <span className="text-sm text-muted-foreground">Total Bids</span>
-          <span className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{totalBids}</span>
+          <span className="text-xl font-bold">{totalBids}</span>
         </div>
       </div>
     </div>

@@ -54,7 +54,7 @@ const itemVariants = {
 
 export default function TrendingArtists() {
   return (
-    <section className="px-4 sm:px-6 lg:px-8 py-20 bg-background">
+    <section className="px-4 sm:px-6 lg:px-8 py-20">
       <div className="max-w-7xl mx-auto">
         <motion.h2 
           className="text-3xl sm:text-4xl font-bold mb-16"
@@ -77,7 +77,7 @@ export default function TrendingArtists() {
             <motion.div
               key={artist.id}
               variants={itemVariants}
-              className="group relative overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300"
+              className="glass-card border-white/20 group relative overflow-hidden rounded-2xl transition-all duration-300"
             >
               {/* Cover Image */}
               <div className="relative h-48 overflow-hidden bg-muted">

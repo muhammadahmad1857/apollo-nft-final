@@ -34,7 +34,7 @@ export default function AuctionsPage() {
 
   return (
     <div className="container mx-auto pt-24 py-20 space-y-6">
-      <div>
+      <div className="glass-card p-6 rounded-lg border-white/20">
         <h1 className="text-3xl font-bold">Live Auctions</h1>
         <p className="text-muted-foreground">Browse all active NFT auctions</p>
       </div>

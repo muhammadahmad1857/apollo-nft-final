@@ -53,7 +53,7 @@ export default function Page() {
     <div className="flex flex-col lg:flex-row gap-6 p-4 md:p-8">
       {/* LEFT SIDEBAR */}
       <div className="max-w-full lg:w-1/4 flex flex-col gap-6">
-        <Card className="flex flex-col items-center p-6 gap-3">
+        <Card className="glass-card flex flex-col items-center p-6 gap-3 border-white/20">
           <Avatar className="size-24 mb-2">
             <AvatarImage src={user.avatarUrl ?? ""} alt={user.name} />
             <AvatarFallback className="rounded-lg">{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
@@ -64,7 +64,7 @@ export default function Page() {
         </Card>
 
         {/* Stats */}
-        <Card className="p-4">
+        <Card className="glass-card p-4 border-white/20">
           <div className="flex justify-between text-sm">
             <span className="font-semibold">Stats</span>
             <span className="text-muted-foreground">NFTs Owned</span>
@@ -73,7 +73,7 @@ export default function Page() {
         </Card>
 
         {/* Minted filter */}
-        <Card className="p-4">
+        <Card className="glass-card p-4 border-white/20">
           <div className="flex items-center justify-between">
             <span>Show only listed</span>
             <input

@@ -93,7 +93,7 @@ console.log("tokenUri", dbNft);
         {/* Back link */}
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-zinc-500 hover:text-zinc-300 mb-8 transition-colors"
+          className="inline-flex items-center gap-2 hover:text-zinc-300 mb-8 transition-colors"
         >
           ← Back to gallery
         </Link>
@@ -101,7 +101,7 @@ console.log("tokenUri", dbNft);
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left - Media / Cover */}
           <div className="space-y-6">
-            <div className="rounded-2xl overflow-hidden bg-linear-to-br from-zinc-900 to-black border border-zinc-800 shadow-2xl">
+            <div className="glass-card border-white/20 rounded-2xl overflow-hidden shadow-2xl">
               {dbNft.imageUrl ? (
                 <Image
                   src={dbNft.imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
@@ -160,7 +160,7 @@ console.log("tokenUri", dbNft);
             />
 
             {/* Optional extra info */}
-            <div className="pt-6 border-t border-zinc-800 text-sm text-zinc-500">
+            <div className="glass-card border-white/20 p-4 rounded-lg text-sm">
               <p>Metadata loaded from IPFS via Pinata gateway</p>
               <p className="mt-1">
                 View on-chain:{" "}

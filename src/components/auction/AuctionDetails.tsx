@@ -49,9 +49,9 @@ export function AuctionDetails({
   }, [auction.endTime]);
 
   return (
-    <div className="bg-white mt-20 dark:bg-zinc-900 shadow-lg rounded-2xl p-6 flex flex-col lg:flex-row gap-6">
+    <div className="glass-card border-white/20 mt-20 shadow-lg rounded-2xl p-6 flex flex-col lg:flex-row gap-6">
       {/* NFT Image */}
-      <div className="shrink-0 w-full lg:w-64 h-64 relative rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
+      <div className="shrink-0 w-full lg:w-64 h-64 relative rounded-xl overflow-hidden border border-white/20">
         {auction.nft.imageUrl ? (
           <Image
             src={auction.nft.imageUrl.replace(

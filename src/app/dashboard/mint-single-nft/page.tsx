@@ -98,10 +98,10 @@ export default function MintSingleNFTPage() {
   return (
     <div className="max-w-4xl mx-auto mt-10 px-4 w-full">
       <div className="mb-10 text-center">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-black dark:text-white inline-block drop-shadow-lg animate-fade-in">
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight inline-block drop-shadow-lg animate-fade-in">
           Mint NFTs
         </h1>
-        <p className="mt-4 text-lg text-gray-500 dark:text-gray-300 max-w-2xl mx-auto animate-fade-in delay-100">
+        <p className="mt-4 text-lg max-w-2xl mx-auto animate-fade-in delay-100">
           Effortlessly mint your unique NFT with custom metadata and royalty
           settings. Upload your file, preview your NFT, and set your royalty
           percentage with a sleek slider.
@@ -109,7 +109,7 @@ export default function MintSingleNFTPage() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2  gap-10 items-start">
         {/* Form Section */}
-        <div className="flex flex-col gap-8 w-full animate-fade-in delay-150">
+        <div className="glass-card border-white/20 p-6 rounded-lg flex flex-col gap-8 w-full animate-fade-in delay-150">
           <div className="flex items-center gap-3 mb-2">
             <SparklesIcon className="w-7 h-7 text-cyan-500 dark:text-cyan-300 animate-sparkle" />
             <h2 className="text-2xl font-bold text-black dark:text-white">
@@ -159,7 +159,7 @@ export default function MintSingleNFTPage() {
           </div>
           {/* Mint Price Info */}
           <div className="relative">
-            <div className="flex items-start gap-3 rounded-xl border border-cyan-200/60 dark:border-cyan-800/60 bg-cyan-50/60 dark:bg-cyan-950/40 p-4 shadow-sm transition-all">
+            <div className="glass flex items-start gap-3 rounded-xl border-cyan-200/60 dark:border-cyan-800/60 p-4 shadow-sm transition-all">
               <div className="mt-0.5 text-cyan-600 dark:text-cyan-300">
                 <SparklesIcon className="w-5 h-5" />
               </div>
@@ -229,7 +229,7 @@ export default function MintSingleNFTPage() {
         </div>
         {/* Preview Section */}
         <div className="flex flex-col items-center gap-6">
-          <div className="w-full aspect-square max-w-xs relative border-2 border-cyan-400/60 dark:border-cyan-300/40 rounded-2xl overflow-hidden shadow-xl bg-white dark:bg-black transition-all duration-300 animate-fade-in">
+          <div className="glass-card border-white/20 w-full aspect-square max-w-xs relative rounded-2xl overflow-hidden shadow-xl transition-all duration-300 animate-fade-in">
             {isLoadingPreview ? (
               <span className="flex items-center justify-center h-full w-full text-lg animate-pulse">
                 Loading preview...

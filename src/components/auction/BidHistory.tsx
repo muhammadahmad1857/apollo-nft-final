@@ -19,8 +19,8 @@ export function BidHistory({ bids }: { bids: (BidModel & { bidder: UserModel })[
     );
 
   return (
-    <div className="p-6 bg-white dark:bg-gray-800 shadow-lg rounded-xl">
-      <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-4">
+    <div className="glass-card border-white/20 p-6 shadow-lg rounded-xl">
+      <h3 className="font-bold text-lg mb-4">
         Bid History
       </h3>
       <Table>

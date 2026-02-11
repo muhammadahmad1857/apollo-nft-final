@@ -44,7 +44,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
   };
 
   return (
-    <Card className="p-0 overflow-hidden bg-card shadow-lg hover:shadow-xl transition-shadow relative">
+    <Card className="glass-card border-white/20 p-0 overflow-hidden shadow-lg hover:shadow-xl transition-shadow relative">
       {/* Top icons: Share + Edit page */}
       <div className="absolute top-2 right-2 flex gap-2 z-10">
         <button

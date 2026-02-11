@@ -103,7 +103,7 @@ export default function EditProfilePage() {
   return (
     <div className="max-w-md mx-auto p-8">
       <h1 className="text-2xl font-bold mb-6">Edit Profile</h1>
-      <form onSubmit={handleSave} className="flex flex-col gap-6">
+      <form onSubmit={handleSave} className="glass-card border-white/20 p-6 rounded-lg flex flex-col gap-6">
         <div className="flex flex-col items-center gap-2">
           <Avatar className="size-24">
             <AvatarImage src={avatarUrl} alt={name} />

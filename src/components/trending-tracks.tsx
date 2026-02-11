@@ -55,7 +55,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
   }
 
   return (
-    <section className="px-4 sm:px-6 lg:px-8 py-20 bg-background">
+    <section className="px-4 sm:px-6 lg:px-8 py-20">
       <div className="max-w-7xl mx-auto">
         <motion.h2 
           className="text-3xl sm:text-4xl font-bold mb-16"
@@ -78,7 +78,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
             <motion.div
               key={track.id}
               variants={itemVariants}
-              className="group relative overflow-hidden rounded-2xl border border-border transition-all duration-300"
+              className="glass-card border-white/20 group relative overflow-hidden rounded-2xl transition-all duration-300"
             >
               {/* Cover Image */}
               <div className="relative h-48 overflow-hidden bg-muted">
@@ -118,7 +118,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
               </div>
 
               {/* Track Info */}
-              <div className="p-6 bg-background border-t border-border">
+              <div className="p-6 glass-card border-t border-white/10">
                 <h3 className="text-xl font-bold mb-1">{track.title}</h3>
                 <p className="text-muted-foreground text-sm mb-4">{track.artist}</p>
                 

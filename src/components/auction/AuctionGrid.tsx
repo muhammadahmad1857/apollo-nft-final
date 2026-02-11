@@ -40,7 +40,7 @@ export default function AuctionGrid({
             href={`/auction/${auction.nft.id}`}
             className="group"
           >
-            <Card className="hover:shadow-lg transition cursor-pointer h-full flex flex-col">
+            <Card className="glass-card border-white/20 hover:shadow-lg transition cursor-pointer h-full flex flex-col">
               <CardHeader className="p-0 min-h-56 relative dark:bg-gray-900 bg-gray-100">
                 {auction.nft.imageUrl ? (
                   <Image
