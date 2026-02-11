@@ -33,7 +33,7 @@ export default function AuctionsPage() {
   }, [searchParams]); // re-run whenever URL changes
 
   return (
-    <div className="container mx-auto pt-24 py-20 space-y-6">
+    <div className="container mx-auto pt-28 pb-20 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Live Auctions</h1>
         <p className="text-muted-foreground">Browse all active NFT auctions</p>

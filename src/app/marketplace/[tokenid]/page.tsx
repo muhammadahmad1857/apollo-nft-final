@@ -87,9 +87,9 @@ export default async function NFTDetailPage({
   //   .replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`);
 console.log("tokenUri", dbNft);
   return (
-    <main className="min-h-screen py-12 px-4 md:px-8 lg:px-16">
+    <main className="min-h-screen">
       <Header/>
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto  py-14 px-4 md:px-8 lg:px-16">
         {/* Back link */}
         <Link
           href="/"
@@ -177,7 +177,7 @@ console.log("tokenUri", dbNft);
           </div>
         </div>
       </div>
-      <Footer/>
+      <Footer />
     </main>
   );
 }

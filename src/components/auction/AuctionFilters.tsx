@@ -38,7 +38,7 @@ export default function AuctionFilters() {
   }
 
   return (
-    <Card className="bg-white dark:bg-black border border-gray-200 dark:border-gray-700 rounded-xl shadow-md hover:shadow-xl transition-all">
+    <Card className="bg-white dark:bg-black/20 backdrop-blur-lg border border-gray-200 dark:border-gray-700 rounded-xl shadow-md hover:shadow-xl transition-all">
       <CardContent className="p-6 flex flex-wrap gap-4 items-center justify-between">
         {/* Search */}
         <Input
