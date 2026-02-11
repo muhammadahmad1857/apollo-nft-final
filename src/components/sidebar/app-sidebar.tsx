@@ -163,7 +163,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const { state } = useSidebar();
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar collapsible="icon" {...props} className="bg-background/20 backdrop-blur-lg border-r-2">
       <SidebarHeader>
         {/* <TeamSwitcher teams={data.teams} /> */}
         <SidebarMenuItem>

@@ -21,7 +21,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className='bg-transparent'>
         <SidebarHeader/>
         
     {(isConnected && !(isConnecting || isReconnecting))

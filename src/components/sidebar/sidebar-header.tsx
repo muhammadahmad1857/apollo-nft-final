@@ -9,7 +9,7 @@ import  {CustomConnectButton} from '@/components/ConnectButton'
 const SidebarHeader = () => {
     const {state} = useSidebar()
   return (
-      <header className=" bg-background/80 backdrop-blur-md border-b border-border">
+      <header className=" bg-background/20 backdrop-blur-md border-b border-border">
                 <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
       <Logo show={state==="collapsed"}/>
@@ -23,7 +23,7 @@ const SidebarHeader = () => {
                     
                   
                     {/* Theme toggle */}
-                  <ThemeToggle />
+                  {/* <ThemeToggle /> */}
                   <CustomConnectButton />
                   </div>
                 </div>
