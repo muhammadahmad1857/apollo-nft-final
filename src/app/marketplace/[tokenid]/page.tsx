@@ -36,7 +36,6 @@ export default async function NFTDetailPage({
     );
   }
 
-  let metadata: any = null;
   let owner: `0x${string}` | null = null;
 
   const dbNft = await getNFTByTokenId(tokenId);
@@ -55,38 +54,38 @@ export default async function NFTDetailPage({
   }
 
   // Fetch metadata from tokenUri
-  try {
-    const tokenUri = dbNft.tokenUri;
-    const httpUri = tokenUri.replace(
-      "ipfs://",
-      `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`
-    );
-    const res = await fetch(httpUri, { next: { revalidate: 60 } });
+  // try {
+  //   const tokenUri = dbNft.tokenUri;
+  //   const httpUri = tokenUri.replace(
+  //     "ipfs://",
+  //     `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`
+  //   );
+  //   const res = await fetch(httpUri, { next: { revalidate: 60 } });
 
-    if (res.ok) {
-      metadata = await res.json();
-    }
-  } catch (err) {
-    console.error("Error loading metadata:", err);
-  }
+  //   if (res.ok) {
+  //     metadata = await res.json();
+  //   }
+  // } catch (err) {
+  //   console.error("Error loading metadata:", err);
+  // }
 
-  if (!metadata) {
-    return (
-      <div className="flex flex-col items-center justify-center">
-        <NotFound title="No NFT FOUND" link="/dashboard" />
-      </div>
-    );
-  }
-  if (!metadata) return <div className="flex flex-col items-center justify-center"><NotFound title="No NFT FOUND" link="/dashboard"/></div>;;
+  // if (!metadata) {
+  //   return (
+  //     <div className="flex flex-col items-center justify-center">
+  //       <NotFound title="No NFT FOUND" link="/dashboard" />
+  //     </div>
+  //   );
+  // }
+  // if (!metadata) return <div className="flex flex-col items-center justify-center"><NotFound title="No NFT FOUND" link="/dashboard"/></div>;;
 
-  const title = metadata.title || `NFT #${tokenId}`;
-  const description = metadata.description || "No description provided";
-  const artist = metadata.name || "Anonymous";
-  const cover = (metadata.image || metadata.cover || "")
-    .replace("ipfs://",  `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`);
-  const media = (metadata.media || "")
-    .replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`);
-console.log("metadata", metadata,"tokenUri", dbNft.tokenUri);
+  // const title = metadata.title || `NFT #${tokenId}`;
+  // const description = metadata.description || "No description provided";
+  // const artist = metadata.name || "Anonymous";
+  // const cover = (metadata.image || metadata.cover || "")
+  //   .replace("ipfs://",  `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`);
+  // const media = (metadata.media || "")
+  //   .replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`);
+console.log("tokenUri", dbNft);
   return (
     <main className="min-h-screen py-12 px-4 md:px-8 lg:px-16">
       <Header/>
@@ -103,17 +102,17 @@ console.log("metadata", metadata,"tokenUri", dbNft.tokenUri);
           {/* Left - Media / Cover */}
           <div className="space-y-6">
             <div className="rounded-2xl overflow-hidden bg-linear-to-br from-zinc-900 to-black border border-zinc-800 shadow-2xl">
-              {cover ? (
+              {dbNft.imageUrl ? (
                 <Image
-                  src={cover}
-                  alt={title}
+                  src={dbNft.imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
+                  alt={dbNft.title || `NFT #${tokenId}`}
                   width={800}
                   height={800}
                   className="w-full aspect-square object-cover"
                   priority
                 />
               ) : (
-                <UniversalMediaIcon uri={media} className="w-full aspect-square" />
+                <UniversalMediaIcon  tokenUri={dbNft.tokenUri} uri={dbNft.mediaUrl} className="w-full aspect-square" />
               )}
             </div>
 
@@ -127,9 +126,9 @@ console.log("metadata", metadata,"tokenUri", dbNft.tokenUri);
           {/* Right - Info + Actions */}
           <div className="space-y-8">
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-3">{title}</h1>
+              <h1 className="text-4xl md:text-5xl font-bold mb-3">{dbNft.title || `NFT #${tokenId}`}</h1>
               <div className="flex items-center gap-4 text-zinc-400">
-                <span>By {artist}</span>
+                <span>By {dbNft.name}</span>
                 <span>•</span>
                 <span>#{tokenId}</span>
                 {owner && (
@@ -145,16 +144,16 @@ console.log("metadata", metadata,"tokenUri", dbNft.tokenUri);
 
             <div className="prose dark:prose-invert max-w-none">
               <p className="text-lg leading-relaxed text-zinc-300">
-                {description}
+                {dbNft.description}
               </p>
             </div>
 
             {/* Client-side interactive content */}
             <NFTInteractiveContent
               tokenId={tokenId}
-              title={title}
-              name={artist}
-              media={media}
+              title={dbNft.title || `NFT #${tokenId}`}
+              name={dbNft.name}
+              media={dbNft.mediaUrl}
               mintPrice={dbNft?.mintPrice}
               ownerAddress={owner}
               tokenUri={dbNft.tokenUri}
