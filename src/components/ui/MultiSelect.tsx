@@ -70,7 +70,7 @@ const MultiSelect = ({
     <div className={`relative w-full ${className}`} ref={containerRef}>
       {/* Trigger / Selected items display */}
       <div
-        className={`min-h-10.5 w-full p-2 border rounded bg-transparent flex flex-wrap gap-2 items-center cursor-pointer ${
+        className={`min-h-10.5 w-full p-2 border rounded bg-background flex flex-wrap gap-2 items-center cursor-pointer ${
           isLoading ? "opacity-70 cursor-wait" : ""
         }`}
         onClick={() => !isLoading && setIsOpen(!isOpen)}

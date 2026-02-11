@@ -60,7 +60,7 @@ const CustomSelect = ({
     <div className={`relative ${className}`} ref={selectRef}>
       <button
         type="button"
-        className="w-full p-2 border rounded bg-transparent text-left flex justify-between items-center"
+        className="w-full p-2 border rounded bg-background text-left flex justify-between items-center"
         onClick={() => setIsOpen(!isOpen)}
         disabled={isLoading}
       >

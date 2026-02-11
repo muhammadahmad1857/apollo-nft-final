@@ -22,11 +22,11 @@ export default function AuctionList({ auctions, loading, userId }: AuctionListPr
   const [loadingMap, setLoadingMap] = useState<Record<number, boolean>>({});
 
   if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading auctions...</div>;
+    return <div className="text-center py-8 text-background">Loading auctions...</div>;
   }
 
   if (!auctions.length) {
-    return <div className="text-center py-8 text-muted-foreground">No auctions found.</div>;
+    return <div className="text-center py-8 text-background">No auctions found.</div>;
   }
 
   const handleSettleOrCancel = async (a: AuctionHistory, isCancel = false) => {
@@ -89,7 +89,7 @@ export default function AuctionList({ auctions, loading, userId }: AuctionListPr
             {/* NFT Image */}
             <div className="w-full md:w-32 h-32 shrink-0">
               <Image
-                src={a.auction.nft.imageUrl}
+                src={a.auction.nft.imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
                 alt={a.auction.nft.name}
                 className="w-full h-full object-cover rounded-lg"
                 width={128}
