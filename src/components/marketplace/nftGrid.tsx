@@ -48,7 +48,7 @@ console.log("data",data)
     return (
       <div className="text-center py-16 text-red-500">
         {error}
-        <Button variant="outline" className="mt-4" onClick={loadMints}>
+        <Button className="mt-4" onClick={loadMints}>
           Try Again
         </Button>
       </div>
@@ -60,7 +60,7 @@ console.log("data",data)
       <div className="text-center py-16">
         <h2 className="text-xl font-medium">No public mints yet</h2>
         <p className="text-zinc-500 mt-2">New creations will appear here</p>
-        <Button variant="outline" className="mt-4" onClick={loadMints}>
+        <Button  className="mt-4" onClick={loadMints}>
           Refresh
         </Button>
       </div>
@@ -71,7 +71,7 @@ console.log("data",data)
     <div className="max-w-7xl mx-auto px-6">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-3xl font-bold">Recent Public Mints ({mints.length})</h2>
-        <Button variant="outline" onClick={loadMints}>
+        <Button  onClick={loadMints}>
           Refresh
         </Button>
       </div>
