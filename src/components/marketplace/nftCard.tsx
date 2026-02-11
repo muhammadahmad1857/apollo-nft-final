@@ -118,7 +118,7 @@ const NFTCard = ({
   return (
     <>
       <motion.div
-        className="group cursor-pointer rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+        className="group cursor-pointer rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-background/20 backdrop-blur-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -128,7 +128,7 @@ const NFTCard = ({
       
 
         {/* Media preview (cover image) */}
-        <div className="aspect-square relative bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+        <div className="aspect-square relative bg-zinc-100 p-2 dark:bg-zinc-800 overflow-hidden">
           {cover ? (
             <Image
               src={cover}
