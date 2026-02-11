@@ -74,7 +74,7 @@ export default function HowItWorks() {
           viewport={{ once: true, amount: 0.3 }}
         >
           {/* Connecting line (hidden on mobile) */}
-          <div className="hidden md:block absolute top-12 left-1/4 right-1/4 h-0.5 bg-primary-foreground/30" />
+          <div className="hidden md:block absolute top-12 left-1/4 right-1/4 h-0.5 bg-primary/30" />
 
           {steps.map((step, idx) => {
             const Icon = step.icon
@@ -86,16 +86,16 @@ export default function HowItWorks() {
               >
                 <motion.div
                   whileHover={{ scale: 1.05 }}
-                  className="bg-primary text-primary-foreground rounded-2xl p-8 h-full flex flex-col items-center justify-center text-center"
+                  className="bg-primary-foreground text-primary rounded-2xl p-8 h-full flex flex-col items-center justify-center text-center"
                 >
                   <motion.div
                     className="mb-6 p-4 bg-primary/10 rounded-full"
                     whileHover={{ rotate: 10 }}
                   >
-                    <Icon className="w-8 h-8 text-primary-foreground" />
+                    <Icon className="w-8 h-8 text-primary" />
                   </motion.div>
                   <h3 className="text-xl font-bold mb-2">{step.title}</h3>
-                  <p className="text-sm text-primary-foreground/80">{step.description}</p>
+                  <p className="text-sm text-primary/80">{step.description}</p>
                 </motion.div>
 
                 {/* Step number badge */}

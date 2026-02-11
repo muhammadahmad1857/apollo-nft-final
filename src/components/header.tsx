@@ -75,7 +75,7 @@ export default function Header() {
             </motion.button>
 
             {/* Theme toggle */}
-            <motion.button
+            {/* <motion.button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="p-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
               aria-label="Toggle theme"
@@ -83,7 +83,7 @@ export default function Header() {
               whileTap={{ scale: 0.9 }}
             >
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </motion.button>
+            </motion.button> */}
             <CustomConnectButton/>
           </div>
         </div>
