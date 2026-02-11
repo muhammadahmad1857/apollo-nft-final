@@ -149,7 +149,7 @@ export default function HeroSection() {
               variants={floatingVariants}
               className="relative w-full h-full max-w-md"
             >
-              <Image
+              {/* <Image
                 src={'/apollo-hero.png'}
                 alt="Music NFT Vinyl Records"
                 fill
@@ -162,7 +162,7 @@ export default function HeroSection() {
                 fill
                 className="object-contain dark:hidden"
                 priority
-              />
+              /> */}
             </motion.div>
           </motion.div>
         </motion.div>
