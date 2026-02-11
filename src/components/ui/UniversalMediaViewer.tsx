@@ -41,6 +41,7 @@ export async function detectFileType(uri: string): Promise<string> {
   try {
     let type = "";
     let name = "";
+    console.log("detectFileType start:", { uri });
 
     // Try to get from getFileTypeByIPFS first
     try {
