@@ -49,7 +49,7 @@ const itemVariants = {
 
 export default function HowItWorks() {
   return (
-    <section className="px-4 sm:px-6 lg:px-8 py-20 bg-background text-primary-foreground">
+    <section className="px-4 sm:px-6 lg:px-8 py-20">
       <div className="max-w-7xl mx-auto">
         <motion.div 
           className="text-center mb-16"
