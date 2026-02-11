@@ -174,7 +174,7 @@ const NFTCard = ({
           )}
 
           {/* Media Preview (not cover) */}
-        {media || token && (
+        {(media || token) && (
           <div className="px-4 py-2">
             <UniversalMediaViewer
               tokenUri={token}

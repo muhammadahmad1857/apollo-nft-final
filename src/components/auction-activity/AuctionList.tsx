@@ -6,6 +6,7 @@ import { AuctionHistory } from "@/types";
 import { Button } from "@/components/ui/button";
 import { formatDistanceStrict, format } from "date-fns";
 import Image from "next/image";
+import Link from "next/link";
 
 interface AuctionListProps {
   auctions: AuctionHistory[];
@@ -100,12 +101,12 @@ export default function AuctionList({ auctions, loading, userId }: AuctionListPr
                 </>
               )}
 
-              {isEnded && !isSettled && isWon && (
-                <Button className="bg-orange-600 hover:bg-orange-700">Settle Auction 🏁</Button>
+              {!isSettled && (
+                <Button className="bg-orange-600 hover:bg-orange-700">{isEnded ? "Settle" : "Cancel"} Auction 🏁</Button>
               )}
-
-              {isEnded && isLost && <Button className="bg-blue-600 hover:bg-blue-700">View NFT</Button>}
-
+<Link href={`/nft/${a.auction.nft.id}`} passHref>
+              <Button asChild className="bg-blue-600 hover:bg-blue-700">View NFT</Button>
+</Link>
               {isSettled && <div className="text-green-600 font-semibold">✅ Settled</div>}
             </div>
           </div>
