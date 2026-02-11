@@ -168,7 +168,7 @@ const NFTCard = ({
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3">
               Price:{" "}
               <span className="font-semibold">
-                {(auction?.highestBid && auction?.highestBid.toFixed(4)) || mintPrice.toFixed(4)} APOLLO
+{(auction?.highestBid != null ? auction.highestBid.toFixed(4) : mintPrice.toFixed(4))} APOLLO
               </span>
             </p>
           )}

@@ -84,13 +84,13 @@ console.log("data",data)
             title={nft.title}
             description={nft.description}
             cover={nft.imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
-            token={nft.tokenUri.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
+            token={nft.tokenUri}
             name={nft.name || "Unknown"}
             minted={true}
             showBuyButton={true}
             mintPrice={nft.mintPrice}
             ownerAddress={nft.owner.walletAddress}
-            media={nft.mediaUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
+            media={nft.mediaUrl}
              auction={nft.auction ? {
       id: nft.auction.id,
       startTime: nft.auction.startTime.toISOString(),
