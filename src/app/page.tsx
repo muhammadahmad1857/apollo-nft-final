@@ -10,7 +10,7 @@ import Footer from '@/components/footer'
 export default function Home() {
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+    <div className="min-h-screen  text-foreground transition-colors duration-300">
       <Header />
       <HeroSection />
       <TrendingTracks isRecent={true} />
