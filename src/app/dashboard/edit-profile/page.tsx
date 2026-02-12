@@ -137,6 +137,7 @@ export default function EditProfilePage() {
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
             required
+            className="bg-background"
           />
         </div>
         <Button

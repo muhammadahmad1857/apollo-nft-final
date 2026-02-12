@@ -162,6 +162,7 @@ export function MetadataForm({
           placeholder="Internal name (e.g., my-music-001)"
           value={name}
           onChange={(e) => {
+
             setName(e.target.value);
             // handleFieldChange();
              onMetadataChange({
@@ -172,7 +173,7 @@ export function MetadataForm({
                 musicTrackUrl: musicTrackUrl, 
               });
           }}
-          className="bg-transparent"
+          className="bg-background"
         />
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Used internally or as NFT identifier
@@ -195,7 +196,7 @@ export function MetadataForm({
                 musicTrackUrl,   
               });
           }}
-          className="bg-transparent text-lg"
+          className="bg-background text-lg"
         />
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           This is what users will see
@@ -220,7 +221,7 @@ export function MetadataForm({
               });
           }}
           maxLength={500}
-          className="bg-transparent resize-none"
+          className="bg-background resize-none"
         />
         <div className="flex justify-between">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -277,7 +278,7 @@ export function MetadataForm({
               onDragOver={(e) => e.preventDefault()}
               onDragLeave={(e) => e.preventDefault()}
               onClick={() => fileInputRef.current?.click()}
-              className="relative cursor-pointer rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-700 p-8 text-center transition-all hover:border-cyan-500/50 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              className="relative cursor-pointer rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-700 p-8 text-center transition-all hover:border-cyan-500/50 hover:bg-background/20"
             >
               <input
                 ref={fileInputRef}
