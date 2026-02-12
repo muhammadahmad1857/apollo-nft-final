@@ -160,7 +160,7 @@ export default function UniversalMediaViewer({
   if (loading) {
     return (
       <div
-        className={`w-full h-64 bg-zinc-200 dark:bg-zinc-700 animate-pulse rounded-xl ${className}`}
+        className={`w-full h-64 bg-black/20 backdrop-blur-lg animate-pulse rounded-xl ${className}`}
         style={style}
       />
     );
@@ -169,7 +169,7 @@ export default function UniversalMediaViewer({
   if (isImage) {
     return (
       <div
-        className={`relative w-full h-64 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-hidden ${className}`}
+        className={`relative w-full h-64 flex items-center justify-center bg-black/20 backdrop-blur-lg rounded-xl overflow-hidden ${className}`}
         style={style}
       >
         <Image
@@ -182,7 +182,7 @@ export default function UniversalMediaViewer({
         <AnimatePresence>
           {showModal && (
             <motion.div
-              className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+              className="fixed inset-0 z-50 bg-black/20 backdrop-blur-lg flex items-center justify-center p-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -211,7 +211,7 @@ export default function UniversalMediaViewer({
   if (isVideo) {
     return (
       <div
-        className={`relative w-full h-64 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-hidden ${className}`}
+        className={`relative w-full h-64 flex items-center justify-center bg-black/20 backdrop-blur-lg rounded-xl overflow-hidden ${className}`}
         style={style}
       >
         <Button
@@ -227,7 +227,7 @@ export default function UniversalMediaViewer({
         <AnimatePresence>
           {showModal && (
             <motion.div
-              className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+              className="fixed inset-0 z-50 bg-black/20 backdrop-blur-lg flex items-center justify-center p-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -256,7 +256,7 @@ export default function UniversalMediaViewer({
   if (isAudio) {
     return (
       <div
-        className={`w-full flex flex-col items-center bg-zinc-100 dark:bg-zinc-800 rounded-xl p-4 ${className}`}
+        className={`w-full flex flex-col items-center bg-black/20 backdrop-blur-lg rounded-xl p-4 ${className}`}
         style={style}
       >
         <audio controls className="w-full">
@@ -272,7 +272,7 @@ if (isPdf) {
   return (
     <>
       <div
-        className={`relative w-full h-96 bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-hidden cursor-pointer ${className}`}
+        className={`relative w-full h-96 bg-black/20 backdrop-blur-lg rounded-xl overflow-hidden cursor-pointer ${className}`}
         style={style}
         onClick={() => setShowModal(true)}
       >
@@ -286,7 +286,7 @@ if (isPdf) {
       <AnimatePresence>
         {showModal && (
           <motion.div
-            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/20 backdrop-blur-lg flex items-center justify-center p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -321,7 +321,7 @@ if (isPdf) {
     const googleViewer = `https://docs.google.com/gview?url=${encodeURIComponent(src)}&embedded=true`;
     return (
       <div
-        className={`w-full h-96 bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-hidden ${className}`}
+        className={`w-full h-96 bg-black/20 backdrop-blur-lg rounded-xl overflow-hidden ${className}`}
         style={style}
       >
         <iframe src={googleViewer} title="Word Preview" className="w-full h-full border-none rounded-xl" />
@@ -333,7 +333,7 @@ if (isPdf) {
   if (isTxt) {
     return (
       <div
-        className={`w-full h-64 bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-auto p-4 font-mono text-sm ${className}`}
+        className={`w-full h-64 bg-black/20 backdrop-blur-lg rounded-xl overflow-auto p-4 font-mono text-sm ${className}`}
         style={style}
       >
         <FileText className="mb-2 text-zinc-400" />
@@ -345,7 +345,7 @@ if (isPdf) {
   // ===== Fallback =====
   return (
     <div
-      className={`w-full h-32 flex flex-col items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-xl ${className}`}
+      className={`w-full h-32 flex flex-col items-center justify-center bg-black/20 backdrop-blur-lg rounded-xl ${className}`}
       style={style}
     >
       <File size={40} className="text-zinc-400 mb-2" />

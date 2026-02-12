@@ -93,7 +93,7 @@ console.log("tokenUri", dbNft);
         {/* Back link */}
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-zinc-500 hover:text-zinc-300 mb-8 transition-colors"
+          className="inline-flex items-center gap-2 text-white hover:text-zinc-300 mb-8 transition-colors"
         >
           ← Back to gallery
         </Link>
@@ -127,7 +127,7 @@ console.log("tokenUri", dbNft);
           <div className="space-y-8">
             <div>
               <h1 className="text-4xl md:text-5xl font-bold mb-3">{dbNft.title || `NFT #${tokenId}`}</h1>
-              <div className="flex items-center gap-4 text-zinc-400">
+              <div className="flex items-center gap-4 text-white">
                 <span>By {dbNft.name}</span>
                 <span>•</span>
                 <span>#{tokenId}</span>
@@ -143,7 +143,7 @@ console.log("tokenUri", dbNft);
             </div>
 
             <div className="prose dark:prose-invert max-w-none">
-              <p className="text-lg leading-relaxed text-zinc-300">
+              <p className="text-lg leading-relaxed font-bold text-zinc-300">
                 {dbNft.description}
               </p>
             </div>
