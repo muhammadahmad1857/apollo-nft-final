@@ -88,7 +88,12 @@ const NFTCard = ({
     try {
       await buyNFT(BigInt(tokenId), parseEther(String(mintPrice))); // use real price
       if (user?.id) {
+        console.log("User ID", user.id);
         await transferOwnership(tokenId, user.id); // update DB
+      }
+      else{
+        toast.error("User not found. Please connect wallet and try again.");
+        return;
       }
       toast.success("NFT purchased successfully!");
       router.refresh();
