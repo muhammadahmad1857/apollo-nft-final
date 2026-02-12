@@ -238,7 +238,7 @@ console.log(fileType);
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="rounded-xl border border-zinc-200 dark:border-zinc-800 backdrop-blur-lg bg-background/20 p-6"
+            className="rounded-xl border border-zinc-200 dark:border-zinc-800 backdrop-blur-lg bg-zinc-950/20 p-6"
           >
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-500/10">
@@ -278,7 +278,7 @@ console.log(fileType);
             onDragLeave={handleDragLeave}
             onClick={() => fileInputRef.current?.click()}
             className={`
-              relative cursor-pointer rounded-xl border-2 border-dashed p-12 text-center transition-all duration-300
+              relative cursor-pointer rounded-xl border-2 border-dashed p-12 backdrop-blur-lg text-center transition-all duration-300 bg-zinc-950/20
               ${
                 isDragging
                   ? "border-cyan-500 bg-cyan-500/5 shadow-[0_0_20px_rgba(34,211,238,0.2)]"
