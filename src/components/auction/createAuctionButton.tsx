@@ -155,8 +155,12 @@ export function CreateAuctionButton({
         const endDateTime = new Date(customEndDate);
         endDateTime.setHours(parseInt(customHour), parseInt(customMinute), 0, 0);
 
-        durationHours = differenceInHours(endDateTime, new Date());
-        if (durationHours <= 0) return toast.error("End date & time must be in the future");
+        const now = new Date();
+        if (endDateTime <= now) return toast.error("End date & time must be in the future");
+
+        durationHours = differenceInHours(endDateTime, now);
+        // If less than 1 hour, still allow but set minimum duration
+        if (durationHours < 1) durationHours = 1;
       } else {
         durationHours = Number(duration);
       }
