@@ -87,8 +87,8 @@ const NFTCard = ({
 
     try {
       await buyNFT(BigInt(tokenId), parseEther(String(mintPrice))); // use real price
+      console.log("User ID", user?.id);
       if (user?.id) {
-        console.log("User ID", user.id);
         await transferOwnership(tokenId, user.id); // update DB
       }
       else{

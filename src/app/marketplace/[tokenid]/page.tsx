@@ -157,6 +157,7 @@ console.log("tokenUri", dbNft);
               mintPrice={dbNft?.mintPrice}
               ownerAddress={owner}
               tokenUri={dbNft.tokenUri}
+              
             />
 
             {/* Optional extra info */}
