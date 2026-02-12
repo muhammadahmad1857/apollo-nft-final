@@ -140,7 +140,7 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
     metadata.name.trim() !== "" && metadata.title.trim() !== "";
 
   return (
-    <div className="min-h-screen relative bg-zinc-50 dark:bg-zinc-950">
+    <div className="min-h-screen relative ">
 
       <div className="mx-auto max-w-4xl px-6 py-12">
         {showActions && createdFileId && (

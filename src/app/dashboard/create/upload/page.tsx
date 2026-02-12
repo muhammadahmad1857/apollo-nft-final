@@ -91,7 +91,7 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+    <div className="min-h-screen ">
       <div className="mx-auto max-w-4xl px-6 py-12">
         {isConnected ? (
           <>

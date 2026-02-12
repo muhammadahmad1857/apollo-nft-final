@@ -238,7 +238,7 @@ console.log(fileType);
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6"
+            className="rounded-xl border border-zinc-200 dark:border-zinc-800 backdrop-blur-lg bg-background/20 p-6"
           >
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-500/10">
