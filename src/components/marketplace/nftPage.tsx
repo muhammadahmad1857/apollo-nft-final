@@ -152,7 +152,7 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
               disabled={isPending || address === ownerAddress}
             >
               {address === ownerAddress
-                ? "Sold"
+                ? "My NFT"
                 : isPending
                 ? "Buying..."
                 : "Buy"
