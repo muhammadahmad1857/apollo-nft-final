@@ -66,6 +66,8 @@ export function CreateAuctionButton({
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
   const toastIdRef = useRef<string | number | null>(null);
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
+  const [customHour, setCustomHour] = useState<string>("12");
+  const [customMinute, setCustomMinute] = useState<string>("00");
 
   const { settleAuction, isPending: isSettlePending } = useSettleAuction();
 
@@ -149,8 +151,12 @@ export function CreateAuctionButton({
       if (duration === "custom") {
         if (!customEndDate) return toast.error("Pick an end date");
 
-        durationHours = differenceInHours(customEndDate, new Date());
-        if (durationHours <= 0) return toast.error("End date must be in the future");
+        // Combine date with time
+        const endDateTime = new Date(customEndDate);
+        endDateTime.setHours(parseInt(customHour), parseInt(customMinute), 0, 0);
+
+        durationHours = differenceInHours(endDateTime, new Date());
+        if (durationHours <= 0) return toast.error("End date & time must be in the future");
       } else {
         durationHours = Number(duration);
       }
@@ -267,9 +273,47 @@ export function CreateAuctionButton({
                       />
                     </PopoverContent>
                   </Popover>
+
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1">
+                      <Label className="text-xs">Hour (0-23)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="23"
+                        value={customHour}
+                        onChange={(e) => {
+                          const val = Math.min(23, Math.max(0, parseInt(e.target.value) || 0));
+                          setCustomHour(val.toString().padStart(2, "0"));
+                        }}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Label className="text-xs">Minute (0-59)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={customMinute}
+                        onChange={(e) => {
+                          const val = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                          setCustomMinute(val.toString().padStart(2, "0"));
+                        }}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+
                   {customEndDate && (
                     <p className="text-xs text-muted-foreground">
-                      Duration: {Math.max(0, differenceInHours(customEndDate, new Date()))} hours
+                      End time: {format(customEndDate, "PPP")} at {customHour}:{customMinute}
+                      <br />
+                      Duration: {Math.max(0, (() => {
+                        const endDateTime = new Date(customEndDate);
+                        endDateTime.setHours(parseInt(customHour), parseInt(customMinute), 0, 0);
+                        return differenceInHours(endDateTime, new Date());
+                      })())} hours
                     </p>
                   )}
                 </div>
