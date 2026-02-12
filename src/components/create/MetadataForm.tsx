@@ -173,7 +173,7 @@ export function MetadataForm({
                 musicTrackUrl: musicTrackUrl, 
               });
           }}
-          className="bg-background"
+          className="bg-zinc-950!"
         />
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Used internally or as NFT identifier
@@ -196,7 +196,7 @@ export function MetadataForm({
                 musicTrackUrl,   
               });
           }}
-          className="bg-zinc-950 text-lg"
+          className="bg-zinc-950! text-lg"
         />
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           This is what users will see
@@ -221,7 +221,7 @@ export function MetadataForm({
               });
           }}
           maxLength={500}
-          className="bg-zinc-950 resize-none"
+          className="bg-zinc-950! resize-none"
         />
         <div className="flex justify-between">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">

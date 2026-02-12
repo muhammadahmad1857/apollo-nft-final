@@ -322,7 +322,7 @@ console.log(fileType);
                   <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                     or click to browse
                   </p>
-                  <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500">
+                  <p className="mt-3 text-xs text-zinc-400 text-zinc-50 dark:hover:text-zinc-500">
                     Accepted: Any audio/*, video/*, image/*, .md, .pdf, .doc, .docx, .txt
                   </p>
                 </div>
