@@ -234,7 +234,7 @@ const NFTCard = ({
         disabled={isPending || !address || address === ownerAddress}
       >
         {address === ownerAddress
-          ? "Sold"
+          ? "My NFT"
           : isPending
           ? "Buying..."
           : "Buy"

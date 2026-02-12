@@ -135,7 +135,7 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
 
         <button
           onClick={() => setShowShareModal(true)}
-          className="flex items-center gap-1.5 text-zinc-500 hover:text-blue-500 transition-colors"
+          className="flex items-center gap-1.5 text-white hover:text-cyan-500 transition-colors"
           aria-label="Share"
         >
           <Share size={18} />
