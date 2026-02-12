@@ -131,13 +131,13 @@ export default function EditProfilePage() {
           )}
         </div>
         <div>
-          <label className="block mb-1 font-medium">Name</label>
+          <label className="block mb-1 font-bold">Name</label>
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
             required
-            className="bg-background"
+            className="bg-zinc-950"
           />
         </div>
         <Button

@@ -92,7 +92,7 @@ export default function Page() {
           placeholder="Search your NFT..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-background"
+          className="bg-zinc-950"
         />
 
         {loading ? (

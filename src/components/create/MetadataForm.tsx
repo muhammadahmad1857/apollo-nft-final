@@ -196,7 +196,7 @@ export function MetadataForm({
                 musicTrackUrl,   
               });
           }}
-          className="bg-background text-lg"
+          className="bg-zinc-950 text-lg"
         />
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           This is what users will see
@@ -221,7 +221,7 @@ export function MetadataForm({
               });
           }}
           maxLength={500}
-          className="bg-background resize-none"
+          className="bg-zinc-950 resize-none"
         />
         <div className="flex justify-between">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -278,7 +278,7 @@ export function MetadataForm({
               onDragOver={(e) => e.preventDefault()}
               onDragLeave={(e) => e.preventDefault()}
               onClick={() => fileInputRef.current?.click()}
-              className="relative cursor-pointer rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-700 p-8 text-center transition-all hover:border-cyan-500/50 hover:bg-background/20"
+              className="relative cursor-pointer rounded-lg border-2 border-dashed backdrop-blur-md border-zinc-300 dark:border-zinc-700 p-8 text-center transition-all hover:border-cyan-500/50 bg-zinc-950/20"
             >
               <input
                 ref={fileInputRef}

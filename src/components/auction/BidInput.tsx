@@ -34,7 +34,9 @@ export function BidInput({ onPlaceBid, isDisabled, minBid }: { onPlaceBid: (bidE
           onChange={(e) => {
             setBid(e.target.value);
             setError("");
+
           }}
+          className="bg-zinc-950"
         />
         <Button
           disabled={isDisabled || (!isConnected && !isConnecting) || !bid}
