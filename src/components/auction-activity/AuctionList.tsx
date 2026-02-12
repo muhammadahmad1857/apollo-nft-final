@@ -29,7 +29,7 @@ export default function AuctionList({ auctions, loading, userId }: AuctionListPr
     return <div className="text-center py-8 text-background">No auctions found.</div>;
   }
 
-  const handleSettleOrCancel = async (a: AuctionHistory, isCancel = false) => {
+  const handleSettleOrCancel = async (a: AuctionHistory) => {
     if (!a?.auction?.id || !a.auction.nft?.tokenId) return;
 
     const auctionId = a.auction.id;
@@ -46,7 +46,7 @@ export default function AuctionList({ auctions, loading, userId }: AuctionListPr
       // ⚡ realtime UI update
       setSettledMap((prev) => ({ ...prev, [auctionId]: true }));
 
-      toast.success(isCancel ? "Auction cancelled 🛑" : "Auction settled 🏁");
+      toast.success("Auction settled 🏁");
     } catch (err: any) {
       toast.error(err?.message || "Transaction failed");
     } finally {
@@ -148,17 +148,16 @@ export default function AuctionList({ auctions, loading, userId }: AuctionListPr
               )}
 
               {/* Cancel / Settle */}
-              {!isSettled && (
+              {!isSettled && isEnded && (
                 <Button
-                  onClick={() => handleSettleOrCancel(a, !isEnded)}
+                  onClick={() => handleSettleOrCancel(a)}
                   disabled={settleLoading}
                   className="bg-orange-600 hover:bg-orange-700 w-full"
                 >
                   {settleLoading
                     ? "Processing..."
-                    : isEnded
-                    ? "Settle Auction 🏁"
-                    : "Cancel Auction 🛑"}
+                    : "Settle Auction 🏁"
+                    }
                 </Button>
               )}
 
