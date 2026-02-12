@@ -98,7 +98,7 @@ console.log("data",data)
       settled: nft.auction.settled,
       highestBid: nft.auction.highestBid || undefined,
               
-    } : undefined}
+    } : null}
     nftId={nft.id}
           />
         ))}

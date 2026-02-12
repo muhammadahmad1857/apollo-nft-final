@@ -40,13 +40,13 @@ export interface NFTCardProps {
   token:string;
   nftId: number;
   ownerAddress:string;
-  auction?: {
+  auction: {
     id: number;
     startTime: string;
     endTime: string;
     settled: boolean;
     highestBid?: number;
-  };
+  } | null;
 }
 
 const NFTCard = ({
@@ -80,7 +80,7 @@ const NFTCard = ({
     new Date(auction.endTime) >= now;
 
   console.log("nft.media", cover);
-  console.log("NFT title received:", title);
+  console.log("NFT title received:", auction);
 
   const handleBuy = async () => {
     if (!mintPrice) return toast.error("Mint price not available");
