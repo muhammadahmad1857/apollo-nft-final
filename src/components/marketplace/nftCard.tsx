@@ -213,7 +213,7 @@ const NFTCard = ({
            {
   !address ? (
     <p className="text-sm text-foreground">Connect your wallet to buy</p>
-  ) : !isAuctionActive  ? (
+  ) : isAuctionActive  ? (
     <button
       onClick={(e) => {
         e.stopPropagation();
