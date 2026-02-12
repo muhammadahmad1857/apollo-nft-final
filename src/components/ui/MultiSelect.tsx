@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, X, Check, PlusIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"; // shadcn tooltip
 
 interface Option {
   value: string;
@@ -138,41 +137,26 @@ const MultiSelect = ({
                   No files found
                 </div>
               ) : (
-                options.map((option) => {
-                  const isSelected = value.includes(option.value);
-                  const disabled = option.isListed;
+                options
+                  .filter((option) => !option.isListed)
+                  .map((option) => {
+                    const isSelected = value.includes(option.value);
 
-                  const optionContent = (
-                    <div
-                      key={option.value}
-                      className={`px-4 py-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer flex items-center justify-between ${
-                        isSelected ? "bg-primary/5" : ""
-                      } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
-                      onClick={() => !disabled && toggleOption(option)}
-                    >
-                      <span className="flex items-center gap-2">
-                        {option.label}
-                        {disabled && (
-                          <span className="text-xs bg-yellow-200 text-yellow-800 px-1 rounded">
-                            Listed
-                          </span>
-                        )}
-                      </span>
-                      {isSelected && <Check className="h-4 w-4 text-primary" />}
-                    </div>
-                  );
-
-                  return disabled ? (
-                     <Tooltip key={option.value}>
-                      <TooltipTrigger asChild>{optionContent}</TooltipTrigger>
-                      <TooltipContent>
-                        <p>This file is already listed</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    optionContent
-                  );
-                })
+                    return (
+                      <div
+                        key={option.value}
+                        className={`px-4 py-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer flex items-center justify-between ${
+                          isSelected ? "bg-primary/5" : ""
+                        }`}
+                        onClick={() => toggleOption(option)}
+                      >
+                        <span className="flex items-center gap-2">
+                          {option.label}
+                        </span>
+                        {isSelected && <Check className="h-4 w-4 text-primary" />}
+                      </div>
+                    );
+                  })
               )}
             </div>
 
