@@ -13,6 +13,7 @@ import * as nftActions from "@/actions/nft"; // your server actions
 import { useAccount } from "wagmi";
 import { AuctionModel, NFTLikeModel, NFTModel, UserModel } from "@/generated/prisma/models";
 import Loader from "@/components/loader";
+import Link from "next/link";
 
 export default function Page() {
   const router = useRouter();
@@ -92,21 +93,32 @@ export default function Page() {
           placeholder="Search your NFT..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-zinc-950"
+          className="bg-zinc-950!"
         />
 
         {loading ? (
           <Loader text="Loading NFT's..."/>
         ) : filteredNFTs.length === 0 ? (
-<div className="text-center py-5 text-muted-foreground space-y-2">
+<div className="text-center py-5 text-white space-y-2">
   <div>No NFTs found.</div>
+  <div className="flex items-center justify-center gap-4">
+    <Link href="/dashboard/mint-single-nft">
   <Button
-    variant="outline"
+    variant="default"
+    size="sm"
+  >
+    Mint new
+  </Button>
+  </Link>
+  <Button
+    variant="secondary"
     size="sm"
     onClick={() => router.refresh()}
   >
     Refresh
   </Button>
+  </div>
+  
 </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2  gap-6">

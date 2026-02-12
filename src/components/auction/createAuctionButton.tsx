@@ -21,7 +21,7 @@ import { useUser } from "@/hooks/useUser";
 import { useSettleAuction } from "@/hooks/useAuction";
 import { getAuctionByNFT } from "@/actions/auction"; // your Prisma fetch
 import { CalendarIcon } from "lucide-react";
-import { differenceInHours, format, startOfDay } from "date-fns";
+import { differenceInHours, differenceInSeconds, format, startOfDay } from "date-fns";
 
 import {
   Select,
@@ -68,6 +68,7 @@ export function CreateAuctionButton({
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
   const [customHour, setCustomHour] = useState<string>("12");
   const [customMinute, setCustomMinute] = useState<string>("00");
+  const [customPeriod, setCustomPeriod] = useState<"AM" | "PM">("PM");
 
   const { settleAuction, isPending: isSettlePending } = useSettleAuction();
 
@@ -151,16 +152,21 @@ export function CreateAuctionButton({
       if (duration === "custom") {
         if (!customEndDate) return toast.error("Pick an end date");
 
-        // Combine date with time
-        const endDateTime = new Date(customEndDate);
-        endDateTime.setHours(parseInt(customHour), parseInt(customMinute), 0, 0);
+        // Convert 12-hour to 24-hour format
+        let hour24 = parseInt(customHour);
+        if (customPeriod === "PM" && hour24 !== 12) hour24 += 12;
+        if (customPeriod === "AM" && hour24 === 12) hour24 = 0;
+
+        // Create local datetime
+        const localEndDateTime = new Date(customEndDate);
+        localEndDateTime.setHours(hour24, parseInt(customMinute), 0, 0);
 
         const now = new Date();
-        if (endDateTime <= now) return toast.error("End date & time must be in the future");
+        if (localEndDateTime <= now) return toast.error("End date & time must be in the future");
 
-        durationHours = differenceInHours(endDateTime, now);
-        // If less than 1 hour, still allow but set minimum duration
-        if (durationHours < 1) durationHours = 1;
+        // Calculate duration in seconds from local time
+        const durationSeconds = differenceInSeconds(localEndDateTime, now);
+        durationHours = durationSeconds / 3600;
       } else {
         durationHours = Number(duration);
       }
@@ -280,15 +286,15 @@ export function CreateAuctionButton({
 
                   <div className="flex gap-2 items-center">
                     <div className="flex-1">
-                      <Label className="text-xs">Hour (0-23)</Label>
+                      <Label className="text-xs">Hour (1-12)</Label>
                       <Input
                         type="number"
-                        min="0"
-                        max="23"
+                        min="1"
+                        max="12"
                         value={customHour}
                         onChange={(e) => {
-                          const val = Math.min(23, Math.max(0, parseInt(e.target.value) || 0));
-                          setCustomHour(val.toString().padStart(2, "0"));
+                          const val = Math.min(12, Math.max(1, parseInt(e.target.value) || 1));
+                          setCustomHour(val.toString());
                         }}
                         className="mt-1"
                       />
@@ -307,17 +313,39 @@ export function CreateAuctionButton({
                         className="mt-1"
                       />
                     </div>
+                    <div className="flex-1">
+                      <Label className="text-xs">Period</Label>
+                      <Select value={customPeriod} onValueChange={(val: any) => setCustomPeriod(val)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AM">AM</SelectItem>
+                          <SelectItem value="PM">PM</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   {customEndDate && (
                     <p className="text-xs text-muted-foreground">
-                      End time: {format(customEndDate, "PPP")} at {customHour}:{customMinute}
+                      End time: {format(customEndDate, "PPP")} at {customHour}:{customMinute} {customPeriod} (Your Local Time)
                       <br />
-                      Duration: {Math.max(0, (() => {
+                      Duration: {(() => {
+                        let hour24 = parseInt(customHour);
+                        if (customPeriod === "PM" && hour24 !== 12) hour24 += 12;
+                        if (customPeriod === "AM" && hour24 === 12) hour24 = 0;
+                        
                         const endDateTime = new Date(customEndDate);
-                        endDateTime.setHours(parseInt(customHour), parseInt(customMinute), 0, 0);
-                        return differenceInHours(endDateTime, new Date());
-                      })())} hours
+                        endDateTime.setHours(hour24, parseInt(customMinute), 0, 0);
+                        
+                        const totalSeconds = Math.max(0, differenceInSeconds(endDateTime, new Date()));
+                        const hours = Math.floor(totalSeconds / 3600);
+                        const minutes = Math.floor((totalSeconds % 3600) / 60);
+                        const seconds = totalSeconds % 60;
+                        
+                        return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds} second${seconds !== 1 ? 's' : ''}`;
+                      })()}
                     </p>
                   )}
                 </div>

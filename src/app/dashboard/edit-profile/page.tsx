@@ -137,7 +137,7 @@ export default function EditProfilePage() {
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
             required
-            className="bg-zinc-950"
+            className="bg-zinc-950!"
           />
         </div>
         <Button
