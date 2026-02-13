@@ -75,7 +75,7 @@ export default function MintPage() {
         title: formValues.title,
         description: formValues.description,
         cover: formValues.coverImageUrl,
-        music: formValues.musicTrackUrl,
+        media: formValues.musicTrackUrl,
         fileType: formValues.fileType,
       };
 
