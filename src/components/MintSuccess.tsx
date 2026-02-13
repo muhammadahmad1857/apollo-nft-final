@@ -62,7 +62,7 @@ export default function MintSuccessDialog({
 
               {/* Title */}
               <div>
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent">
+                <h2 className="text-3xl font-bold text-white">
                   {isBatch ? "NFTs Minted Successfully!" : "NFT Minted Successfully!"}
                 </h2>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
@@ -86,9 +86,9 @@ export default function MintSuccessDialog({
                   {/* List on Marketplace Button */}
                   <Button
                     onClick={handleListMarketplace}
-                    className="w-full h-14 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 hover:from-cyan-600 hover:via-blue-600 hover:to-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden"
+                    className="w-full h-14 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:via-indigo-600 hover:to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden"
                   >
-                    <span className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity" />
+                    <span className="absolute inset-0 bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 opacity-0 group-hover:opacity-20 transition-opacity" />
                     <Store className="w-5 h-5 mr-2" />
                     List on Marketplace
                   </Button>
@@ -110,7 +110,7 @@ export default function MintSuccessDialog({
                     onClose();
                   }}
                   variant="outline"
-                  className="flex-1 h-12 border-2 border-zinc-300 dark:border-zinc-700 hover:border-cyan-500 dark:hover:border-cyan-500 rounded-xl font-semibold transition-all"
+                  className="flex-1 h-12 border-2 border-zinc-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-gray-500 rounded-xl font-semibold transition-all"
                 >
                   Go to Dashboard
                 </Button>

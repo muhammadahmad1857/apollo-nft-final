@@ -25,9 +25,14 @@ export default function BatchMintPage() {
       coverImageUrl: undefined,
       musicTrackUrl: "",
       fileType: undefined,
-      royaltyBps: Number(getRoyalty("BATCH")) || 500,
+      royaltyBps: 500, // Not used in batch mint UI, but kept in interface
     },
   ]);
+
+  // Universal Royalty State
+  const [universalRoyaltyBps, setUniversalRoyaltyBps] = useState<number>(
+    Number(getRoyalty("BATCH")) || 500
+  );
 
   // Collapse State
   const [collapsedForms, setCollapsedForms] = useState<Set<number>>(new Set());
@@ -36,15 +41,13 @@ export default function BatchMintPage() {
   const [isMinting, setIsMinting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Update royalty in session storage for all forms
+  // Update royalty in session storage
   useEffect(() => {
-    const lastRoyalty = forms[forms.length - 1]?.royaltyBps || 500;
-    saveRoyalty(lastRoyalty, "BATCH");
-  }, [forms]);
+    saveRoyalty(universalRoyaltyBps, "BATCH");
+  }, [universalRoyaltyBps]);
 
   // Add new form
   const handleAddForm = () => {
-    const lastForm = forms[forms.length - 1];
     const newForm: MintFormValues = {
       name: "",
       title: "",
@@ -52,7 +55,7 @@ export default function BatchMintPage() {
       coverImageUrl: undefined,
       musicTrackUrl: "",
       fileType: undefined,
-      royaltyBps: lastForm?.royaltyBps || 500,
+      royaltyBps: 500, // Not used in batch mint
     };
     setForms([...forms, newForm]);
   };
@@ -104,105 +107,202 @@ export default function BatchMintPage() {
         royaltyBps: 500,
       },
     ]);
+    setUniversalRoyaltyBps(500);
     removeRoyalty("BATCH");
     toast.success("All forms reset");
   };
 
   // Handle batch mint
-  const handleMint = async () => {
-    // Validate all forms have files
-    const missingFiles = forms
-      .map((f, i) => (!f.musicTrackUrl ? i + 1 : null))
-      .filter((n) => n !== null);
+  // const handleMint = async () => {
+  //   // Validate all forms have files
+  //   const missingFiles = forms
+  //     .map((f, i) => (!f.musicTrackUrl ? i + 1 : null))
+  //     .filter((n) => n !== null);
 
-    if (missingFiles.length > 0) {
-      toast.error(`NFTs ${missingFiles.join(", ")} are missing files`);
-      return;
-    }
+  //   if (missingFiles.length > 0) {
+  //     toast.error(`NFTs ${missingFiles.join(", ")} are missing files`);
+  //     return;
+  //   }
 
-    if (!address) {
-      toast.error("Please connect your wallet");
-      return;
-    }
+  //   if (!address) {
+  //     toast.error("Please connect your wallet");
+  //     return;
+  //   }
 
-    setIsMinting(true);
+  //   setIsMinting(true);
 
-    try {
-      const royaltyBps = forms[0]?.royaltyBps || 500;
+  //   try {
+  //     const royaltyBps = forms[0]?.royaltyBps || 500;
 
-      // Mint each NFT with metadata
-      let successCount = 0;
-      for (const form of forms) {
-        try {
-          // Create metadata JSON
-          const metadata = {
-            name: form.name,
-            title: form.title,
-            description: form.description,
-            cover: form.coverImageUrl,
-            music: form.musicTrackUrl,
-            fileType: form.fileType,
-          };
+  //     // Mint each NFT with metadata
+  //     let successCount = 0;
+  //     for (const form of forms) {
+  //       try {
+  //         // Create metadata JSON
+  //         const metadata = {
+  //           name: form.name,
+  //           title: form.title,
+  //           description: form.description,
+  //           cover: form.coverImageUrl,
+  //           media: form.musicTrackUrl,
+  //           fileType: form.fileType,
+  //         };
 
-          // Upload metadata JSON to Pinata
-          const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
-          if (!jwtRes.ok) {
-            throw new Error("Failed to get upload token");
-          }
-          const { JWT } = await jwtRes.json();
+  //         // Upload metadata JSON to Pinata
+  //         const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
+  //         if (!jwtRes.ok) {
+  //           throw new Error("Failed to get upload token");
+  //         }
+  //         const { JWT } = await jwtRes.json();
 
-          const blob = new Blob([JSON.stringify(metadata)], { type: "application/json" });
-          const file = new File([blob], `${form.name || "nft"}-metadata.json`, { type: "application/json" });
+  //         const blob = new Blob([JSON.stringify(metadata)], { type: "application/json" });
+  //         const file = new File([blob], `${form.name || "nft"}-metadata.json`, { type: "application/json" });
 
-          const formData = new FormData();
-          formData.append("file", file);
-          formData.append("network", "public");
+  //         const formData = new FormData();
+  //         formData.append("file", file);
+  //         formData.append("network", "public");
 
-          const uploadRes = await fetch(
-            "https://api.pinata.cloud/pinning/pinFileToIPFS",
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${JWT}`,
-              },
-              body: formData,
-            }
-          );
+  //         const uploadRes = await fetch(
+  //           "https://api.pinata.cloud/pinning/pinFileToIPFS",
+  //           {
+  //             method: "POST",
+  //             headers: {
+  //               Authorization: `Bearer ${JWT}`,
+  //             },
+  //             body: formData,
+  //           }
+  //         );
 
-          if (!uploadRes.ok) {
-            throw new Error("Metadata upload failed");
-          }
+  //         if (!uploadRes.ok) {
+  //           throw new Error("Metadata upload failed");
+  //         }
 
-          const uploadJson = await uploadRes.json();
-          const metadataIpfsHash = uploadJson.IpfsHash;
-          const metadataUrl = `ipfs://${metadataIpfsHash}`;
+  //         const uploadJson = await uploadRes.json();
+  //         const metadataIpfsHash = uploadJson.IpfsHash;
+  //         const metadataUrl = `ipfs://${metadataIpfsHash}`;
 
-          // Mint with metadata URL
-          const success = await mint({
-            tokenURIs: metadataUrl,
-            royaltyBps,
-          });
-          if (success) {
-            successCount++;
-          }
-        } catch (error) {
-          console.error("Error minting:", error);
+  //         // Mint with metadata URL
+  //         const success = await mint({
+  //           tokenURIs: metadataUrl,
+  //           royaltyBps,
+  //         });
+  //         if (success) {
+  //           successCount++;
+  //         }
+  //       } catch (error) {
+  //         console.error("Error minting:", error);
+  //       }
+  //     }
+
+  //     if (successCount > 0) {
+  //       toast.success(`Successfully minted ${successCount} out of ${forms.length} NFTs`);
+  //       setShowSuccess(true);
+  //       removeRoyalty("BATCH");
+  //       handleReset();
+  //     }
+  //   } catch (error) {
+  //     console.error("Batch mint error:", error);
+  //     toast.error("Failed to mint NFTs");
+  //   } finally {
+  //     setIsMinting(false);
+  //   }
+  // };
+const handleMint = async () => {
+  const missingFiles = forms
+    .map((f, i) => (!f.musicTrackUrl ? i + 1 : null))
+    .filter((n) => n !== null);
+
+  if (missingFiles.length > 0) {
+    toast.error(`NFTs ${missingFiles.join(", ")} are missing files`);
+    return;
+  }
+
+  if (!address) {
+    toast.error("Please connect your wallet");
+    return;
+  }
+
+  setIsMinting(true);
+
+  try {
+    const royaltyBps = universalRoyaltyBps;
+
+    // 1️⃣ Upload ALL metadata first
+    const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
+    if (!jwtRes.ok) throw new Error("Failed to get upload token");
+
+    const { JWT } = await jwtRes.json();
+
+    const metadataUrls: string[] = [];
+
+    for (const form of forms) {
+      const metadata = {
+        name: form.name,
+        title: form.title,
+        description: form.description,
+        cover: form.coverImageUrl,
+        media: form.musicTrackUrl,
+        fileType: form.fileType,
+      };
+
+      const blob = new Blob([JSON.stringify(metadata)], {
+        type: "application/json",
+      });
+
+      const file = new File(
+        [blob],
+        `${form.name || "nft"}-metadata.json`,
+        { type: "application/json" }
+      );
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("network", "public");
+
+      const uploadRes = await fetch(
+        "https://api.pinata.cloud/pinning/pinFileToIPFS",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${JWT}`,
+          },
+          body: formData,
         }
+      );
+
+      if (!uploadRes.ok) {
+        throw new Error("Metadata upload failed");
       }
 
-      if (successCount > 0) {
-        toast.success(`Successfully minted ${successCount} out of ${forms.length} NFTs`);
-        setShowSuccess(true);
-        removeRoyalty("BATCH");
-        handleReset();
-      }
-    } catch (error) {
-      console.error("Batch mint error:", error);
-      toast.error("Failed to mint NFTs");
-    } finally {
-      setIsMinting(false);
+      const uploadJson = await uploadRes.json();
+      const metadataIpfsHash = uploadJson.IpfsHash;
+
+      metadataUrls.push(`ipfs://${metadataIpfsHash}`);
     }
-  };
+
+    // 2️⃣ Now call ONE batch mint
+    const result = await mint({
+      tokenURIs: metadataUrls,
+      quantity: metadataUrls.length,
+      royaltyBps,
+      isBatch: true,
+    });
+
+    if (result.success) {
+      toast.success(`Successfully minted ${metadataUrls.length} NFTs 🎉`);
+      setShowSuccess(true);
+      removeRoyalty("BATCH");
+      handleReset();
+    } else {
+      toast.error("Batch mint failed");
+    }
+  } catch (error) {
+    console.error("Batch mint error:", error);
+    toast.error("Failed to mint NFTs");
+  } finally {
+    setIsMinting(false);
+  }
+};
 
   handleToasts();
 
@@ -217,11 +317,11 @@ export default function BatchMintPage() {
         {/* Header */}
         <div className="mb-12 text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <SparklesIcon className="w-8 h-8 text-cyan-500 dark:text-cyan-300 animate-pulse" />
+            <SparklesIcon className="w-8 h-8 text-white animate-pulse" />
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-black dark:text-white">
               Batch Mint
             </h1>
-            <SparklesIcon className="w-8 h-8 text-cyan-500 dark:text-cyan-300 animate-pulse" />
+            <SparklesIcon className="w-8 h-8 text-white animate-pulse" />
           </div>
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             Create and mint multiple NFTs at once. Add as many as you need.
@@ -235,20 +335,49 @@ export default function BatchMintPage() {
           transition={{ duration: 0.5 }}
           className="space-y-6"
         >
+          {/* Royalty Section */}
+          <div className="space-y-3 rounded-xl backdrop-blur-md bg-zinc-500/5 border border-zinc-400/20 p-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-white">
+                Royalty Percentage (Applied to All NFTs)
+              </label>
+              <span className="text-base font-bold text-white">
+                {(universalRoyaltyBps / 100).toFixed(2)}%
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min={0}
+                max={1000}
+                step={10}
+                value={universalRoyaltyBps}
+                onChange={(e) => setUniversalRoyaltyBps(Number(e.target.value))}
+                className="flex-1 h-2 rounded-lg appearance-none bg-linear-to-r from-zinc-500/30 to-zinc-500/50 accent-white cursor-pointer"
+              />
+              <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500 w-12 text-right">
+                {universalRoyaltyBps} bps
+              </span>
+            </div>
+            <p className="text-xs text-white/80">
+              This royalty rate will apply to all NFTs in this batch (0-10%)
+            </p>
+          </div>
+
           {/* Progress Info */}
           <div className="relative">
-            <div className="flex items-center gap-3 rounded-xl border border-cyan-400/20 bg-cyan-500/5 backdrop-blur-lg p-4">
+            <div className="flex items-center gap-3 rounded-xl border border-zinc-400/20 bg-zinc-500/5 backdrop-blur-lg p-4">
               <div className="flex-1">
                 <p className="text-sm font-semibold text-white">
                   NFTs Ready: {forms.length}
                 </p>
-                <p className="text-xs text-cyan-400/80 mt-1">
+                <p className="text-xs text-white/80 mt-1">
                   {isAllFilesUploaded
                     ? `All ${forms.length} files uploaded ✓`
                     : `${uploadingCount} file(s) remaining`}
                 </p>
               </div>
-              <div className="text-3xl font-bold text-cyan-400">
+              <div className="text-3xl font-bold text-white">
                 {isAllFilesUploaded ? "✓" : uploadingCount}
               </div>
             </div>
@@ -268,14 +397,14 @@ export default function BatchMintPage() {
                   {/* Form Header with Collapse */}
                   <motion.button
                     onClick={() => toggleCollapse(index)}
-                    className="w-full relative flex items-center justify-between -top-4 left-0 z-10 px-6 py-3 bg-linear-to-r from-cyan-500/30 to-cyan-600/20 hover:from-cyan-500/40 hover:to-cyan-600/30 border border-cyan-400/40 rounded-full backdrop-blur-sm transition-all group"
+                    className="w-full relative flex items-center justify-between -top-4 left-0 z-10 px-6 py-3 bg-linear-to-r from-zinc-500/30 to-zinc-600/20 hover:from-zinc-500/40 hover:to-zinc-600/30 border border-zinc-400/40 rounded-full backdrop-blur-sm transition-all group"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-bold text-cyan-300">
+                      <span className="text-sm font-bold text-white">
                         NFT #{index + 1}
                       </span>
                       {form.title && (
-                        <span className="text-xs text-cyan-200/70">
+                        <span className="text-xs text-white/70">
                           {form.title}
                         </span>
                       )}
@@ -293,9 +422,9 @@ export default function BatchMintPage() {
                       transition={{ duration: 0.2 }}
                     >
                       {collapsedForms.has(index) ? (
-                        <ChevronUp className="w-5 h-5 text-cyan-300" />
+                        <ChevronUp className="w-5 h-5 text-white" />
                       ) : (
-                        <ChevronDown className="w-5 h-5 text-cyan-300" />
+                        <ChevronDown className="w-5 h-5 text-white" />
                       )}
                     </motion.div>
                   </motion.button>
@@ -317,7 +446,7 @@ export default function BatchMintPage() {
                           }
                           onRemove={() => handleRemoveForm(index)}
                           showRemoveButton={forms.length > 1}
-                          royaltyLabel={`Royalty (${index === 0 ? "Applied to All" : "Same as NFT #1"})`}
+                          showRoyalty={false}
                         />
                       </motion.div>
                     )}
@@ -332,16 +461,16 @@ export default function BatchMintPage() {
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleAddForm}
-            className="w-full py-4 rounded-xl border-2 border-dashed border-cyan-400/60 hover:border-cyan-300 bg-linear-to-r from-cyan-500/20 to-cyan-600/10 hover:from-cyan-500/30 hover:to-cyan-600/20 shadow-lg hover:shadow-cyan-500/20 transition-all flex items-center justify-center gap-3 group backdrop-blur-sm"
+            className="w-full py-4 rounded-xl border-2 border-dashed border-zinc-400/60 hover:border-zinc-300 bg-linear-to-r from-zinc-500/20 to-zinc-600/10 hover:from-zinc-500/30 hover:to-zinc-600/20 shadow-lg hover:shadow-zinc-500/20 transition-all flex items-center justify-center gap-3 group backdrop-blur-sm"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500/30 group-hover:bg-cyan-500/40 transition-all">
-              <Plus className="w-5 h-5 text-cyan-300" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-500/30 group-hover:bg-zinc-500/40 transition-all">
+              <Plus className="w-5 h-5 text-white" />
             </div>
             <div className="text-left">
-              <p className="text-sm font-bold text-cyan-300 group-hover:text-cyan-200">
+              <p className="text-sm font-bold text-white group-hover:text-gray-200">
                 Add Another NFT
               </p>
-              <p className="text-xs text-cyan-200/60">
+              <p className="text-xs text-white/60">
                 Click to create more NFTs
               </p>
             </div>
@@ -365,11 +494,11 @@ export default function BatchMintPage() {
                 isMinting ||
                 !address
               }
-              className="flex-1 py-3 h-auto text-base font-semibold rounded-xl bg-linear-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600 text-white shadow-lg hover:shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex-1 py-3 h-auto text-base font-semibold rounded-xl text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {isBusy || isMinting ? (
                 <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin text-white" />
                   Minting {forms.length} NFTs...
                 </span>
               ) : !address ? (

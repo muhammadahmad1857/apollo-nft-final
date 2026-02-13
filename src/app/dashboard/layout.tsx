@@ -3,6 +3,7 @@ import { AppSidebar } from '@/components/sidebar/app-sidebar'
 import SidebarHeader from '@/components/sidebar/sidebar-header'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { useRouter } from 'next/navigation'
+import Loader from '@/components/loader'
 
 import React, { useEffect } from 'react'
 import { toast } from 'sonner'
@@ -26,7 +27,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         
     {(isConnected && !(isConnecting || isReconnecting))
     ?  children
-    : <div className="min-h-[calc(100vh-64px)] grid items-center text-center">Connecting to your account...</div>}
+    : <Loader text="Connecting to your wallet..." fullScreen />}
       <Footer/>
       </SidebarInset>
     </SidebarProvider>

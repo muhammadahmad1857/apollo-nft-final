@@ -2,8 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import Loader from "@/components/loader";
@@ -32,6 +31,7 @@ import { NotFound } from "@/components/notFound";
 
 export default function EditRoyaltyPage() {
   const { tokenid } = useParams();
+  const router = useRouter();
   const {address} = useAccount()
   const { data: user, refetch:userRefetch, isLoading: isUserLoading } = useUser(address || "");
 
@@ -169,13 +169,14 @@ useEffect(() => {
 
   return (
     <div className="container mx-auto max-w-2xl py-8">
-      <Link
-        href="/dashboard"
-        className="inline-flex items-center gap-2 text-sm mb-4 text-muted-foreground hover:text-foreground"
+      <Button
+        variant="default"
+        onClick={() => router.push("/dashboard")}
+        className="mb-4 text-white"
       >
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowLeft className="w-4 h-4 mr-2" />
         Back
-      </Link>
+      </Button>
 
       <Card className="overflow-hidden">
         {/* HEADER */}

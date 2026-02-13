@@ -161,7 +161,7 @@ export default function CreateAuctionPage() {
       <div className="max-w-3xl mx-auto">
         {/* Back Button */}
         <Button
-          variant="ghost"
+          variant="default"
           onClick={() => router.push("/dashboard")}
           className="mb-6 hover:bg-zinc-100 dark:hover:bg-zinc-800"
         >

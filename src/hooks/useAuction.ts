@@ -46,9 +46,9 @@ export function useCreateAuction() {
     nftId: number,
   ) => {
     try {
-     toast.loading("Creating auction on blockchain...", {
-          id: toastIdRef.current ?? undefined,
-        });
+    //  toast.loading("Creating auction on blockchain...", {
+    //       id: toastIdRef.current ?? undefined,
+    //     });
       const hash = await writeContractAsync({
         address: auctionAddress,
         abi: auctionABIArray,

@@ -111,7 +111,7 @@ export default function MintSingleNFTPage() {
         {/* Form Section */}
         <div className="flex flex-col gap-8 w-full animate-fade-in delay-150">
           <div className="flex items-center gap-3 mb-2">
-            <SparklesIcon className="w-7 h-7 text-cyan-500 dark:text-cyan-300 animate-sparkle" />
+            <SparklesIcon className="w-7 h-7 text-white animate-sparkle" />
             <h2 className="text-2xl font-bold text-black dark:text-white">
               Mint Single NFT
             </h2>
@@ -130,7 +130,7 @@ export default function MintSingleNFTPage() {
               className="font-medium text-sm flex justify-between"
             >
               <span>Royalty Percentage</span>
-              <span className="font-semibold text-cyan-600 dark:text-cyan-300">
+              <span className="font-semibold text-white">
                 {(royaltyBps / 100).toFixed(2)}%
               </span>
             </label>
@@ -146,8 +146,8 @@ export default function MintSingleNFTPage() {
     const val = Number(e.target.value);
     setRoyaltyBps(val);
     saveRoyalty(val, "SINGLE"); // save in sessionStorage whenever user updates
-  }}                className="w-full accent-cyan-500 h-2 rounded-lg appearance-none bg-gray-200 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
-                style={{ boxShadow: "0 0 0 2px #06b6d4" }}
+  }}                className="w-full accent-white h-2 rounded-lg appearance-none bg-gray-200 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all"
+                style={{ boxShadow: "0 0 0 2px #ffffff" }}
               />
               <span className="w-12 text-right text-xs text-gray-500 dark:text-gray-400">
                 {royaltyBps} bps
@@ -159,8 +159,8 @@ export default function MintSingleNFTPage() {
           </div>
           {/* Mint Price Info */}
           <div className="relative">
-            <div className="flex items-start gap-3 rounded-xl border border-cyan-200/60 dark:border-cyan-800/60 bg-cyan-50/60 dark:bg-cyan-950/40 p-4 shadow-sm transition-all">
-              <div className="mt-0.5 text-cyan-600 dark:text-cyan-300">
+            <div className="flex items-start gap-3 rounded-xl border border-zinc-200/60 dark:border-zinc-800/60 bg-zinc-50/60 dark:bg-zinc-950/40 p-4 shadow-sm transition-all">
+              <div className="mt-0.5 text-white">
                 <SparklesIcon className="w-5 h-5" />
               </div>
 
@@ -171,14 +171,14 @@ export default function MintSingleNFTPage() {
 
                 {isPriceLoading ? (
                   <div className="mt-1 flex items-center gap-2">
-                    <div className="h-4 w-24 rounded bg-cyan-200/60 dark:bg-cyan-800/60 animate-pulse" />
+                    <div className="h-4 w-24 rounded bg-zinc-200/60 dark:bg-zinc-800/60 animate-pulse" />
                     <span className="text-xs text-gray-400">
                       Fetching price…
                     </span>
                   </div>
                 ) : (
                   <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                    <span className="font-semibold text-cyan-700 dark:text-cyan-300">
+                    <span className="font-semibold text-white">
                       {mintPriceHuman} APOLLO
                     </span>{" "}
                     will be charged for minting this NFT.
@@ -196,7 +196,7 @@ export default function MintSingleNFTPage() {
           <Button
             onClick={handleMint}
             disabled={!selectedFile || isPriceLoading || isBusy || isMinting}
-            className="my-4 py-3 text-base font-semibold rounded-xl shadow-md bg-cyan-600 hover:bg-cyan-700 text-white dark:bg-cyan-500 dark:hover:bg-cyan-400 transition-all duration-200 animate-fade-in delay-200"
+            className="my-4 py-3 text-base font-semibold rounded-xl shadow-md text-white transition-all duration-200 animate-fade-in delay-200"
             style={{ letterSpacing: 1 }}
           >
             {isBusy || isMinting ? (
@@ -229,7 +229,7 @@ export default function MintSingleNFTPage() {
         </div>
         {/* Preview Section */}
         <div className="flex flex-col items-center gap-6">
-          <div className="w-full aspect-square max-w-xs relative border-2 border-cyan-400/60 dark:border-cyan-300/40 rounded-2xl overflow-hidden shadow-xl bg-white dark:bg-black transition-all duration-300 animate-fade-in">
+          <div className="w-full aspect-square max-w-xs relative border-2 border-zinc-400/60 dark:border-zinc-300/40 rounded-2xl overflow-hidden shadow-xl bg-white dark:bg-black transition-all duration-300 animate-fade-in">
             {isLoadingPreview ? (
               <span className="flex items-center justify-center h-full w-full text-lg animate-pulse">
                 Loading preview...
@@ -336,7 +336,7 @@ function JsonWithIpfsImages({ data }: { data: any }) {
           </div>
         </div>
       )}
-      <div className="text-xs font-mono bg-gray-100 dark:bg-gray-900 rounded p-2 overflow-x-auto border border-cyan-100 dark:border-cyan-900 transition-colors duration-300">
+      <div className="text-xs font-mono bg-gray-100 dark:bg-gray-900 rounded p-2 overflow-x-auto border border-zinc-100 dark:border-zinc-900 transition-colors duration-300">
         {renderJson(data)}
       </div>
     </div>

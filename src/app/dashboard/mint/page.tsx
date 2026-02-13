@@ -114,26 +114,18 @@ export default function MintPage() {
       const metadataUrl = `ipfs://${metadataIpfsHash}`;
 
       // Mint with metadata URL as token URI
-      const success = await mint({
+      const {success,tokenId} = await mint({
         tokenURIs: metadataUrl,
         royaltyBps: formValues.royaltyBps,
       });
 
       if (success) {
         // Wait for sync and fetch latest token
+        setMintedTokenId(Number(tokenId));
         setTimeout(async () => {
-          try {
-            // Trigger sync
-            await fetch("/api/sync-mints").catch(() => {});
-            
-            // For now, just show the success dialog without tokenId
-            // The user can navigate from dashboard instead
-          } catch (err) {
-            console.error("Error after mint:", err);
-          }
+        setShowSuccess(true);
         }, 1000);
         
-        setShowSuccess(true);
         removeRoyalty("SINGLE");
         handleReset();
       }
@@ -197,11 +189,11 @@ export default function MintPage() {
                 isMinting ||
                 !address
               }
-              className="flex-1 py-3 h-auto text-base font-semibold rounded-xl bg-linear-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600 text-white shadow-lg hover:shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex-1 py-3 h-auto text-base font-semibold rounded-xl text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {isBusy || isMinting ? (
                 <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin text-white" />
                   Minting...
                 </span>
               ) : !address ? (

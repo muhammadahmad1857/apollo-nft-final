@@ -203,9 +203,9 @@ variant={'secondary'}
               className="mb-8"
             >
               <Button
-                variant="ghost"
+                variant="default"
                 onClick={() => router.back()}
-                className="mb-4 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                className="mb-4 text-white"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back

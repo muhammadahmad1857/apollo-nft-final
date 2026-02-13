@@ -61,6 +61,7 @@ interface MintMetadataFormProps {
   onRemove?: () => void;
   showRemoveButton?: boolean;
   royaltyLabel?: string;
+  showRoyalty?: boolean;
 }
 
 export function MintMetadataForm({
@@ -69,6 +70,7 @@ export function MintMetadataForm({
   onRemove,
   showRemoveButton = false,
   royaltyLabel = "Royalty Percentage",
+  showRoyalty = true,
 }: MintMetadataFormProps) {
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
@@ -345,7 +347,7 @@ export function MintMetadataForm({
           placeholder="Your artist name or organization"
           value={values.name}
           onChange={(e) => handleChange("name", e.target.value)}
-          className="bg-zinc-950/40 backdrop-blur border-zinc-700/50 dark:border-zinc-600/50 focus:border-cyan-500/50 focus:ring-cyan-500/20 text-white placeholder-zinc-500"
+          className="bg-zinc-950/40 backdrop-blur border-zinc-700/50 dark:border-zinc-600/50 focus:border-white/50 focus:ring-white/20 text-white placeholder-zinc-500"
         />
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Internal identifier for your NFT
@@ -363,7 +365,7 @@ export function MintMetadataForm({
           placeholder="Display title shown in marketplace"
           value={values.title}
           onChange={(e) => handleChange("title", e.target.value)}
-          className="bg-zinc-950/40 backdrop-blur border-zinc-700/50 dark:border-zinc-600/50 focus:border-cyan-500/50 focus:ring-cyan-500/20 text-white placeholder-zinc-500"
+          className="bg-zinc-950/40 backdrop-blur border-zinc-700/50 dark:border-zinc-600/50 focus:border-white/50 focus:ring-white/20 text-white placeholder-zinc-500"
         />
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           This is what users will see in the marketplace
@@ -381,7 +383,7 @@ export function MintMetadataForm({
           value={values.description}
           onChange={(e) => handleChange("description", e.target.value)}
           maxLength={500}
-          className="bg-zinc-950/40 backdrop-blur border-zinc-700/50 dark:border-zinc-600/50 focus:border-cyan-500/50 focus:ring-cyan-500/20 text-white placeholder-zinc-500 resize-none min-h-24"
+          className="bg-zinc-950/40 backdrop-blur border-zinc-700/50 dark:border-zinc-600/50 focus:border-white/50 focus:ring-white/20 text-white placeholder-zinc-500 resize-none min-h-24"
         />
         <div className="flex justify-between">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -394,34 +396,36 @@ export function MintMetadataForm({
       </div>
 
       {/* Royalty Slider */}
-      <div className="space-y-3 rounded-xl backdrop-blur-md bg-cyan-500/5 border border-cyan-400/20 p-4">
-        <div className="flex items-center justify-between">
-          <Label htmlFor={`royalty-${values.name}`} className="text-sm font-semibold">
-            {royaltyLabel}
-          </Label>
-          <span className="text-base font-bold text-cyan-400 dark:text-cyan-300">
-            {(values.royaltyBps / 100).toFixed(2)}%
-          </span>
+      {showRoyalty && (
+        <div className="space-y-3 rounded-xl backdrop-blur-md bg-zinc-500/5 border border-zinc-400/20 p-4">
+          <div className="flex items-center justify-between">
+            <Label htmlFor={`royalty-${values.name}`} className="text-sm font-semibold">
+              {royaltyLabel}
+            </Label>
+            <span className="text-base font-bold text-white">
+              {(values.royaltyBps / 100).toFixed(2)}%
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <input
+              id={`royalty-${values.name}`}
+              type="range"
+              min={0}
+              max={1000}
+              step={10}
+              value={values.royaltyBps}
+              onChange={(e) => handleChange("royaltyBps", Number(e.target.value))}
+              className="flex-1 h-2 rounded-lg appearance-none bg-linear-to-r from-zinc-500/30 to-zinc-500/50 accent-white cursor-pointer"
+            />
+            <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500 w-12 text-right">
+              {values.royaltyBps} bps
+            </span>
+          </div>
+          <p className="text-xs text-white/80">
+            Earn royalties on secondary sales (0-10%)
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <input
-            id={`royalty-${values.name}`}
-            type="range"
-            min={0}
-            max={1000}
-            step={10}
-            value={values.royaltyBps}
-            onChange={(e) => handleChange("royaltyBps", Number(e.target.value))}
-            className="flex-1 h-2 rounded-lg appearance-none bg-linear-to-r from-cyan-500/30 to-cyan-500/50 accent-cyan-500 cursor-pointer"
-          />
-          <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500 w-12 text-right">
-            {values.royaltyBps} bps
-          </span>
-        </div>
-        <p className="text-xs text-cyan-400/80 dark:text-cyan-300/80">
-          Earn royalties on secondary sales (0-10%)
-        </p>
-      </div>
+      )}
 
       {/* Cover Image Upload (Optional) */}
       <div className="space-y-2">
@@ -436,7 +440,7 @@ export function MintMetadataForm({
               exit={{ opacity: 0 }}
               className="relative group"
             >
-              <div className="relative h-40 w-full overflow-hidden rounded-lg border border-cyan-400/30 bg-black/40 backdrop-blur">
+              <div className="relative h-40 w-full overflow-hidden rounded-lg border border-zinc-400/30 bg-black/40 backdrop-blur">
                 <Image
                   src={
                     coverPreview ||
@@ -452,8 +456,8 @@ export function MintMetadataForm({
                 {isUploadingCover && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-2">
-                      <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
-                      <p className="text-xs text-cyan-300 font-semibold">
+                      <Loader2 className="w-6 h-6 animate-spin text-white" />
+                      <p className="text-xs text-white font-bold">
                         Uploading...
                       </p>
                     </div>
@@ -476,7 +480,7 @@ export function MintMetadataForm({
               onDrop={handleCoverDrop}
               onDragOver={(e) => e.preventDefault()}
               onClick={() => !isUploadingCover && coverFileInputRef.current?.click()}
-              className={`relative cursor-pointer rounded-lg border-2 border-dashed border-zinc-400/30 dark:border-zinc-600/30 p-6 text-center transition-all hover:border-cyan-500/50 hover:bg-cyan-500/5 bg-zinc-950/20 ${
+              className={`relative cursor-pointer rounded-lg border-2 border-dashed border-zinc-400/30 dark:border-zinc-600/30 p-6 text-center transition-all hover:border-white/50 hover:bg-zinc-500/5 bg-zinc-950/20 ${
                 isUploadingCover ? "opacity-50" : ""
               }`}
             >
@@ -494,8 +498,8 @@ export function MintMetadataForm({
 
               {isUploadingCover ? (
                 <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-cyan-500" />
-                  <p className="text-xs text-cyan-300 font-semibold">Uploading image...</p>
+                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-white" />
+                  <p className="text-xs text-white font-bold">Uploading image...</p>
                 </div>
               ) : (
                 <>
@@ -523,17 +527,17 @@ export function MintMetadataForm({
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -5 }}
-              className="rounded-lg border border-cyan-400/30 bg-cyan-500/5 backdrop-blur-lg p-4"
+              className="rounded-lg border border-zinc-400/30 bg-zinc-500/5 backdrop-blur-lg p-4"
             >
               <div className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-cyan-400 shrink-0 mt-0.5" />
+                <CheckCircle2 className="h-5 w-5 text-white shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-white text-sm">
                       File uploaded
                     </p>
                     {values.fileType && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-500/20 text-white border border-zinc-500/30">
                         {values.fileType}
                       </span>
                     )}
@@ -546,7 +550,7 @@ export function MintMetadataForm({
                       handleChange("musicTrackUrl", "");
                       handleChange("fileType", undefined);
                     }}
-                    className="mt-2 text-xs text-cyan-400 hover:text-cyan-300 underline"
+                    className="mt-2 text-xs text-white hover:text-gray-300 underline"
                   >
                     Change file
                   </button>
@@ -582,14 +586,14 @@ export function MintMetadataForm({
 
               {isUploadingFile ? (
                 <div className="space-y-3">
-                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-cyan-500" />
+                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
                   <div>
-                    <p className="text-xs font-semibold text-white mb-2">
+                    <p className="text-xs font-bold text-white mb-2">
                       Uploading...
                     </p>
                     <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                       <motion.div
-                        className="h-full bg-linear-to-r from-cyan-500 to-cyan-400"
+                        className="h-full bg-linear-to-r from-white to-gray-300"
                         initial={{ width: 0 }}
                         animate={{ width: `${uploadProgress}%` }}
                         transition={{ duration: 0.3 }}

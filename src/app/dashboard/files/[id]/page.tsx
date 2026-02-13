@@ -187,15 +187,15 @@ export default function FileDetailPage() {
       case ".ogg":
       case ".m4a":
       case ".aac":
-        return <Music className="h-8 w-8 text-cyan-500" />;
+        return <Music className="h-8 w-8 text-white" />;
       case ".mp4":
       case ".webm":
       case ".mov":
-        return <FileVideo className="h-8 w-8 text-cyan-500" />;
+        return <FileVideo className="h-8 w-8 text-white" />;
       case ".json":
-        return <FileText className="h-8 w-8 text-cyan-500" />;
+        return <FileText className="h-8 w-8 text-white" />;
       default:
-        return <FileText className="h-8 w-8 text-cyan-500" />;
+        return <FileText className="h-8 w-8 text-white" />;
     }
   };
 
@@ -241,7 +241,7 @@ export default function FileDetailPage() {
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
         <div className="mx-auto max-w-7xl px-6 py-12">
           <Button
-            variant="ghost"
+            variant="default"
             onClick={() => router.back()}
             className="mb-6"
           >
@@ -269,7 +269,7 @@ export default function FileDetailPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <div className="mx-auto max-w-7xl px-6 py-12">
-        <Button variant="ghost" onClick={() => router.back()} className="mb-6">
+        <Button variant="default" onClick={() => router.back()} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>

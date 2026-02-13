@@ -35,7 +35,7 @@ export default function CreatePage() {
                 initial={{ width: 0 }}
                 animate={{ width: "100%" }}
                 transition={{ duration: 0.4, delay: 0.2 }}
-                className="mt-3 h-0.5 bg-linear-to-r from-cyan-500 to-blue-500"
+                className="mt-3 h-0.5 bg-linear-to-r from-white to-gray-300"
               />
             </motion.div>
 
@@ -47,11 +47,11 @@ export default function CreatePage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: 0.1 }}
                 onClick={() => handleNavigate("/dashboard/create/upload")}
-                className="group relative cursor-pointer rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 p-8 hover:border-cyan-500 dark:hover:border-cyan-500 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/20"
+                className="group relative cursor-pointer rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 p-8 hover:border-white dark:hover:border-white transition-all duration-300 hover:shadow-lg hover:shadow-white/20"
               >
                 <div className="flex flex-col items-center text-center space-y-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-cyan-500/10 group-hover:bg-cyan-500/20 transition-colors">
-                    <Upload className="h-8 w-8 text-cyan-500" />
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 group-hover:bg-white/20 transition-colors">
+                    <Upload className="h-8 w-8 text-white" />
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
@@ -62,7 +62,7 @@ export default function CreatePage() {
                       the database
                     </p>
                   </div>
-                  <div className="flex items-center text-cyan-500 font-medium mt-4 group-hover:translate-x-1 transition-transform">
+                  <div className="flex items-center text-white font-medium mt-4 group-hover:translate-x-1 transition-transform">
                     Get Started
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </div>
@@ -75,11 +75,11 @@ export default function CreatePage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: 0.2 }}
                 onClick={() => handleNavigate("/dashboard/create/metadata")}
-                className="group relative cursor-pointer rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 p-8 hover:border-cyan-500 dark:hover:border-cyan-500 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/20"
+                className="group relative cursor-pointer rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 p-8 hover:border-white dark:hover:border-white transition-all duration-300 hover:shadow-lg hover:shadow-white/20"
               >
                 <div className="flex flex-col items-center text-center space-y-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-cyan-500/10 group-hover:bg-cyan-500/20 transition-colors">
-                    <FileJson className="h-8 w-8 text-cyan-500" />
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 group-hover:bg-white/20 transition-colors">
+                    <FileJson className="h-8 w-8 text-white" />
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
@@ -90,7 +90,7 @@ export default function CreatePage() {
                       to the database
                     </p>
                   </div>
-                  <div className="flex items-center text-cyan-500 font-medium mt-4 group-hover:translate-x-1 transition-transform">
+                  <div className="flex items-center text-white font-medium mt-4 group-hover:translate-x-1 transition-transform">
                     Get Started
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </div>

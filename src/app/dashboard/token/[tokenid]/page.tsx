@@ -76,12 +76,12 @@ export default function TokenDetailsPage() {
         <Card className="border shadow-sm w-full">
           <CardHeader className="border-b pb-4 flex flex-col items-center justify-between md:flex-row md:items-center">
             <div className="w-full md:w-auto flex flex-col items-center md:items-start">
-              <CardTitle className="text-3xl font-bold text-center md:text-left w-full text-cyan-600 dark:text-cyan-400">{String(identifier)}</CardTitle>
+              <CardTitle className="text-3xl font-bold text-center md:text-left w-full text-white">{String(identifier)}</CardTitle>
               <CardDescription className="text-xs mt-1 text-muted-foreground text-center md:text-left w-full">Token #{token.tokenId}</CardDescription>
             </div>
             <CardAction>
               <Link href={`/dashboard/token/${token.tokenId}/edit`}>
-                <Button size="sm" variant="outline" className="border-cyan-600 text-cyan-700 dark:text-cyan-400">Edit</Button>
+                <Button size="sm" variant="outline" className="border-white text-white">Edit</Button>
               </Link>
             </CardAction>
           </CardHeader>
@@ -95,7 +95,7 @@ export default function TokenDetailsPage() {
             <div className="flex flex-col gap-4">
               <div>
                 <Label className="text-muted-foreground">Royalty</Label>
-                <div className="font-medium text-cyan-600 dark:text-cyan-400">{token.royaltyBps} bps ({(token.royaltyBps/100).toFixed(2)}%)</div>
+                <div className="font-medium text-white">{token.royaltyBps} bps ({(token.royaltyBps/100).toFixed(2)}%)</div>
               </div>
               <div>
                 <Label className="text-muted-foreground">Mint Price</Label>
@@ -111,7 +111,7 @@ export default function TokenDetailsPage() {
                   <Tooltip.TooltipProvider>
                     <Tooltip.Tooltip>
                       <Tooltip.TooltipTrigger asChild>
-                        <span className="text-xs underline text-cyan-600 cursor-pointer">Hover to preview</span>
+                        <span className="text-xs underline text-white cursor-pointer">Hover to preview</span>
                       </Tooltip.TooltipTrigger>
                       <Tooltip.TooltipContent sideOffset={8}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -127,7 +127,7 @@ export default function TokenDetailsPage() {
                   <Tooltip.TooltipProvider>
                     <Tooltip.Tooltip>
                       <Tooltip.TooltipTrigger asChild>
-                        <span className="text-xs underline text-cyan-600 cursor-pointer">Hover to preview</span>
+                        <span className="text-xs underline text-white cursor-pointer">Hover to preview</span>
                       </Tooltip.TooltipTrigger>
                       <Tooltip.TooltipContent sideOffset={8}>
                         <UniversalMediaViewer uri={media} fileType={token?.fileType} className="w-40 h-40 object-cover" />
@@ -158,7 +158,7 @@ export default function TokenDetailsPage() {
                 <div className="flex items-center gap-2">
                   <div className="text-xs font-mono break-all select-all border rounded-md px-3 py-2 bg-muted text-foreground">{token.tokenUri || "-"}</div>
                   {ipfsUrl && (
-                    <a href={ipfsUrl} target="_blank" rel="noopener noreferrer" className="text-cyan-600 underline text-xs ml-2">IPFS</a>
+                    <a href={ipfsUrl} target="_blank" rel="noopener noreferrer" className="text-white underline text-xs ml-2">IPFS</a>
                   )}
                 </div>
               </div>

@@ -2,9 +2,10 @@ import { useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useEnsName, useEnsAvatar } from 'wagmi';
 import { createUser, getUserByWallet } from '@/actions/users';
+import Loader from '@/components/loader';
 
 export const CustomConnectButton = () => {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, isConnecting, isReconnecting } = useAccount();
   const { data: ensName } = useEnsName({ address });
   const { data: ensAvatar } = useEnsAvatar({ universalResolverAddress: address });
 
@@ -31,6 +32,11 @@ export const CustomConnectButton = () => {
 
     if (isConnected) registerUser();
   }, [isConnected, address, ensName, ensAvatar]);
+
+  // Show loader when connecting or reconnecting
+  if (isConnecting || isReconnecting) {
+    return <Loader text="Connecting to your wallet..." />;
+  }
 
   return (
     <ConnectButton.Custom>

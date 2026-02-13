@@ -64,7 +64,7 @@ export function ApproveAuctionButton({ nftId, disabled = false, onSuccess,tokenI
     <Button
       onClick={handleApproveAuction}
       disabled={disabled || isApproving || isApproveConfirming}
-      className="w-full bg-cyan-600 hover:bg-cyan-700"
+      className="w-full"
     >
       {isApproving || isApproveConfirming ? "Approving..." : "Approve for Auction"}
     </Button>

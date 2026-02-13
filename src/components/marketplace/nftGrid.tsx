@@ -6,6 +6,8 @@ import SkeletonCards from "./SekeletonCards";
 import { Button } from "../ui/button";
 import { getAllNFTs } from "@/actions/nft"; // server-side Prisma function
 import type { AuctionModel, NFTModel as PrismaNFT, UserModel } from "@/generated/prisma/models";
+import { useAccount } from "wagmi";
+import { useUser } from "@/hooks/useUser";
 
 const PAGE_SIZE = 12;
 
@@ -13,7 +15,8 @@ export default function PublicMintsGrid() {
   const [mints, setMints] = useState<(PrismaNFT & { owner: UserModel,auction:AuctionModel|null })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const {address} = useAccount();
+  const {data:user} = useUser(address);
   const loadMints = async () => {
     try {
       setLoading(true);
@@ -103,6 +106,8 @@ console.log("data",data)
               
     } : null}
     nftId={nft.id}
+    userId={user?.id || undefined}
+    address={address || ""}
           />
         ))}
       </div>

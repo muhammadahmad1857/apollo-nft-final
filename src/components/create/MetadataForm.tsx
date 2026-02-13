@@ -292,7 +292,7 @@ export function MetadataForm({
               />
 
               {isUploadingCover ? (
-                <Loader2 className="mx-auto h-8 w-8 animate-spin text-cyan-500" />
+                <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
               ) : (
                 <>
                   <ImageIcon className="mx-auto h-8 w-8 text-zinc-400 dark:text-zinc-500" />

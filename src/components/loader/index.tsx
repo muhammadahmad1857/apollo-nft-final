@@ -22,21 +22,21 @@ const Loader: React.FC<LoaderProps> = ({
     >
       <div
         className={`relative w-[175px] h-[175px] rounded-lg flex items-center justify-center 
-          ${theme === "dark" ? "bg-gray-800 shadow-cyan-900/50" : "bg-cyan-100 shadow-cyan-600/50"}`}
+          ${theme === "dark" ? "bg-gray-800 shadow-gray-900/50" : "bg-gray-100 shadow-gray-600/50"}`}
       >
         {/* Plate */}
         <div className="flex items-center justify-center">
           <div
             className={`flex items-center justify-center rounded-full w-[150px] h-[150px] animate-spin 
-            ${theme === "dark" ? "bg-cyan-600" : "bg-cyan-500"}`}
+            ${theme === "dark" ? "bg-gray-600" : "bg-gray-400"}`}
           >
             {/* Border */}
             <div
               className={`flex items-center justify-center rounded-full w-[111px] h-[111px] 
               border-t-[3px] border-b-[3px] ${
                 theme === "dark"
-                  ? "border-t-white border-b-white border-l-cyan-600 border-r-cyan-600"
-                  : "border-t-white border-b-white border-l-cyan-500 border-r-cyan-500"
+                  ? "border-t-white border-b-white border-l-gray-600 border-r-gray-600"
+                  : "border-t-white border-b-white border-l-gray-400 border-r-gray-400"
               }`}
             >
               {/* White Inner Circle */}
@@ -47,7 +47,7 @@ const Loader: React.FC<LoaderProps> = ({
                 {/* Center Dot */}
                 <div
                   className={`rounded-full w-[20px] h-[20px] ${
-                    theme === "dark" ? "bg-cyan-600" : "bg-cyan-500"
+                    theme === "dark" ? "bg-gray-600" : "bg-gray-400"
                   }`}
                 ></div>
               </div>
@@ -73,7 +73,7 @@ const Loader: React.FC<LoaderProps> = ({
       {/* Loader Text */}
       {text && (
         <div
-          className={`mt-4 text-lg font-medium ${theme === "dark" ? "text-cyan-400" : "text-cyan-600"}`}
+          className="mt-4 text-lg text-white font-bold"
         >
           {text}
         </div>

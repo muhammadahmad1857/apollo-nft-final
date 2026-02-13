@@ -42,6 +42,8 @@ export interface NFTCardProps {
   ownerAddress:string;
   auctionApproved:boolean;
   fileType?: string;
+  userId?:number
+  address:string
   auction: {
     id: number;
     startTime: string;
@@ -68,11 +70,11 @@ const NFTCard = ({
   media,
   auctionApproved,
   fileType,
+  userId,
+  address
 }: NFTCardProps) => {
   const { buyNFT, isPending } = useBuyNFT();
   const router = useRouter();
-  const { address } = useAccount();
-  const { data: user } = useUser(address);
   const [showBuyConfirm, setShowBuyConfirm] = useState(false);
   const [isProcessingBuy, setIsProcessingBuy] = useState(false);
   const [showShareModal,setShowShareModal] = useState(false)
@@ -92,9 +94,9 @@ const NFTCard = ({
 
     try {
       await buyNFT(BigInt(tokenId), parseEther(String(mintPrice))); // use real price
-      console.log("User ID", user?.id);
-      if (user?.id) {
-        await transferOwnership(tokenId, user.id); // update DB
+      console.log("User ID", userId);
+      if (userId) {
+        await transferOwnership(tokenId, userId); // update DB
       }
       else{
         toast.error("User not found. Please connect wallet and try again.");
@@ -207,7 +209,7 @@ const NFTCard = ({
           {/* Actions */}
           <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
             <div onClick={(e) => e.stopPropagation()}>
-              <LikeButton userId={user?.id || 0} tokenId={tokenId} />
+              <LikeButton userId={userId||0} tokenId={tokenId} />
             </div>
             <button
               onClick={(e) => {
@@ -223,7 +225,7 @@ const NFTCard = ({
             {/* {showBuyButton && mintPrice && (
               <button
                 onClick={() => setShowBuyConfirm(true)}
-                className="ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors"
+                className="ml-auto px-4 py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-colors"
                 disabled={isPending}
               >
                 {isPending ? "Buying..." : "Buy"}

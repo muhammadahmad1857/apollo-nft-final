@@ -297,14 +297,14 @@ console.log(fileType);
 
             {isUploading ? (
               <div className="space-y-4">
-                <Loader2 className="mx-auto h-12 w-12 animate-spin text-cyan-500" />
+                <Loader2 className="mx-auto h-12 w-12 animate-spin text-white" />
                 <div>
                   <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                     Uploading...
                   </p>
                   <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
                     <motion.div
-                      className="h-full bg-cyan-500"
+                      className="h-full bg-white"
                       initial={{ width: "0%" }}
                       animate={{ width: `${uploadProgress}%` }}
                       transition={{ duration: 0.3 }}
