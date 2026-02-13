@@ -92,10 +92,22 @@ export default function BatchMintPage() {
     });
   };
 
-  // Update form
-  const handleFormChange = (formId: string, values: MintFormValues) => {
-    setForms(forms.map((form) => (form.id === formId ? { ...values, id: formId } : form)));
-  };
+const handleFormChange = (
+  formId: string,
+  values: MintFormValues | ((prev: MintFormValues) => MintFormValues)
+) => {
+  setForms(prevForms =>
+    prevForms.map(form => {
+      if (form.id !== formId) return form;
+
+      const resolved =
+        typeof values === "function" ? values(form) : values;
+
+      return { ...resolved, id: formId };
+    })
+  );
+};
+
 
   // Reset all forms
   const handleReset = () => {
