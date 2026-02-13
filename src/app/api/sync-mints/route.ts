@@ -18,7 +18,7 @@ export async function GET() {
       select: { tokenId: true },
       orderBy: { tokenId: "desc" },
     });
-    const START_TOKEN = 22; // assume your last mint was #22
+    const START_TOKEN = 59; // assume your last mint was #22
 
     const fromToken = last ? Number(last.tokenId) + 1 :START_TOKEN ;
     console.log(`[SYNC-MINTS] Last tokenId: ${last ? last.tokenId : "none"}, fromToken: ${fromToken}`);
@@ -109,6 +109,7 @@ export async function GET() {
             mintPrice:0,
             imageUrl: meta.cover || "",
             mediaUrl:meta.media || "",
+            fileType:meta.fileType || "",
           },
 
         });

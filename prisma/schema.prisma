@@ -51,7 +51,7 @@ model NFT {
   approvedAuction Boolean @default(false)
   approvedMarket Boolean @default(false)
   updatedAt   DateTime  @updatedAt
-
+  fileType   String @default("")
   creator     User      @relation("CreatorNFTs", fields: [creatorId], references: [id])
   owner       User      @relation("OwnerNFTs", fields: [ownerId], references: [id])
   likes       NFTLike[]
