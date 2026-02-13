@@ -63,60 +63,67 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
         </button>
       </div>
 
+      {/* Media as Main Focus */}
       <div className="relative">
-        {nft.imageUrl ? (
-          <Image
-            src={nft.imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
-            alt={nft.title}
-            width={400}
-            height={192}
-            className="w-full h-48 object-cover"
-          />
-        ) : (
-         <UniversalMediaIcon tokenUri={nft.tokenUri} uri={nft.mediaUrl} fileType={nft.fileType} className="w-full h-48 object-cover" />
-        )}
         {nft.isListed && (
-          <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded text-white font-bold bg-cyan-400">
+          <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded text-white font-bold bg-cyan-400 z-5">
             Listed
           </span>
         )}
-        <div className="w-full dark:bg-white bg-black h-0.5 my-0.5"></div>
-        {/* Media Preview (not cover) */}
         {nft.tokenUri && (
-          <div className="px-4 py-2">
+          <div className="w-full">
             <UniversalMediaViewer
               tokenUri={nft.tokenUri}
               uri={nft.mediaUrl}
               fileType={nft.fileType}
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="w-full"
-              style={{ maxHeight: 192 }}
+              style={{ height: 320 }}
             />
           </div>
         )}
       </div>
 
-      <div className="p-4 flex flex-col gap-2">
-        <div className="flex justify-between items-center">
-        <div className="font-semibold text-lg truncate" title={nft.title}>
-          {nft.title}
-        </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span><Heart fill="red" color="red"/></span> <p>{nft.likes?.length || 0}</p>
-        </div>
+      <div className="p-4 flex flex-col gap-3">
+        {/* Title and Cover Image Avatar */}
+        <div className="flex justify-between items-start gap-3">
+          <div className="flex-1 flex items-center gap-3">
+            {nft.imageUrl && (
+              <Image
+                src={nft.imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
+                alt={nft.title}
+                width={56}
+                height={56}
+                className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+              />
+            )}
+            {!nft.imageUrl && nft.tokenUri && (
+              <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0">
+                <UniversalMediaIcon tokenUri={nft.tokenUri} uri={nft.mediaUrl} fileType={nft.fileType} className="w-full h-full object-cover" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-base truncate" title={nft.title}>
+                {nft.title}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground flex-shrink-0">
+            <span><Heart fill="red" color="red" size={16}/></span> <p>{nft.likes?.length || 0}</p>
+          </div>
         </div>
 
         {owner && (
-          <div className="flex flex-col gap-2 mt-2">
+          <div className="flex flex-col gap-2">
             {/* Use dialog/modal for MarketplaceListing */}
             <Dialog>
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 w-full"
                 >
-                  <Edit /> Add  to marketplace
+                  <Edit /> Add to marketplace
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-xl w-full">
@@ -135,7 +142,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
                 nftId={nft.id}
               />
             ) : (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground text-center">
                 This NFT is already approved for marketing and cannot be
                 approved for the auction.
               </p>
@@ -147,15 +154,13 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
           <Button
             variant="default"
             size="sm"
-            className="mt-2 flex items-center gap-2"
+            className="w-full flex items-center gap-2 justify-center"
             onClick={onBuy}
           >
             Buy
           </Button>
         )}
       </div>
-
-      {/* Video modal removed, handled by UniversalMediaViewer */}
     </Card>
   );
 }
