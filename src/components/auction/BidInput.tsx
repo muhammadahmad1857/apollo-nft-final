@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useConnection } from "wagmi";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export function BidInput({ onPlaceBid, isDisabled, minBid }: { onPlaceBid: (bidEth: string) => void, isDisabled: boolean, minBid: number }) {
   const [bid, setBid] = useState("");
   const [error, setError] = useState("");
   const { isConnected, isConnecting } = useConnection();
-
+  const router = useRouter()
   const handleBid = () => {
     if (isDisabled) return;
     const bidValue = parseFloat(bid);

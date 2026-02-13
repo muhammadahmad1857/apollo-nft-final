@@ -101,6 +101,8 @@ export default function AuctionPage() {
       const bidList = await getBidsByAuctionWithUser(auction.id);
       console.log("bidlist",bidList)
       setBids(bidList);
+      router.refresh()
+
     } catch (err: any) {
       toast.error(err?.message || "Failed to place bid");
     }

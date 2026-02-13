@@ -240,14 +240,15 @@ const handleMint = async () => {
     const metadataUrls: string[] = [];
 
     for (const form of forms) {
-      const formData = new FormData();
-      formData.append("name", form.name || "");
-      formData.append("title", form.title || "");
-      formData.append("description", form.description || "");
-      formData.append("cover", form.coverImageUrl || "");
-      formData.append("media", form.musicTrackUrl || "");
-      formData.append("fileType", form.fileType || "");
-      formData.append("network", "public");
+      // const formData = new FormData();
+      // formData.append("name", form.name || "");
+      // formData.append("title", form.title || "");
+      // formData.append("description", form.description || "");
+      // formData.append("cover", form.coverImageUrl || "");
+      // formData.append("media", form.musicTrackUrl || "");
+      // formData.append("fileType", form.fileType || "");
+      // formData.append("network", "public");
+      const metadataFileName = `${form.name}-${form.title}-${new Date().getTime()}.json`;
 
       const uploadRes = await fetch(
         "https://api.pinata.cloud/pinning/pinJSONToIPFS",
@@ -256,7 +257,12 @@ const handleMint = async () => {
           headers: {
             Authorization: `Bearer ${JWT}`,
           },
-          body: formData,
+          body: JSON.stringify({
+            pinataMetadata: {
+              name: metadataFileName,
+            },
+            pinataContent: form,
+          }),
         }
       );
 
