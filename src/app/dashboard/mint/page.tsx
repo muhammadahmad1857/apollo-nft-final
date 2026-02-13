@@ -10,9 +10,11 @@ import { useMintContract } from "@/hooks/useMint";
 import { saveRoyalty, getRoyalty, removeRoyalty } from "@/lib/royaltySessionStorage";
 import MintSuccessDialog from "@/components/MintSuccess";
 import { MintMetadataForm, type MintFormValues } from "@/components/mint/MintMetadataForm";
+import { useUser } from "@/hooks/useUser";
 
 export default function MintPage() {
   const { address } = useAccount();
+  const { data: user } = useUser(address);
   const { mint, handleToasts, isBusy, isPriceLoading } =
     useMintContract();
 
@@ -30,6 +32,7 @@ export default function MintPage() {
   // Mint States
   const [isMinting, setIsMinting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [mintedTokenId, setMintedTokenId] = useState<number | undefined>(undefined);
 
   // Update royalty in session storage
   useEffect(() => {
@@ -117,6 +120,19 @@ export default function MintPage() {
       });
 
       if (success) {
+        // Wait for sync and fetch latest token
+        setTimeout(async () => {
+          try {
+            // Trigger sync
+            await fetch("/api/sync-mints").catch(() => {});
+            
+            // For now, just show the success dialog without tokenId
+            // The user can navigate from dashboard instead
+          } catch (err) {
+            console.error("Error after mint:", err);
+          }
+        }, 1000);
+        
         setShowSuccess(true);
         removeRoyalty("SINGLE");
         handleReset();
@@ -199,7 +215,14 @@ export default function MintPage() {
       </div>
 
       {/* Success Dialog */}
-      <MintSuccessDialog open={showSuccess} onClose={() => setShowSuccess(false)} />
+      <MintSuccessDialog 
+        open={showSuccess} 
+        onClose={() => {
+          setShowSuccess(false);
+          setMintedTokenId(undefined);
+        }}
+        tokenId={mintedTokenId}
+      />
     </div>
   );
 }

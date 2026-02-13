@@ -95,7 +95,7 @@ export default function UniversalMediaViewer({
   const [text, setText] = useState<string>("");
   const [fileType, setFileType] = useState<string>("other");
   const [loading, setLoading] = useState(true);
-
+  console.log("Props:", { tokenUri, uri, gateway, providedFileType });
   // Fetch the media URI, prioritizing 'uri' over 'tokenUri'
   useEffect(() => {
     setLoading(true);

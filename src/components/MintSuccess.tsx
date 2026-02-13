@@ -1,21 +1,39 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2 } from "lucide-react";
-import Link from "next/link";
+import { CheckCircle2, Sparkles, Store } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 interface MintSuccessDialogProps {
   open: boolean;
   onClose: () => void;
   isBatch?: boolean;
+  tokenId?: number; // NFT token ID for navigation
 }
 
 export default function MintSuccessDialog({
   open,
   onClose,
   isBatch = false,
+  tokenId,
 }: MintSuccessDialogProps) {
+  const router = useRouter();
+
+  const handleCreateAuction = () => {
+    if (tokenId) {
+      router.push(`/dashboard/create-auction/${tokenId}`);
+      onClose();
+    }
+  };
+
+  const handleListMarketplace = () => {
+    if (tokenId) {
+      router.push(`/dashboard/list-marketplace/${tokenId}`);
+      onClose();
+    }
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -30,31 +48,77 @@ export default function MintSuccessDialog({
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-xl border border-zinc-200 dark:border-zinc-700"
+            className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 p-8 shadow-2xl border border-zinc-200 dark:border-zinc-800"
           >
-            <div className="flex flex-col items-center text-center gap-4">
-              <CheckCircle2 className="w-14 h-14 text-green-500" />
+            <div className="flex flex-col items-center text-center gap-6">
+              {/* Success Icon */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              >
+                <CheckCircle2 className="w-16 h-16 text-green-500" />
+              </motion.div>
 
-              <h2 className="text-2xl font-bold">
-                {isBatch ? "NFTs Minted Successfully!" : "NFT Minted Successfully!"}
-              </h2>
+              {/* Title */}
+              <div>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent">
+                  {isBatch ? "NFTs Minted Successfully!" : "NFT Minted Successfully!"}
+                </h2>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
+                  Your NFT{isBatch ? "s are" : " is"} ready. What would you like to do next?
+                </p>
+              </div>
 
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Your NFT{isBatch ? "s have" : " has"} been minted successfully.
-                To list {isBatch ? "them" : "it"} on the marketplace, please go to
-                your dashboard and update the listing.
-              </p>
-
-              <div className="flex gap-3 mt-4 w-full">
-                <Link href="/dashboard" className="flex-1">
-                  <Button className=" bg-cyan-600 hover:bg-cyan-700">
-                    Go to Dashboard
+              {/* Action Buttons */}
+              {!isBatch && tokenId && (
+                <div className="w-full space-y-3 mt-2">
+                  {/* Create Auction Button */}
+                  <Button
+                    onClick={handleCreateAuction}
+                    className="w-full h-14 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 hover:from-orange-600 hover:via-pink-600 hover:to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden"
+                  >
+                    <span className="absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 opacity-0 group-hover:opacity-20 transition-opacity" />
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    Create Auction
                   </Button>
-                </Link>
+
+                  {/* List on Marketplace Button */}
+                  <Button
+                    onClick={handleListMarketplace}
+                    className="w-full h-14 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 hover:from-cyan-600 hover:via-blue-600 hover:to-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden"
+                  >
+                    <span className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity" />
+                    <Store className="w-5 h-5 mr-2" />
+                    List on Marketplace
+                  </Button>
+
+                  {/* Divider */}
+                  <div className="flex items-center gap-3 py-2">
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-zinc-300 dark:via-zinc-700 to-transparent" />
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">or</span>
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-zinc-300 dark:via-zinc-700 to-transparent" />
+                  </div>
+                </div>
+              )}
+
+              {/* Close/Dashboard Buttons */}
+              <div className="flex gap-3 w-full">
+                <Button
+                  onClick={() => {
+                    router.push("/dashboard");
+                    onClose();
+                  }}
+                  variant="outline"
+                  className="flex-1 h-12 border-2 border-zinc-300 dark:border-zinc-700 hover:border-cyan-500 dark:hover:border-cyan-500 rounded-xl font-semibold transition-all"
+                >
+                  Go to Dashboard
+                </Button>
 
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   onClick={onClose}
+                  className="flex-1 h-12 rounded-xl font-semibold"
                 >
                   Close
                 </Button>
