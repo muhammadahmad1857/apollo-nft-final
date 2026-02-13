@@ -94,13 +94,13 @@ export default function ApolloOverview({ auctionHistory = [] }: ApolloOverviewPr
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Auction Activity 🪐</h1>
           <p className="text-muted-foreground">Track all auctions you participated in.</p>
         </div>
-        <Button
+        {/* <Button
           onClick={handleWithdraw}
           disabled={isWithdrawing || isWithdrawConfirming || pendingApollo === 0}
           className="bg-orange-600 hover:bg-orange-700"
         >
           {isWithdrawing || isWithdrawConfirming ? "Withdrawing..." : "Withdraw Apollo 💸"}
-        </Button>
+        </Button> */}
       </div>
 
       {/* Stats Boxes */}

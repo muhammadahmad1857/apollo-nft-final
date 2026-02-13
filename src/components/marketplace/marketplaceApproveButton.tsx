@@ -27,7 +27,7 @@ export function ApproveMarketButton({
 }: ApproveMarketButtonProps) {
   const toastIdRef = useRef<string | number | null>(null);
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
-
+  const [onPageLoading,setOnPageLoading] = useState(false)
   const { writeContractAsync } = useWriteContract();
 
   const {
@@ -40,6 +40,7 @@ export function ApproveMarketButton({
   });
 
   const handleApproveMarket = async () => {
+    setOnPageLoading(true)
     try {
       const hash = await writeContractAsync({
         address: nftAddress,
@@ -76,6 +77,7 @@ export function ApproveMarketButton({
 
       toastIdRef.current = null;
       setTxHash(undefined);
+      setOnPageLoading(false)
       onSuccess?.();
     }
 
@@ -91,10 +93,10 @@ export function ApproveMarketButton({
   return (
     <Button
       onClick={handleApproveMarket}
-      disabled={disabled || isConfirming}
+      disabled={disabled || isConfirming || onPageLoading}
       className="w-full bg-green-600 hover:bg-green-700"
     >
-      {isConfirming ? "Approving..." : "Approve for Marketplace"}
+      {isConfirming || onPageLoading ? "Approving..." : "Approve for Marketplace"}
     </Button>
   );
 }
