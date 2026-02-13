@@ -2,7 +2,7 @@
 
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Share, Edit,  Heart } from "lucide-react";
+import { Share, Edit, Heart } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -19,9 +19,10 @@ import {
 } from "@/components/ui/dialog";
 import { UniversalMediaIcon } from "./ui/UniversalMediaIcon";
 import { NFTLikeModel, NFTModel } from "@/generated/prisma/models";
+import Link from "next/link";
 
 interface NFTCardProps {
-  nft: NFTModel & { likes?: NFTLikeModel[]};
+  nft: NFTModel & { likes?: NFTLikeModel[] };
   owner?: boolean;
   onBuy?: () => void;
 }
@@ -90,33 +91,47 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
           <div className="flex-1 flex items-center gap-3">
             {nft.imageUrl && (
               <Image
-                src={nft.imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
+                src={nft.imageUrl.replace(
+                  "ipfs://",
+                  `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`,
+                )}
                 alt={nft.title}
                 width={56}
                 height={56}
-                className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                className="w-14 h-14 rounded-lg object-cover shrink-0"
               />
             )}
             {!nft.imageUrl && nft.tokenUri && (
-              <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0">
-                <UniversalMediaIcon tokenUri={nft.tokenUri} uri={nft.mediaUrl} fileType={nft.fileType} className="w-full h-full object-cover" />
+              <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0">
+                <UniversalMediaIcon
+                  tokenUri={nft.tokenUri}
+                  uri={nft.mediaUrl}
+                  fileType={nft.fileType}
+                  className="w-full h-full object-cover"
+                />
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-base truncate" title={nft.title}>
+              <div
+                className="font-semibold text-base truncate"
+                title={nft.title}
+              >
                 {nft.title}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground flex-shrink-0">
-            <span><Heart fill="red" color="red" size={16}/></span> <p>{nft.likes?.length || 0}</p>
+            <span>
+              <Heart fill="red" color="red" size={16} />
+            </span>{" "}
+            <p>{nft.likes?.length || 0}</p>
           </div>
         </div>
 
         {owner && (
           <div className="flex flex-col gap-2">
             {/* Use dialog/modal for MarketplaceListing */}
-            <Dialog>
+            {/* <Dialog>
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
@@ -133,14 +148,37 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
                 </DialogHeader>
                 <MarketplaceListing token={nft} />
               </DialogContent>
-            </Dialog>
-
+            </Dialog> */}
+            <Link
+              href={`/dashboard/list-marketplace/${nft.tokenId}/`}
+              className="w-full"
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 w-full"
+              >
+                <Edit /> Add to marketplace
+              </Button>
+            </Link>
             {!nft.approvedMarket ? (
-              <CreateAuctionButton
-                tokenId={BigInt(nft.tokenId)}
-                approvedAuction={nft.approvedAuction}
-                nftId={nft.id}
-              />
+              // <CreateAuctionButton
+              //   tokenId={BigInt(nft.tokenId)}
+              //   approvedAuction={nft.approvedAuction}
+              //   nftId={nft.id}
+              // />
+              <Link
+              href={`/dashboard/create-auction/${nft.tokenId}/`}
+              className="w-full"
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 w-full"
+              >
+                <Edit /> Create Auction
+              </Button>
+            </Link>
             ) : (
               <p className="text-sm text-muted-foreground text-center">
                 This NFT is already approved for marketing and cannot be
