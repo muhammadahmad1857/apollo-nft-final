@@ -81,10 +81,13 @@ export function MintMetadataForm({
 
   const handleChange = useCallback(
     (field: keyof MintFormValues, value: string | number | undefined) => {
-      onChange({
+      console.log(`🔄 handleChange called: ${field} =`, value);
+      const newValues = {
         ...values,
         [field]: value,
-      });
+      };
+      console.log("📦 New form values:", newValues);
+      onChange(newValues);
     },
     [onChange, values]
   );
@@ -222,15 +225,18 @@ export function MintMetadataForm({
         const detectedFileType = getFileType(file);
 
         setUploadProgress(100);
+        console.log("🎵 File uploaded:", ipfsUrl);
+        console.log("📁 File type detected:", detectedFileType);
+        
         handleChange("musicTrackUrl", ipfsUrl);
         handleChange("fileType", detectedFileType);
         
-        // Delay toast to ensure state updates propagate before re-render
-        setTimeout(() => {
-          toast.success("✓ File uploaded successfully!", {
-            description: "Your NFT file is ready to mint",
-          });
-        }, 50);
+        console.log("✅ State updated - musicTrackUrl:", ipfsUrl);
+        
+        // Show success message
+        toast.success("✓ File uploaded successfully!", {
+          description: `File type: ${detectedFileType}`,
+        });
       } catch (error) {
         console.error("Upload error:", error);
         toast.error("Failed to upload file", {
@@ -508,7 +514,7 @@ export function MintMetadataForm({
         </Label>
 
         <AnimatePresence mode="wait">
-          {values.musicTrackUrl ? (
+          {values.musicTrackUrl && values.musicTrackUrl.trim() !== "" ? (
             <motion.div
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}

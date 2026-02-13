@@ -175,6 +175,7 @@ export default function MintPage() {
               onClick={handleMint}
               disabled={
                 !formValues.musicTrackUrl ||
+                formValues.musicTrackUrl.trim() === "" ||
                 isPriceLoading ||
                 isBusy ||
                 isMinting ||
