@@ -24,7 +24,7 @@ export async function POST() {
           //   },
           // },
         },
-        maxUses: 1,
+        maxUses: 100,
       }),
     };
     console.log("Request options:", options);
