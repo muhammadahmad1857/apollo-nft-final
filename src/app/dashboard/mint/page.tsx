@@ -137,7 +137,9 @@ export default function MintPage() {
     }
   };
 
+useEffect(() => {
   handleToasts();
+}, [handleToasts]); // or [] if handleToasts is stable
 
   return (
     <div className="min-h-screen py-12 px-4">
@@ -189,7 +191,7 @@ export default function MintPage() {
                 isMinting ||
                 !address
               }
-              className="flex-1 py-3 h-auto text-base font-semibold rounded-xl  shadow-lg disabled:opacity-80 disabled:cursor-not-allowed transition-all"
+              className="flex-1 py-3 h-auto text-base font-semibold rounded-xl  shadow-lg disabled:opacity-80 disabled:cursor-not-allowed! transition-all"
             >
               {isBusy || isMinting ? (
                 <span className="flex items-center justify-center gap-2">

@@ -151,7 +151,7 @@ export default function CreateAuctionPage() {
   if (!nft) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
       </div>
     );
   }
@@ -171,7 +171,7 @@ export default function CreateAuctionPage() {
 
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 bg-clip-text text-transparent mb-2">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-600 to-slate-800 dark:from-slate-400 dark:to-slate-600 bg-clip-text text-transparent mb-2">
             Create Auction
           </h1>
           <p className="text-zinc-600 dark:text-zinc-400">
@@ -187,9 +187,9 @@ export default function CreateAuctionPage() {
                 <motion.div
                   className={`flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all ${
                     currentStep > step
-                      ? "bg-gradient-to-r from-orange-500 to-purple-500 border-transparent text-white"
+                      ? "bg-slate-600 dark:bg-slate-700 border-transparent text-white"
                       : currentStep === step
-                      ? "border-purple-500 text-purple-500 dark:text-purple-400"
+                      ? "border-slate-500 text-slate-600 dark:text-slate-400"
                       : "border-zinc-300 dark:border-zinc-700 text-zinc-400"
                   }`}
                   whileHover={{ scale: 1.05 }}
@@ -203,7 +203,7 @@ export default function CreateAuctionPage() {
                 <div className="ml-3 mr-8">
                   <p
                     className={`text-sm font-semibold ${
-                      currentStep >= step ? "text-purple-600 dark:text-purple-400" : "text-zinc-400"
+                      currentStep >= step ? "text-slate-600 dark:text-slate-400" : "text-zinc-400"
                     }`}
                   >
                     {step === 1 ? "Approve NFT" : "Create Auction"}
@@ -212,7 +212,7 @@ export default function CreateAuctionPage() {
                 {step < 2 && (
                   <div
                     className={`h-0.5 w-16 ${
-                      currentStep > step ? "bg-gradient-to-r from-orange-500 to-purple-500" : "bg-zinc-300 dark:bg-zinc-700"
+                      currentStep > step ? "bg-slate-500 dark:bg-slate-600" : "bg-zinc-300 dark:bg-zinc-700"
                     }`}
                   />
                 )}
