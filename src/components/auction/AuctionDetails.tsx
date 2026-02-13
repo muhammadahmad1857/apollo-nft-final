@@ -187,6 +187,7 @@ transition-all duration-300"
               <UniversalMediaViewer
                 tokenUri={auction.nft.tokenUri}
                 uri={auction.nft.mediaUrl}
+                fileType={auction.nft.fileType}
                 gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
                 className="w-full"
                 style={{ maxHeight: 384 }}

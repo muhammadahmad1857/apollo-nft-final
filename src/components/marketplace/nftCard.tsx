@@ -41,6 +41,7 @@ export interface NFTCardProps {
   nftId: number;
   ownerAddress:string;
   auctionApproved:boolean;
+  fileType?: string;
   auction: {
     id: number;
     startTime: string;
@@ -65,7 +66,8 @@ const NFTCard = ({
   auction,
   nftId,
   media,
-  auctionApproved
+  auctionApproved,
+  fileType,
 }: NFTCardProps) => {
   const { buyNFT, isPending } = useBuyNFT();
   const router = useRouter();
@@ -147,7 +149,7 @@ const NFTCard = ({
             />
 
           ) : (
-           <UniversalMediaIcon  tokenUri={token} uri={media} className="w-full h-full object-cover" />
+           <UniversalMediaIcon  tokenUri={token} uri={media} fileType={fileType} className="w-full h-full object-cover" />
           )}
             {/* Status badge */}
 
@@ -195,6 +197,7 @@ const NFTCard = ({
             <UniversalMediaViewer
               tokenUri={token}
               uri={media}
+              fileType={fileType}
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="w-full"
               style={{ maxHeight: 192 }}

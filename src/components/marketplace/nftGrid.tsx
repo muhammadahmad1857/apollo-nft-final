@@ -92,6 +92,7 @@ console.log("data",data)
             ownerAddress={nft.owner.walletAddress}
             media={nft.mediaUrl}
             auctionApproved={nft.approvedAuction}
+            fileType={nft.fileType}
              auction={nft.auction ? {
       id: nft.auction.id,
       startTime: nft.auction.startTime.toISOString(),

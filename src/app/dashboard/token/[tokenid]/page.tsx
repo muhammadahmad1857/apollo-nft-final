@@ -130,7 +130,7 @@ export default function TokenDetailsPage() {
                         <span className="text-xs underline text-cyan-600 cursor-pointer">Hover to preview</span>
                       </Tooltip.TooltipTrigger>
                       <Tooltip.TooltipContent sideOffset={8}>
-                        <UniversalMediaViewer uri={media} className="w-40 h-40 object-cover" />
+                        <UniversalMediaViewer uri={media} fileType={token?.fileType} className="w-40 h-40 object-cover" />
                       </Tooltip.TooltipContent>
                     </Tooltip.Tooltip>
                   </Tooltip.TooltipProvider>

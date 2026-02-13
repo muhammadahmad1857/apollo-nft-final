@@ -112,7 +112,7 @@ console.log("tokenUri", dbNft);
                   priority
                 />
               ) : (
-                <UniversalMediaIcon  tokenUri={dbNft.tokenUri} uri={dbNft.mediaUrl} className="w-full aspect-square" />
+                <UniversalMediaIcon  tokenUri={dbNft.tokenUri} uri={dbNft.mediaUrl} fileType={dbNft.fileType} className="w-full aspect-square" />
               )}
             </div>
 
@@ -157,7 +157,7 @@ console.log("tokenUri", dbNft);
               mintPrice={dbNft?.mintPrice}
               ownerAddress={owner}
               tokenUri={dbNft.tokenUri}
-              
+              fileType={dbNft.fileType}
             />
 
             {/* Optional extra info */}

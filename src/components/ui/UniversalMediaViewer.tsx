@@ -12,7 +12,8 @@ interface UniversalMediaViewerProps {
   gateway?: string; // e.g. gateway.pinata.cloud
   className?: string;
   style?: React.CSSProperties;
-  uri?: string; 
+  uri?: string;
+  fileType?: string; // Pass fileType directly from nft.fileType
 }
 
 export function resolveIpfs(uri: string, gateway = process.env.NEXT_PUBLIC_GATEWAY_URL) {
@@ -87,6 +88,7 @@ export default function UniversalMediaViewer({
   gateway,
   className = "",
   style = {},
+  fileType: providedFileType,
 }: UniversalMediaViewerProps) {
   const [mediaUri, setMediaUri] = useState<string>(""); // actual media url
   const [showModal, setShowModal] = useState(false);
@@ -125,15 +127,20 @@ export default function UniversalMediaViewer({
     fetchMedia();
   }, [tokenUri, gateway, uri]);
 
-  // Detect file type once mediaUri is available
+  // Detect file type once mediaUri is available (skip if fileType is provided)
   useEffect(() => {
+    if (providedFileType) {
+      setFileType(providedFileType);
+      setLoading(false);
+      return;
+    }
     if (!mediaUri) return;
     setLoading(true);
     detectFileType(mediaUri)
       .then((detected) => setFileType(detected))
       .catch(() => setFileType("other"))
       .finally(() => setLoading(false));
-  }, [mediaUri]);
+  }, [mediaUri, providedFileType]);
 
   const src = resolveIpfs(mediaUri, gateway);
 

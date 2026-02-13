@@ -28,7 +28,8 @@ interface NFTInteractiveContentProps {
   name: string;
   mintPrice?: number;
   ownerAddress?: string | null;
-  tokenUri:string
+  tokenUri: string;
+  fileType?: string;
 }
 
 export default function NFTInteractiveContent({
@@ -38,7 +39,8 @@ export default function NFTInteractiveContent({
   name,
   mintPrice,
   ownerAddress,
-  tokenUri
+  tokenUri,
+  fileType,
 }: NFTInteractiveContentProps) {
   const { address } = useAccount();
   const { data: user, isLoading: loadingUser } = useUser(address);
@@ -118,7 +120,7 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
     <>
       {/* Media Controls */}
       <div className="mt-8 flex flex-wrap gap-4 justify-center sm:justify-start">
-       <UniversalMediaViewer uri={media} tokenUri={tokenUri} className="w-full max-w-md rounded-lg shadow-lg" />
+       <UniversalMediaViewer uri={media} tokenUri={tokenUri} fileType={fileType} className="w-full max-w-md rounded-lg shadow-lg" />
         
 
         <button

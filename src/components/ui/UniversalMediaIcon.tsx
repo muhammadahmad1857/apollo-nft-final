@@ -10,9 +10,10 @@ interface UniversalMediaIconProps {
   uri?: string;
   className?: string;
   style?: React.CSSProperties;
+  fileType?: string; // Pass fileType directly from nft.fileType
 }
 
-export function UniversalMediaIcon({ tokenUri, gateway,uri, className = "", style = {} }: UniversalMediaIconProps) {
+export function UniversalMediaIcon({ tokenUri, gateway, uri, className = "", style = {}, fileType: providedFileType }: UniversalMediaIconProps) {
   const [fileType, setFileType] = useState<string>("other");
   const [loading, setLoading] = useState(true);
 
@@ -20,6 +21,15 @@ export function UniversalMediaIcon({ tokenUri, gateway,uri, className = "", styl
     let isMounted = true;
 
     const fetchMediaAndDetectType = async () => {
+      // If fileType is provided, use it directly
+      if (providedFileType) {
+        if (isMounted) {
+          setFileType(providedFileType);
+          setLoading(false);
+        }
+        return;
+      }
+
       if (uri && uri.trim() !== "") {
         setLoading(true);
         try {
@@ -62,7 +72,7 @@ export function UniversalMediaIcon({ tokenUri, gateway,uri, className = "", styl
     return () => {
       isMounted = false;
     };
-  }, [tokenUri, gateway, uri]);
+  }, [tokenUri, gateway, uri, providedFileType]);
 
   // ===== Loader =====
   if (loading) {
