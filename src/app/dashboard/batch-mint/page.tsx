@@ -268,7 +268,9 @@ const handleMint = async () => {
           method: "POST",
           headers: {
             Authorization: `Bearer ${JWT}`,
+            "Content-Type": "application/json",
           },
+          
           body: JSON.stringify({
             pinataMetadata: {
               name: metadataFileName,
