@@ -275,7 +275,15 @@ const handleMint = async () => {
             pinataMetadata: {
               name: metadataFileName,
             },
-            pinataContent: form,
+            pinataContent: {
+              name: form.name,
+              title: form.title,
+              description: form.description,
+              cover: form.coverImageUrl,
+              media: form.musicTrackUrl,
+              fileType: form.fileType,
+              
+            },
           }),
         }
       );
