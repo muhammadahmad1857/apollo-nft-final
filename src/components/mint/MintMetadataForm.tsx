@@ -224,12 +224,18 @@ export function MintMetadataForm({
         setUploadProgress(100);
         handleChange("musicTrackUrl", ipfsUrl);
         handleChange("fileType", detectedFileType);
-        toast.success("File uploaded successfully!");
+        
+        // Delay toast to ensure state updates propagate before re-render
+        setTimeout(() => {
+          toast.success("✓ File uploaded successfully!", {
+            description: "Your NFT file is ready to mint",
+          });
+        }, 50);
       } catch (error) {
         console.error("Upload error:", error);
-        toast.error(
-          error instanceof Error ? error.message : "Failed to upload file"
-        );
+        toast.error("Failed to upload file", {
+          description: error instanceof Error ? error.message : "Please try again",
+        });
       } finally {
         setIsUploadingFile(false);
         setUploadProgress(0);
@@ -433,9 +439,20 @@ export function MintMetadataForm({
                   className="h-full w-full object-cover"
                   fill
                 />
+                {isUploadingCover && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
+                      <p className="text-xs text-cyan-300 font-semibold">
+                        Uploading...
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <button
                   onClick={removeCover}
-                  className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-500/90 hover:bg-red-600 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                  disabled={isUploadingCover}
+                  className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-500/90 hover:bg-red-600 text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -448,13 +465,16 @@ export function MintMetadataForm({
               exit={{ opacity: 0 }}
               onDrop={handleCoverDrop}
               onDragOver={(e) => e.preventDefault()}
-              onClick={() => coverFileInputRef.current?.click()}
-              className="relative cursor-pointer rounded-lg border-2 border-dashed border-zinc-400/30 dark:border-zinc-600/30 p-6 text-center transition-all hover:border-cyan-500/50 hover:bg-cyan-500/5 bg-zinc-950/20"
+              onClick={() => !isUploadingCover && coverFileInputRef.current?.click()}
+              className={`relative cursor-pointer rounded-lg border-2 border-dashed border-zinc-400/30 dark:border-zinc-600/30 p-6 text-center transition-all hover:border-cyan-500/50 hover:bg-cyan-500/5 bg-zinc-950/20 ${
+                isUploadingCover ? "opacity-50" : ""
+              }`}
             >
               <input
                 ref={coverFileInputRef}
                 type="file"
                 accept="image/*"
+                disabled={isUploadingCover}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) handleCoverFile(file);
@@ -463,7 +483,10 @@ export function MintMetadataForm({
               />
 
               {isUploadingCover ? (
-                <Loader2 className="mx-auto h-6 w-6 animate-spin text-cyan-500" />
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-cyan-500" />
+                  <p className="text-xs text-cyan-300 font-semibold">Uploading image...</p>
+                </div>
               ) : (
                 <>
                   <ImageIcon className="mx-auto h-6 w-6 text-zinc-500 dark:text-zinc-400 mb-2" />
@@ -495,14 +518,24 @@ export function MintMetadataForm({
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="h-5 w-5 text-cyan-400 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-white text-sm">
-                    File uploaded
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-white text-sm">
+                      File uploaded
+                    </p>
+                    {values.fileType && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                        {values.fileType}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-zinc-400 font-mono break-all mt-1">
                     {values.musicTrackUrl}
                   </p>
                   <button
-                    onClick={() => handleChange("musicTrackUrl", "")}
+                    onClick={() => {
+                      handleChange("musicTrackUrl", "");
+                      handleChange("fileType", undefined);
+                    }}
                     className="mt-2 text-xs text-cyan-400 hover:text-cyan-300 underline"
                   >
                     Change file

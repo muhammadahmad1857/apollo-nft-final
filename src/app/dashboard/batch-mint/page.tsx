@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAccount } from "wagmi";
 import { Button } from "@/components/ui/button";
-import { Loader2, SparklesIcon, Plus } from "lucide-react";
+import { Loader2, SparklesIcon, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { useMintContract } from "@/hooks/useMint";
 import { saveRoyalty, getRoyalty, removeRoyalty } from "@/lib/royaltySessionStorage";
@@ -28,6 +28,9 @@ export default function BatchMintPage() {
       royaltyBps: Number(getRoyalty("BATCH")) || 500,
     },
   ]);
+
+  // Collapse State
+  const [collapsedForms, setCollapsedForms] = useState<Set<number>>(new Set());
 
   // Mint States
   const [isMinting, setIsMinting] = useState(false);
@@ -61,6 +64,24 @@ export default function BatchMintPage() {
       return;
     }
     setForms(forms.filter((_, i) => i !== index));
+    setCollapsedForms((prev) => {
+      const updated = new Set(prev);
+      updated.delete(index);
+      return updated;
+    });
+  };
+
+  // Toggle collapse
+  const toggleCollapse = (index: number) => {
+    setCollapsedForms((prev) => {
+      const updated = new Set(prev);
+      if (updated.has(index)) {
+        updated.delete(index);
+      } else {
+        updated.add(index);
+      }
+      return updated;
+    });
   };
 
   // Update form
@@ -244,22 +265,63 @@ export default function BatchMintPage() {
                 transition={{ duration: 0.3 }}
               >
                 <div className="relative">
-                  {/* Form Number Badge */}
-                  <div className="absolute -top-4 left-6 z-10">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/40 backdrop-blur-sm">
-                      <span className="text-xs font-semibold text-cyan-300">
+                  {/* Form Header with Collapse */}
+                  <motion.button
+                    onClick={() => toggleCollapse(index)}
+                    className="w-full relative flex items-center justify-between -top-4 left-0 z-10 px-6 py-3 bg-linear-to-r from-cyan-500/30 to-cyan-600/20 hover:from-cyan-500/40 hover:to-cyan-600/30 border border-cyan-400/40 rounded-full backdrop-blur-sm transition-all group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold text-cyan-300">
                         NFT #{index + 1}
                       </span>
+                      {form.title && (
+                        <span className="text-xs text-cyan-200/70">
+                          {form.title}
+                        </span>
+                      )}
+                      {form.musicTrackUrl && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/20 border border-green-400/40">
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                          <span className="text-xs text-green-300 font-semibold">
+                            Ready
+                          </span>
+                        </span>
+                      )}
                     </div>
-                  </div>
+                    <motion.div
+                      animate={{ rotate: collapsedForms.has(index) ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {collapsedForms.has(index) ? (
+                        <ChevronUp className="w-5 h-5 text-cyan-300" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-cyan-300" />
+                      )}
+                    </motion.div>
+                  </motion.button>
 
-                  <MintMetadataForm
-                    values={form}
-                    onChange={(newValues) => handleFormChange(index, newValues)}
-                    onRemove={() => handleRemoveForm(index)}
-                    showRemoveButton={forms.length > 1}
-                    royaltyLabel={`Royalty (${index === 0 ? "Applied to All" : "Same as NFT #1"})`}
-                  />
+                  {/* Form Content - Collapsible */}
+                  <AnimatePresence>
+                    {!collapsedForms.has(index) && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                      >
+                        <MintMetadataForm
+                          values={form}
+                          onChange={(newValues) =>
+                            handleFormChange(index, newValues)
+                          }
+                          onRemove={() => handleRemoveForm(index)}
+                          showRemoveButton={forms.length > 1}
+                          royaltyLabel={`Royalty (${index === 0 ? "Applied to All" : "Same as NFT #1"})`}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </motion.div>
             ))}
@@ -267,15 +329,22 @@ export default function BatchMintPage() {
 
           {/* Add Form Button */}
           <motion.button
-            whileHover={{ scale: 1.02 }}
+            whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleAddForm}
-            className="w-full py-4 rounded-xl border-2 border-dashed border-cyan-400/40 hover:border-cyan-400/60 bg-cyan-500/5 hover:bg-cyan-500/10 transition-all flex items-center justify-center gap-2 group"
+            className="w-full py-4 rounded-xl border-2 border-dashed border-cyan-400/60 hover:border-cyan-300 bg-linear-to-r from-cyan-500/20 to-cyan-600/10 hover:from-cyan-500/30 hover:to-cyan-600/20 shadow-lg hover:shadow-cyan-500/20 transition-all flex items-center justify-center gap-3 group backdrop-blur-sm"
           >
-            <Plus className="w-5 h-5 text-cyan-400 group-hover:text-cyan-300" />
-            <span className="text-sm font-semibold text-cyan-400 group-hover:text-cyan-300">
-              Add Another NFT
-            </span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500/30 group-hover:bg-cyan-500/40 transition-all">
+              <Plus className="w-5 h-5 text-cyan-300" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-bold text-cyan-300 group-hover:text-cyan-200">
+                Add Another NFT
+              </p>
+              <p className="text-xs text-cyan-200/60">
+                Click to create more NFTs
+              </p>
+            </div>
           </motion.button>
 
           {/* Action Buttons */}
