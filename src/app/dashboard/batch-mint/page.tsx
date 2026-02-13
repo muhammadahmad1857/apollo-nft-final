@@ -236,31 +236,17 @@ const handleMint = async () => {
     const metadataUrls: string[] = [];
 
     for (const form of forms) {
-      const metadata = {
-        name: form.name,
-        title: form.title,
-        description: form.description,
-        cover: form.coverImageUrl,
-        media: form.musicTrackUrl,
-        fileType: form.fileType,
-      };
-
-      const blob = new Blob([JSON.stringify(metadata)], {
-        type: "application/json",
-      });
-
-      const file = new File(
-        [blob],
-        `${form.name || "nft"}-metadata.json`,
-        { type: "application/json" }
-      );
-
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("name", form.name || "");
+      formData.append("title", form.title || "");
+      formData.append("description", form.description || "");
+      formData.append("cover", form.coverImageUrl || "");
+      formData.append("media", form.musicTrackUrl || "");
+      formData.append("fileType", form.fileType || "");
       formData.append("network", "public");
 
       const uploadRes = await fetch(
-        "https://api.pinata.cloud/pinning/pinFileToIPFS",
+        "https://api.pinata.cloud/pinning/pinJSONToIPFS",
         {
           method: "POST",
           headers: {

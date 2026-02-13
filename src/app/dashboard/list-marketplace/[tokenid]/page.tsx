@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, Loader2, ArrowLeft, DollarSign } from "lucide-react";
+import { CheckCircle2, Loader2, ArrowLeft, DollarSign, } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,7 @@ import { ApproveMarketButton } from "@/components/marketplace/marketplaceApprove
 import { getNFTByTokenId } from "@/actions/nft";
 import { useUpdateNFT } from "@/hooks/useNft";
 import { NFTModel } from "@/generated/prisma/models";
-
+import Link from "next/link"; 
 export default function ListMarketplacePage() {
   const params = useParams();
   const router = useRouter();
@@ -106,14 +106,15 @@ export default function ListMarketplacePage() {
     <div className="min-h-screen py-12 px-4">
       <div className="max-w-3xl mx-auto">
         {/* Back Button */}
+        <Link href="/dashboard" passHref>
         <Button
           variant="default"
-          onClick={() => router.push("/dashboard")}
-          className="mb-6 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="mb-6 "
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Dashboard
         </Button>
+        </Link>
 
         {/* Header */}
         <div className="mb-8 text-center">
