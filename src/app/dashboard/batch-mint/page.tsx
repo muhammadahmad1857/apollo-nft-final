@@ -62,7 +62,7 @@ export default function BatchMintPage() {
       fileType: undefined,
       royaltyBps: 500,
     };
-    setForms([...forms, newForm]);
+setForms(prev => [...prev, newForm]);
   };
 
   // Remove form
@@ -71,7 +71,7 @@ export default function BatchMintPage() {
       toast.error("You must have at least one NFT");
       return;
     }
-    setForms(forms.filter((form) => form.id !== formId));
+setForms(prev => prev.filter(form => form.id !== formId));
     setCollapsedForms((prev) => {
       const updated = new Set(prev);
       updated.delete(formId);
@@ -426,10 +426,9 @@ useEffect(() => {
                       >
                         <MintMetadataForm
                           values={form}
-                          onChange={(newValues) => {
-                            const resolvedValues = typeof newValues === 'function' ? newValues(form) : newValues;
-                            handleFormChange(form.id!, resolvedValues);
-                          }}
+                         onChange={(newValues) => {
+    handleFormChange(form.id!, newValues);
+  }}
                           onRemove={() => handleRemoveForm(form.id!)}
                           showRemoveButton={forms.length > 1}
                           showRoyalty={false}
