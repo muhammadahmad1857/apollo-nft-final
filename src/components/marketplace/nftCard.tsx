@@ -40,12 +40,14 @@ export interface NFTCardProps {
   token:string;
   nftId: number;
   ownerAddress:string;
+  auctionApproved:boolean;
   auction: {
     id: number;
     startTime: string;
     endTime: string;
     settled: boolean;
     highestBid?: number;
+    minBid:number
   } | null;
 }
 
@@ -62,7 +64,8 @@ const NFTCard = ({
   showEditRoyaltyButton,
   auction,
   nftId,
-  media
+  media,
+  auctionApproved
 }: NFTCardProps) => {
   const { buyNFT, isPending } = useBuyNFT();
   const router = useRouter();
@@ -173,7 +176,15 @@ const NFTCard = ({
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3">
               Price:{" "}
               <span className="font-semibold">
-{((auction?.highestBid != null && auction.highestBid > 0 )? auction.highestBid.toFixed(4) : mintPrice.toFixed(4))} APOLLO
+{(
+  !auctionApproved
+    ? mintPrice.toFixed(4)
+    : auction?.highestBid != null && auction.highestBid > 0
+      ? auction.highestBid.toFixed(4)
+      : auction?.minBid != null && auction.minBid > 0
+        ? auction.minBid.toFixed(4)
+        : mintPrice.toFixed(4)
+)} APOLLO
               </span>
             </p>
           )}

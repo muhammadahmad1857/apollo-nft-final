@@ -91,12 +91,14 @@ console.log("data",data)
             mintPrice={nft.mintPrice}
             ownerAddress={nft.owner.walletAddress}
             media={nft.mediaUrl}
+            auctionApproved={nft.approvedAuction}
              auction={nft.auction ? {
       id: nft.auction.id,
       startTime: nft.auction.startTime.toISOString(),
       endTime: nft.auction.endTime.toISOString(),
       settled: nft.auction.settled,
       highestBid: nft.auction.highestBid || undefined,
+      minBid: nft.auction.minBid,
               
     } : null}
     nftId={nft.id}
