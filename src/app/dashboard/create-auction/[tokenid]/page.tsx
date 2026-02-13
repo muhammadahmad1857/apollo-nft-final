@@ -171,7 +171,7 @@ export default function CreateAuctionPage() {
 
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-600 to-slate-800 dark:from-slate-400 dark:to-slate-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-4xl font-bold text-white mb-2">
             Create Auction
           </h1>
           <p className="text-zinc-600 dark:text-zinc-400">
@@ -203,7 +203,7 @@ export default function CreateAuctionPage() {
                 <div className="ml-3 mr-8">
                   <p
                     className={`text-sm font-semibold ${
-                      currentStep >= step ? "text-slate-600 dark:text-slate-400" : "text-zinc-400"
+                      currentStep >= step ? "text-slate-600 dark:text-slate-200" : "text-zinc-200"
                     }`}
                   >
                     {step === 1 ? "Approve NFT" : "Create Auction"}
@@ -212,7 +212,7 @@ export default function CreateAuctionPage() {
                 {step < 2 && (
                   <div
                     className={`h-0.5 w-16 ${
-                      currentStep > step ? "bg-slate-500 dark:bg-slate-600" : "bg-zinc-300 dark:bg-zinc-700"
+                      currentStep > step ? "bg-slate-500 dark:bg-slate-300" : "bg-zinc-300 dark:bg-zinc-300"
                     }`}
                   />
                 )}

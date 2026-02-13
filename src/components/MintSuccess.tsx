@@ -75,23 +75,23 @@ export default function MintSuccessDialog({
                 <div className="w-full space-y-3 mt-2">
                   {/* Create Auction Button */}
                   <Button
-                    onClick={handleCreateAuction}
-                    className="w-full h-14 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 hover:from-orange-600 hover:via-pink-600 hover:to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden"
-                  >
-                    <span className="absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 opacity-0 group-hover:opacity-20 transition-opacity" />
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    Create Auction
-                  </Button>
+  onClick={handleCreateAuction}
+  className="w-full h-14 bg-linear-to-r from-orange-400 via-pink-400 to-purple-500 hover:from-orange-500 hover:via-pink-500 hover:to-purple-600 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
+>
+  <span className="absolute inset-0 bg-linear-to-r from-orange-300 via-pink-300 to-purple-400 opacity-0 group-hover:opacity-15 transition-opacity" />
+  <Sparkles className="w-5 h-5 mr-2" />
+  Create Auction
+</Button>
 
-                  {/* List on Marketplace Button */}
-                  <Button
-                    onClick={handleListMarketplace}
-                    className="w-full h-14 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:via-indigo-600 hover:to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden"
-                  >
-                    <span className="absolute inset-0 bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 opacity-0 group-hover:opacity-20 transition-opacity" />
-                    <Store className="w-5 h-5 mr-2" />
-                    List on Marketplace
-                  </Button>
+<Button
+  onClick={handleListMarketplace}
+  className="w-full h-14 bg-linear-to-r from-blue-400 via-indigo-400 to-purple-500 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-600 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
+>
+  <span className="absolute inset-0 bg-linear-to-r from-blue-300 via-indigo-300 to-purple-400 opacity-0 group-hover:opacity-15 transition-opacity" />
+  <Store className="w-5 h-5 mr-2" />
+  List on Marketplace
+</Button>
+
 
                   {/* Divider */}
                   <div className="flex items-center gap-3 py-2">

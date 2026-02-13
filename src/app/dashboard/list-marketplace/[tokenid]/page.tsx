@@ -117,7 +117,7 @@ export default function ListMarketplacePage() {
 
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-600 to-slate-800 dark:from-slate-400 dark:to-slate-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-4xl font-bold bg-linear-to-r from-slate-600 to-slate-800 dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent mb-2">
             List on Marketplace
           </h1>
           <p className="text-zinc-600 dark:text-zinc-400">
@@ -135,7 +135,7 @@ export default function ListMarketplacePage() {
                     currentStep > step
                       ? "bg-slate-600 dark:bg-slate-700 border-transparent text-white"
                       : currentStep === step
-                      ? "border-slate-500 text-slate-600 dark:text-slate-400"
+                      ? "border-slate-500 text-slate-600 dark:text-slate-200"
                       : "border-zinc-300 dark:border-zinc-700 text-zinc-400"
                   }`}
                   whileHover={{ scale: 1.05 }}
@@ -149,7 +149,7 @@ export default function ListMarketplacePage() {
                 <div className="ml-3 mr-8">
                   <p
                     className={`text-sm font-semibold ${
-                      currentStep >= step ? "text-slate-600 dark:text-slate-400" : "text-zinc-400"
+                      currentStep >= step ? "text-slate-600 dark:text-slate-200" : "text-zinc-200"
                     }`}
                   >
                     {step === 1 ? "Approve NFT" : "Set Price & List"}
