@@ -11,6 +11,9 @@ import { saveRoyalty, getRoyalty, removeRoyalty } from "@/lib/royaltySessionStor
 import MintSuccessDialog from "@/components/MintSuccess";
 import { MintMetadataForm, type MintFormValues } from "@/components/mint/MintMetadataForm";
 
+// Generate unique ID for each form
+const generateFormId = () => `form-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
 export default function BatchMintPage() {
   const { address } = useAccount();
   const { mint, handleToasts, isBusy, isPriceLoading } =
@@ -19,13 +22,14 @@ export default function BatchMintPage() {
   // Form States
   const [forms, setForms] = useState<MintFormValues[]>([
     {
+      id: generateFormId(),
       name: "",
       title: "",
       description: "",
       coverImageUrl: undefined,
       musicTrackUrl: "",
       fileType: undefined,
-      royaltyBps: 500, // Not used in batch mint UI, but kept in interface
+      royaltyBps: 500,
     },
   ]);
 
@@ -35,7 +39,7 @@ export default function BatchMintPage() {
   );
 
   // Collapse State
-  const [collapsedForms, setCollapsedForms] = useState<Set<number>>(new Set());
+  const [collapsedForms, setCollapsedForms] = useState<Set<string>>(new Set());
 
   // Mint States
   const [isMinting, setIsMinting] = useState(false);
@@ -49,55 +53,55 @@ export default function BatchMintPage() {
   // Add new form
   const handleAddForm = () => {
     const newForm: MintFormValues = {
+      id: generateFormId(),
       name: "",
       title: "",
       description: "",
       coverImageUrl: undefined,
       musicTrackUrl: "",
       fileType: undefined,
-      royaltyBps: 500, // Not used in batch mint
+      royaltyBps: 500,
     };
     setForms([...forms, newForm]);
   };
 
   // Remove form
-  const handleRemoveForm = (index: number) => {
+  const handleRemoveForm = (formId: string) => {
     if (forms.length === 1) {
       toast.error("You must have at least one NFT");
       return;
     }
-    setForms(forms.filter((_, i) => i !== index));
+    setForms(forms.filter((form) => form.id !== formId));
     setCollapsedForms((prev) => {
       const updated = new Set(prev);
-      updated.delete(index);
+      updated.delete(formId);
       return updated;
     });
   };
 
   // Toggle collapse
-  const toggleCollapse = (index: number) => {
+  const toggleCollapse = (formId: string) => {
     setCollapsedForms((prev) => {
       const updated = new Set(prev);
-      if (updated.has(index)) {
-        updated.delete(index);
+      if (updated.has(formId)) {
+        updated.delete(formId);
       } else {
-        updated.add(index);
+        updated.add(formId);
       }
       return updated;
     });
   };
 
   // Update form
-  const handleFormChange = (index: number, values: MintFormValues) => {
-    const newForms = [...forms];
-    newForms[index] = values;
-    setForms(newForms);
+  const handleFormChange = (formId: string, values: MintFormValues) => {
+    setForms(forms.map((form) => (form.id === formId ? { ...values, id: formId } : form)));
   };
 
   // Reset all forms
   const handleReset = () => {
     setForms([
       {
+        id: generateFormId(),
         name: "",
         title: "",
         description: "",
@@ -323,34 +327,7 @@ useEffect(() => {
           transition={{ duration: 0.5 }}
           className="space-y-6"
         >
-          {/* Royalty Section */}
-          <div className="space-y-3 rounded-xl backdrop-blur-md bg-zinc-500/5 border border-zinc-400/20 p-4">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-semibold text-white">
-                Royalty Percentage (Applied to All NFTs)
-              </label>
-              <span className="text-base font-bold text-white">
-                {(universalRoyaltyBps / 100).toFixed(2)}%
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <input
-                type="range"
-                min={0}
-                max={1000}
-                step={10}
-                value={universalRoyaltyBps}
-                onChange={(e) => setUniversalRoyaltyBps(Number(e.target.value))}
-                className="flex-1 h-2 rounded-lg appearance-none bg-linear-to-r from-zinc-500/30 to-zinc-500/50 accent-white cursor-pointer"
-              />
-              <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500 w-12 text-right">
-                {universalRoyaltyBps} bps
-              </span>
-            </div>
-            <p className="text-xs text-white/80">
-              This royalty rate will apply to all NFTs in this batch (0-10%)
-            </p>
-          </div>
+        
 
           {/* Progress Info */}
           <div className="relative">
@@ -375,7 +352,7 @@ useEffect(() => {
           <AnimatePresence mode="popLayout">
             {forms.map((form, index) => (
               <motion.div
-                key={index}
+                key={form.id}
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 50 }}
@@ -384,7 +361,7 @@ useEffect(() => {
                 <div className="relative">
                   {/* Form Header with Collapse */}
                   <motion.button
-                    onClick={() => toggleCollapse(index)}
+                    onClick={() => toggleCollapse(form.id!)}
                     className="w-full relative flex items-center justify-between -top-4 left-0 z-10 px-6 py-3 bg-linear-to-r from-zinc-500/30 to-zinc-600/20 hover:from-zinc-500/40 hover:to-zinc-600/30 border border-zinc-400/40 rounded-full backdrop-blur-sm transition-all group"
                   >
                     <div className="flex items-center gap-3">
@@ -406,10 +383,10 @@ useEffect(() => {
                       )}
                     </div>
                     <motion.div
-                      animate={{ rotate: collapsedForms.has(index) ? 180 : 0 }}
+                      animate={{ rotate: collapsedForms.has(form.id!) ? 180 : 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      {collapsedForms.has(index) ? (
+                      {collapsedForms.has(form.id!) ? (
                         <ChevronUp className="w-5 h-5 text-white" />
                       ) : (
                         <ChevronDown className="w-5 h-5 text-white" />
@@ -419,7 +396,7 @@ useEffect(() => {
 
                   {/* Form Content - Collapsible */}
                   <AnimatePresence>
-                    {!collapsedForms.has(index) && (
+                    {!collapsedForms.has(form.id!) && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
@@ -429,10 +406,11 @@ useEffect(() => {
                       >
                         <MintMetadataForm
                           values={form}
-                          onChange={(newValues) =>
-                            handleFormChange(index, newValues)
-                          }
-                          onRemove={() => handleRemoveForm(index)}
+                          onChange={(newValues) => {
+                            const resolvedValues = typeof newValues === 'function' ? newValues(form) : newValues;
+                            handleFormChange(form.id!, resolvedValues);
+                          }}
+                          onRemove={() => handleRemoveForm(form.id!)}
                           showRemoveButton={forms.length > 1}
                           showRoyalty={false}
                         />
@@ -496,7 +474,34 @@ useEffect(() => {
               )}
             </Button>
           </div>
-
+  {/* Royalty Section */}
+          <div className="space-y-3 rounded-xl backdrop-blur-md bg-zinc-500/5 border border-zinc-400/20 p-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-white">
+                Royalty Percentage (Applied to All NFTs)
+              </label>
+              <span className="text-base font-bold text-white">
+                {(universalRoyaltyBps / 100).toFixed(2)}%
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min={0}
+                max={1000}
+                step={10}
+                value={universalRoyaltyBps}
+                onChange={(e) => setUniversalRoyaltyBps(Number(e.target.value))}
+                className="flex-1 h-2 rounded-lg appearance-none bg-linear-to-r from-zinc-500/30 to-zinc-500/50 accent-white cursor-pointer"
+              />
+              <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500 w-12 text-right">
+                {universalRoyaltyBps} bps
+              </span>
+            </div>
+            <p className="text-xs text-white/80">
+              This royalty rate will apply to all NFTs in this batch (0-10%)
+            </p>
+          </div>
           {/* Utility Info */}
           <div className="text-xs text-zinc-500 dark:text-zinc-400 text-center">
             Note: All NFTs will be minted with the royalty percentage from the first NFT

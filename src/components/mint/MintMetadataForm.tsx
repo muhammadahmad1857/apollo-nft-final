@@ -46,6 +46,7 @@ function getFileType(file: File): string {
 }
 
 export interface MintFormValues {
+  id?: string;
   name: string;
   title: string;
   description: string;
@@ -57,7 +58,7 @@ export interface MintFormValues {
 
 interface MintMetadataFormProps {
   values: MintFormValues;
-  onChange: (values: MintFormValues) => void;
+onChange: (values: MintFormValues | ((prev: MintFormValues) => MintFormValues)) => void;
   onRemove?: () => void;
   showRemoveButton?: boolean;
   royaltyLabel?: string;
@@ -96,7 +97,7 @@ export function MintMetadataForm({
 
   // Upload cover image to Pinata
   const uploadCoverImage = useCallback(
-    async (file: File) => {
+    async (file: File, currentFormValues: MintFormValues) => {
       try {
         setIsUploadingCover(true);
 
@@ -130,7 +131,11 @@ export function MintMetadataForm({
         const ipfsHash = json.IpfsHash;
         const ipfsUrl = `ipfs://${ipfsHash}`;
 
-        handleChange("coverImageUrl", ipfsUrl);
+       onChange((prev) => ({
+  ...prev,
+  coverImageUrl: ipfsUrl,
+}));
+
         toast.success("Cover image uploaded!");
       } catch (error) {
         console.error("Cover upload error:", error);
@@ -139,7 +144,7 @@ export function MintMetadataForm({
         setIsUploadingCover(false);
       }
     },
-    [handleChange]
+    [onChange]
   );
 
   // Handle cover file selection/drop
@@ -164,9 +169,9 @@ export function MintMetadataForm({
       };
       reader.readAsDataURL(file);
 
-      uploadCoverImage(file);
+      uploadCoverImage(file, values);
     },
-    [uploadCoverImage]
+    [uploadCoverImage, values]
   );
 
   const handleCoverDrop = useCallback(
@@ -187,7 +192,7 @@ export function MintMetadataForm({
 
   // Upload file to Pinata
   const uploadToPinata = useCallback(
-    async (file: File) => {
+    async (file: File, currentFormValues: MintFormValues) => {
       try {
         setIsUploadingFile(true);
         setUploadProgress(0);
@@ -230,12 +235,12 @@ export function MintMetadataForm({
         console.log("🎵 File uploaded:", ipfsUrl);
         console.log("📁 File type detected:", detectedFileType);
         
-        // Update both fields in a single onChange call to avoid stale closure
-        onChange({
-          ...values,
-          musicTrackUrl: ipfsUrl,
-          fileType: detectedFileType,
-        });
+       onChange((prev) => ({
+  ...prev,
+  musicTrackUrl: ipfsUrl,
+  fileType: detectedFileType,
+}));
+
         
         console.log("✅ State updated - musicTrackUrl:", ipfsUrl);
         
@@ -253,7 +258,7 @@ export function MintMetadataForm({
         setUploadProgress(0);
       }
     },
-    [onChange, values]
+    [onChange]
   );
 
   // Handle file selection
@@ -281,9 +286,9 @@ export function MintMetadataForm({
         return;
       }
 
-      uploadToPinata(file);
+      uploadToPinata(file, values);
     },
-    [uploadToPinata]
+    [uploadToPinata, values]
   );
 
   const handleDrop = useCallback(
