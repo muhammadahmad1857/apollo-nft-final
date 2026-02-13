@@ -27,7 +27,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         
     {(isConnected && !(isConnecting || isReconnecting))
     ?  children
-    : <Loader text="Connecting to your wallet..." fullScreen />}
+    : <Loader text="Connecting to your wallet..."  />}
       <Footer/>
       </SidebarInset>
     </SidebarProvider>

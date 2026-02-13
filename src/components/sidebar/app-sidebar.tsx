@@ -79,37 +79,37 @@ const data = {
     },
     {
       title: "Mint NFT",
-      url: "/dashboard/mint-single-nft",
+      url: "/dashboard/mint",
       icon: Bot,
       items: [
         {
           title: "Mint Single NFT",
-          url: "/dashboard/mint-single-nft",
+          url: "/dashboard/mint",
         },
         {
           title: "Batch Minting",
-          url: "/dashboard/batch-mint-nft",
+          url: "/dashboard/batch-mint",
         },
        
       ],
     },
 
-    {
-      title: "Files",
-      url: "/dashboard/files",
-      icon: Files,
-     items: [
-        {
-          title: "Create New",
-          url: "/dashboard/create",
-        },
-        {
-          title: "View Existing",
-          url: "/dashboard/files",
-        },
+    // {
+    //   title: "Files",
+    //   url: "/dashboard/files",
+    //   icon: Files,
+    //  items: [
+    //     {
+    //       title: "Create New",
+    //       url: "/dashboard/create",
+    //     },
+    //     {
+    //       title: "View Existing",
+    //       url: "/dashboard/files",
+    //     },
        
-      ],
-    },
+    //   ],
+    // },
     {
       title: "MarketPlace",
       url: "/marketplace",

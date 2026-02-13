@@ -9,7 +9,6 @@ import MobileSidebar from './sidebar/mobile-sidebar'
 import Logo from './Logo'
 import {CustomConnectButton} from "./ConnectButton"
 export default function Header() {
-  const { resolvedTheme:theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -20,8 +19,8 @@ export default function Header() {
   if (!mounted) return null
 
   const navItems = [
+    { label: 'Mint NFT', href: '/dashboard/mint' },
     { label: 'Marketplace', href: '/marketplace' },
-    { label: 'Dashboard', href: '/dashboard' },
     {label:"Auction",href:"/auction"}
     
   ]

@@ -189,11 +189,11 @@ export default function MintPage() {
                 isMinting ||
                 !address
               }
-              className="flex-1 py-3 h-auto text-base font-semibold rounded-xl text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex-1 py-3 h-auto text-base font-semibold rounded-xl  shadow-lg disabled:opacity-80 disabled:cursor-not-allowed transition-all"
             >
               {isBusy || isMinting ? (
                 <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin text-white" />
+                  <Loader2 className="w-5 h-5 animate-spin " />
                   Minting...
                 </span>
               ) : !address ? (

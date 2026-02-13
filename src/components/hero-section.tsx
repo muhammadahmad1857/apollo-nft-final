@@ -109,7 +109,7 @@ export default function HeroSection() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Link href={'/dashboard/ming-single-nft'}>
+                <Link href={'/dashboard/mint'}>
                 <Button size="lg" variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-muted bg-transparent transition-all">
                   <UploadCloudIcon className="mr-2" size={20} />
                   Upload NFT

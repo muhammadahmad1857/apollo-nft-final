@@ -3,6 +3,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useEnsName, useEnsAvatar } from 'wagmi';
 import { createUser, getUserByWallet } from '@/actions/users';
 import Loader from '@/components/loader';
+import { Loader2 } from 'lucide-react';
 
 export const CustomConnectButton = () => {
   const { address, isConnected, isConnecting, isReconnecting } = useAccount();
@@ -35,7 +36,7 @@ export const CustomConnectButton = () => {
 
   // Show loader when connecting or reconnecting
   if (isConnecting || isReconnecting) {
-    return <Loader text="Connecting to your wallet..." />;
+    return <p className="flex gap-1"><Loader2 className='animate-spin'/> Connecting to your wallet...</p>;
   }
 
   return (
