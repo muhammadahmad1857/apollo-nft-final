@@ -228,8 +228,12 @@ export function MintMetadataForm({
         console.log("🎵 File uploaded:", ipfsUrl);
         console.log("📁 File type detected:", detectedFileType);
         
-        handleChange("musicTrackUrl", ipfsUrl);
-        handleChange("fileType", detectedFileType);
+        // Update both fields in a single onChange call to avoid stale closure
+        onChange({
+          ...values,
+          musicTrackUrl: ipfsUrl,
+          fileType: detectedFileType,
+        });
         
         console.log("✅ State updated - musicTrackUrl:", ipfsUrl);
         
@@ -247,7 +251,7 @@ export function MintMetadataForm({
         setUploadProgress(0);
       }
     },
-    [handleChange]
+    [onChange, values]
   );
 
   // Handle file selection
