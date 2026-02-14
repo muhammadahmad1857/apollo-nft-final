@@ -158,6 +158,7 @@ console.log("tokenUri", dbNft);
               ownerAddress={owner}
               tokenUri={dbNft.tokenUri}
               fileType={dbNft.fileType}
+              nftId={dbNft.id}
             />
 
             {/* Optional extra info */}

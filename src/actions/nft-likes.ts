@@ -43,7 +43,7 @@ export async function checkIfUserLikedNFT(nftId: number, userId: number): Promis
 -------------------- */
 export async function toggleNFTLike(nftId: number, userId: number) {
   return await db.$transaction(async (tx) => {
-
+    console.log("Toggling like for NFT", { nftId, userId });
     let liked = false;
 
     try {

@@ -6,6 +6,7 @@ import { Play, X, FileText, File } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { getFileTypeByIPFS } from "@/actions/files";
+import Portal from "./Portal";
 
 interface UniversalMediaViewerProps {
   tokenUri?: string; // now we pass the NFT token URI (points to JSON)
@@ -188,6 +189,7 @@ export default function UniversalMediaViewer({
         />
         <AnimatePresence>
           {showModal && (
+            <Portal>
             <motion.div
               className="fixed inset-0 z-50 bg-black/20 backdrop-blur-lg flex items-center justify-center p-4"
               initial={{ opacity: 0 }}
@@ -208,6 +210,7 @@ export default function UniversalMediaViewer({
                 <Image src={src} alt="media" width={900} height={600} className="w-full h-auto rounded-xl" />
               </div>
             </motion.div>
+            </Portal>
           )}
         </AnimatePresence>
       </div>
@@ -233,6 +236,7 @@ export default function UniversalMediaViewer({
         <video src={src} className="w-full h-full object-contain rounded-xl" controls={false} />
         <AnimatePresence>
           {showModal && (
+            <Portal>
             <motion.div
               className="fixed inset-0 z-50 bg-black/20 backdrop-blur-lg flex items-center justify-center p-4"
               initial={{ opacity: 0 }}
@@ -253,6 +257,7 @@ export default function UniversalMediaViewer({
                 <video src={src} controls autoPlay className="w-full h-full rounded-xl" />
               </div>
             </motion.div>
+          </Portal>
           )}
         </AnimatePresence>
       </div>
@@ -291,7 +296,9 @@ if (isPdf) {
       </div>
 
       <AnimatePresence>
+        
         {showModal && (
+          <Portal>
           <motion.div
             className="fixed inset-0 z-50 bg-black/20 backdrop-blur-lg flex items-center justify-center p-4"
             initial={{ opacity: 0 }}
@@ -316,6 +323,7 @@ if (isPdf) {
               />
             </div>
           </motion.div>
+          </Portal>
         )}
       </AnimatePresence>
     </>

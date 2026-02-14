@@ -30,6 +30,7 @@ interface NFTInteractiveContentProps {
   ownerAddress?: string | null;
   tokenUri: string;
   fileType?: string;
+  nftId:number
 }
 
 export default function NFTInteractiveContent({
@@ -41,6 +42,7 @@ export default function NFTInteractiveContent({
   ownerAddress,
   tokenUri,
   fileType,
+  nftId
 }: NFTInteractiveContentProps) {
   const { address } = useAccount();
   const { data: user, isLoading: loadingUser } = useUser(address);
@@ -54,51 +56,51 @@ export default function NFTInteractiveContent({
   const [isProcessingBuy, setIsProcessingBuy] = useState(false);
 console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPrice, ownerAddress, tokenUri });
   // Load initial like state and count
-  useEffect(() => {
-    let mounted = true;
+  // useEffect(() => {
+  //   let mounted = true;
 
-    const loadLikes = async () => {
-      const likes = await getNFTLikesByNFT(tokenId);
-      if (!mounted) return;
-      setLikeCount(likes.length);
+  //   const loadLikes = async () => {
+  //     const likes = await getNFTLikesByNFT(nftId);
+  //     if (!mounted) return;
+  //     setLikeCount(likes.length);
 
-      if (user?.id) {
-        const hasLiked = await checkIfUserLikedNFT(tokenId, user.id);
-        if (!mounted) return;
-        setLiked(hasLiked);
-      }
-    };
+  //     if (user?.id) {
+  //       const hasLiked = await checkIfUserLikedNFT(nftId, user.id);
+  //       if (!mounted) return;
+  //       setLiked(hasLiked);
+  //     }
+  //   };
 
-    loadLikes();
+  //   loadLikes();
 
-    return () => {
-      mounted = false;
-    };
-  }, [tokenId, user?.id]);
+  //   return () => {
+  //     mounted = false;
+  //   };
+  // }, [tokenId, user?.id]);
 
 
 
-  // Handle like toggle
-  const handleLike = async () => {
-    if (!user?.id) {
-      toast.error("Connect wallet to like NFTs");
-      return;
-    }
-    if (loadingLike) return;
+  // // Handle like toggle
+  // const handleLike = async () => {
+  //   if (!user?.id) {
+  //     toast.error("Connect wallet to like NFTs");
+  //     return;
+  //   }
+  //   if (loadingLike) return;
 
-    setLoadingLike(true);
-    try {
-      const { liked: newLiked } = await toggleNFTLike(tokenId, user.id);
-      setLiked(newLiked);
-      setLikeCount((c) => (newLiked ? c + 1 : c - 1));
-      toast.success(newLiked ? "Added to favorites" : "Removed from favorites");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update like");
-    } finally {
-      setLoadingLike(false);
-    }
-  };
+  //   setLoadingLike(true);
+  //   try {
+  //     const { liked: newLiked,count:likeCount } = await toggleNFTLike(nftId, user.id);
+  //     setLiked(newLiked);
+  //     setLikeCount(likeCount );
+  //     toast.success(newLiked ? "Added to favorites" : "Removed from favorites");
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Failed to update like");
+  //   } finally {
+  //     setLoadingLike(false);
+  //   }
+  // };
 
   const handleBuy = async () => {
     if (!mintPrice) return toast.error("Mint price not available");
@@ -123,7 +125,7 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
        <UniversalMediaViewer uri={media} tokenUri={tokenUri} fileType={fileType} className="w-full max-w-md rounded-lg shadow-lg" />
         
 
-        <button
+        {/* <button
           onClick={handleLike}
           disabled={loadingLike}
           className={`px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-all ${
@@ -132,8 +134,9 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
               : "bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 border border-zinc-300 dark:border-zinc-600"
           }`}
         >
-          <LikeButton userId={user?.id||0} tokenId={tokenId} showText={true} />
-        </button>
+          <LikeButton userId={user?.id||0} nftId={nftId} showText={true} />
+        </button> */}
+        <LikeButton userId={user?.id||0} nftId={nftId} showText={true} />
 
         <button
           onClick={() => setShowShareModal(true)}
