@@ -108,7 +108,7 @@ const Loader: React.FC<LoaderProps> = ({
               fadeOut ? "opacity-0" : "opacity-100"
             }`}
           >
-            <p className="text-cyan-200 drop-shadow-md px-4 leading-relaxed">
+            <p className="text-orange-500 font-bold drop-shadow-md px-4 leading-relaxed">
               💡 {currentFact}
             </p>
           </div>
@@ -116,7 +116,7 @@ const Loader: React.FC<LoaderProps> = ({
 
         {/* Fact counter */}
         {facts.length > 1 && (
-          <div className="text-xs text-cyan-100/70 mt-2">
+          <div className="text-xs text-orange-500/70 mt-2">
             {currentFactIndex + 1} / {facts.length}
           </div>
         )}
