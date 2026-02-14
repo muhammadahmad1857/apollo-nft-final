@@ -43,38 +43,22 @@ export async function checkIfUserLikedNFT(nftId: number, userId: number): Promis
 -------------------- */
 export async function toggleNFTLike(nftId: number, userId: number) {
   return await db.$transaction(async (tx) => {
-    console.log("Toggling like for NFT", { nftId, userId });
-    let liked = false;
-
-    try {
-      await tx.nFTLike.create({
-        data: { nftId, userId }
-      });
-      liked = true;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      if (err.code === "P2002") {
-        await tx.nFTLike.delete({
-          where: {
-            nftId_userId: {
-              nftId,
-              userId
-            }
-          }
-        });
-        liked = false;
-      } else {
-        throw err;
-      }
-    }
-
-    const count = await tx.nFTLike.count({
-      where: { nftId }
+    const existing = await tx.nFTLike.findUnique({
+      where: { nftId_userId: { nftId, userId } }
     });
 
-    return { liked, count };
+    if (existing) {
+      await tx.nFTLike.delete({ where: { nftId_userId: { nftId, userId } } });
+      const count = await tx.nFTLike.count({ where: { nftId } });
+      return { liked: false, count };
+    } else {
+      await tx.nFTLike.create({ data: { nftId, userId } });
+      const count = await tx.nFTLike.count({ where: { nftId } });
+      return { liked: true, count };
+    }
   });
 }
+
 
 /* --------------------
    GET LIKED NFTs WITH FULL DETAILS
