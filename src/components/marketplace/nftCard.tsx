@@ -220,7 +220,7 @@ const NFTCard = ({
           {/* Actions */}
           <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
             <div onClick={(e) => e.stopPropagation()}>
-              <LikeButton userId={userId||0} tokenId={tokenId} />
+              <LikeButton userId={userId||0} nftId={nftId} />
             </div>
             <button
               onClick={(e) => {

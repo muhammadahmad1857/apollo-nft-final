@@ -13,7 +13,7 @@ import {
 } from "@/actions/nft-likes"; 
 
 interface LikeButtonProps {
-  tokenId: number;
+  nftId: number;
   initialCount?: number;
   className?: string;
   showText?: boolean;
@@ -21,7 +21,7 @@ interface LikeButtonProps {
 }
 
 export default function LikeButton({
-  tokenId,
+  nftId,
   initialCount = 0,
   className = "",
   showText = false,
@@ -47,12 +47,12 @@ export default function LikeButton({
 
     (async () => {
       try {
-        const likes = await getNFTLikesByNFT(tokenId);
+        const likes = await getNFTLikesByNFT(nftId);
         if (mounted) setCount(likes.length);
 
         if (userId) {
           const userLikes = await getNFTLikesByUser(userId);
-          const hasLiked = userLikes.some((like) => like.nftId === tokenId);
+          const hasLiked = userLikes.some((like) => like.nftId === nftId);
           if (mounted) setLiked(hasLiked);
         }
       } catch (err) {
@@ -63,7 +63,7 @@ export default function LikeButton({
     return () => {
       mounted = false;
     };
-  }, [tokenId, userId]);
+  }, [nftId, userId]);
 
   const handleToggle = async () => {
     if (!userId) {
@@ -76,7 +76,7 @@ export default function LikeButton({
     setLoading(true);
 
     try {
-   const result = await toggleNFTLike(tokenId, userId);
+   const result = await toggleNFTLike(nftId, userId);
 setLiked(result.liked);
 setCount(result.count);
 
