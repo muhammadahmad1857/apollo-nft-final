@@ -8,6 +8,7 @@ import {
   Command,
   Files,
   GalleryVerticalEnd,
+  Heart,
   LayoutDashboard,
   
   ShoppingCart,
@@ -120,6 +121,12 @@ const data = {
       title: "Auction History",
       url: "/dashboard/auction-activity",
       icon: ChartAreaIcon,
+      
+    },
+    {
+      title: "My Favorites",
+      url: "/dashboard/favorites",
+      icon: Heart,
       
     },
     {

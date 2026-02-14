@@ -75,3 +75,23 @@ export async function toggleNFTLike(nftId: number, userId: number) {
     return { liked, count };
   });
 }
+
+/* --------------------
+   GET LIKED NFTs WITH FULL DETAILS
+-------------------- */
+export async function getLikedNFTsWithDetails(userId: number) {
+  return db.nFTLike.findMany({
+    where: { userId },
+    include: {
+      nft: {
+        include: {
+          owner: true,
+          auction: true,
+          likes: true,
+          creator: true,
+        }
+      }
+    },
+    orderBy: { createdAt: "desc" }
+  });
+}
