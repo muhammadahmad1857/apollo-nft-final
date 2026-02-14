@@ -6,7 +6,7 @@ const MarketplacePage = () => {
   return (
     <div className="min-h-screen  text-zinc-900 dark:text-zinc-100">
         <Header/>
-      <main className="py-24 space-y-16">
+      <main className="py-28 space-y-16">
         <PageHeading />
         <NFTGrid />
       </main>

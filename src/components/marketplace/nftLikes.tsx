@@ -76,8 +76,10 @@ export default function LikeButton({
 
     try {
       if (!liked) {
-        await createNFTLike({ nft: { connect: { id: tokenId } }, user: { connect: { id: userId } } });
-        setLiked(true);
+await createNFTLike({
+  nft: { connect: { tokenId: tokenId } },
+  user: { connect: { id: userId } }
+});        setLiked(true);
         setCount((prev) => prev + 1);
         toast.success("Added to favorites");
       } else {
