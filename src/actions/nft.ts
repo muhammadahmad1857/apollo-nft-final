@@ -24,8 +24,8 @@ export async function getNFTById(id: number): Promise<PrismaNFT | null> {
   return db.nFT.findUnique({ where: { id } });
 }
 
-export async function getAllNFTs(): Promise<
-  (PrismaNFT & { owner: UserModel | null; auction: AuctionModel | null })[]
+export async function getAllNFTs(likes:boolean=false): Promise<
+  (PrismaNFT & { owner: UserModel | null; auction: AuctionModel | null,likes?:NFTLikeModel[] })[]
 > {
   return db.nFT.findMany({
     where: {
@@ -35,6 +35,7 @@ export async function getAllNFTs(): Promise<
     include: {
       owner: true,
       auction: true, // include auction info
+      likes: likes, // include likes if requested
     }, // nested relation
   });
 }

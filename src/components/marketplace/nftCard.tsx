@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { UniversalMediaIcon } from "../ui/UniversalMediaIcon";
+import { NFTLikeModel } from "@/generated/prisma/models";
 
 export interface NFTCardProps {
   title: string;
@@ -38,6 +39,7 @@ export interface NFTCardProps {
   nftId: number;
   ownerAddress:string;
   auctionApproved:boolean;
+  likes:NFTLikeModel[]
   fileType?: string;
   userId?:number
   address:string
@@ -60,6 +62,7 @@ const NFTCard = ({
   name,
   description,
   mintPrice,
+  likes,
   showBuyButton,
   showEditRoyaltyButton,
   auction,
@@ -220,7 +223,7 @@ const NFTCard = ({
           {/* Actions */}
           <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
             <div onClick={(e) => e.stopPropagation()}>
-              <LikeButton userId={userId||0} nftId={nftId} />
+              <LikeButton userId={userId||0} nftId={nftId} likes={likes} />
             </div>
             <button
               onClick={(e) => {

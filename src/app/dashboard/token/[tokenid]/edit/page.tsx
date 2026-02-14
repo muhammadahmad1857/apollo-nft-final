@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -52,12 +52,24 @@ export default function EditRoyaltyPage() {
   const [isListed, setIsListed] = useState(false);
   const [priceEth, setPriceEth] = useState("");
   const [meta, setMeta] = useState<PinataJSON | null>(null);
-// Show error if user fetch failed
-useEffect(() => {
-  if (!isUserLoading && !user) {
-    toast.error("Something went wrong while fetching user.");
-  }
-}, [user, isUserLoading]); 
+
+  const editFacts = [
+    "Royalties ensure you earn a percentage from every secondary sale!",
+    "Fun fact: Royalty rates are typically set between 2.5% to 10% (250 to 1000 BPS).",
+    "Did you know? 1 BPS (Basis Point) = 0.01% of the sale price.",
+    "Interesting: Royalties are automatically distributed to your wallet when NFTs resell!",
+    "Fun fact: You can update your royalty rate anytime before minting.",
+    "Did you know? Listing prices can be changed at any time from the edit panel!",
+    "Interesting: The marketplace maintains a record of all price changes!",
+    "Fun fact: Smart contracts enforce royalties even on third-party marketplaces!",
+  ];
+
+  // Show error if user fetch failed
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      toast.error("Something went wrong while fetching user.");
+    }
+  }, [user, isUserLoading]); 
 
   /** -------------------------------
    * Init state
@@ -164,7 +176,7 @@ useEffect(() => {
   }
 
   if (isLoading)
-    return <Loader text="Loading nft...."/>;
+    return <Loader text="Loading nft...." facts={editFacts}/>;
   if (!token) return <div className="flex flex-col items-center justify-center"><NotFound title="No NFT FOUND" link="/dashboard"/></div>;
 
   return (

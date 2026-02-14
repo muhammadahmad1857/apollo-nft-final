@@ -5,14 +5,14 @@ import NFTCard from "./nftCard";
 import SkeletonCards from "./SekeletonCards";
 import { Button } from "../ui/button";
 import { getAllNFTs } from "@/actions/nft"; // server-side Prisma function
-import type { AuctionModel, NFTModel as PrismaNFT, UserModel } from "@/generated/prisma/models";
+import type { AuctionModel, NFTLikeModel, NFTModel as PrismaNFT, UserModel } from "@/generated/prisma/models";
 import { useAccount } from "wagmi";
 import { useUser } from "@/hooks/useUser";
 
 const PAGE_SIZE = 12;
 
 export default function PublicMintsGrid() {
-  const [mints, setMints] = useState<(PrismaNFT & { owner: UserModel,auction:AuctionModel|null })[]>([]);
+  const [mints, setMints] = useState<(PrismaNFT & { owner: UserModel,auction:AuctionModel|null,likes:NFTLikeModel[] })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const {address} = useAccount();
@@ -22,9 +22,9 @@ export default function PublicMintsGrid() {
       setLoading(true);
       setError(null);
 
-      const data = await getAllNFTs(); // server-side fetch via Prisma
+      const data = await getAllNFTs(true); // server-side fetch via Prisma
 
-setMints(data as (PrismaNFT & { owner: UserModel,auction:AuctionModel|null, })[]);
+setMints(data as (PrismaNFT & { owner: UserModel,auction:AuctionModel|null,likes:NFTLikeModel[] })[]);
 console.log("data",data)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
@@ -96,6 +96,7 @@ console.log("data",data)
             media={nft.mediaUrl}
             auctionApproved={nft.approvedAuction}
             fileType={nft.fileType}
+            likes={nft?.likes || []}
              auction={nft.auction ? {
       id: nft.auction.id,
       startTime: nft.auction.startTime.toISOString(),

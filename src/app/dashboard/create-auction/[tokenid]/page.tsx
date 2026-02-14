@@ -175,14 +175,14 @@ export default function CreateAuctionPage() {
           <h1 className="text-4xl font-bold text-white mb-2">
             Create Auction
           </h1>
-          <p className="text-zinc-600 dark:text-zinc-400">
+          <p className="text-zinc-600 dark:text-zinc-200 font-bold">
             {nft.title} - Token #{tokenId}
           </p>
         </div>
 
         {/* Stepper */}
         <div className="mb-12">
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex bg-background backdrop-blur-lg items-center justify-center gap-4">
             {[1, 2].map((step) => (
               <div key={step} className="flex items-center">
                 <motion.div

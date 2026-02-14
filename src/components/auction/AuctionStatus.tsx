@@ -8,7 +8,7 @@ export function AuctionStatus({ auction }: { auction: AuctionModel}) {
   const highestBid = auction.highestBid || auction.minBid;
 
   return (
-    <div className="p-4  rounded flex justify-between items-center">
+    <div className="p-4 bg-background/20 backdrop-blur-lg rounded flex justify-between items-center">
       <p>Status: {auction.settled ? "Settled" : ended ? "Ended" : "Active"}</p>
       <p>Current Highest Bid: {highestBid} APOLLO</p>
     </div>

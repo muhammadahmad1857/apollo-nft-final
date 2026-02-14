@@ -28,6 +28,17 @@ export default function AuctionPage() {
   const params = useParams();
   const nftId = Number(params.tokenid);
 
+  const auctionFacts = [
+    "Auctions run on blockchain, making every bid transparent and verifiable!",
+    "Fun fact: The highest bid wins the NFT through a smart contract settlement.",
+    "Did you know? Auction timers are immutable and cannot be changed once started.",
+    "Interesting: All bid history is permanently recorded on the blockchain!",
+    "Fun fact: Auction settlement automatically transfers the NFT to the winner.",
+    "Did you know? You can increase your bid at any time before the auction ends!",
+    "Interesting: Failed auctions can be restarted with new bidding rules.",
+    "Fun fact: The reserve/minimum bid ensures creators get fair value for their NFTs!",
+  ];
+
   const router = useRouter();
   const { address } = useAccount();
   const { data: user } = useUser(address || "");
@@ -127,7 +138,7 @@ export default function AuctionPage() {
      Loading state
   ------------------------------ */
   if (!auction || tokenId === undefined) {
-    return <Loader text="Loading Auction"/>;
+    return <Loader text="Loading Auction" facts={auctionFacts}/>;
   }
 
   return (

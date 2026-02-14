@@ -113,8 +113,8 @@ export default function EditProfilePage() {
             type="file"
             accept="image/*"
             onChange={handleImageChange}
-            className="mt-2"
             disabled={isUploading}
+            className="bg-background mt-2 backdrop-blur-lg "
           />
           {isUploading && (
             <div className="w-full mt-2">

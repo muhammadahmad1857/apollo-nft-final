@@ -24,6 +24,17 @@ export default function Page() {
   const [filterMinted, setFilterMinted] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
 
+  const dashboardFacts = [
+    "Your dashboard shows all NFTs you've minted and collected!",
+    "Fun fact: You can list NFTs for sale directly from your dashboard.",
+    "Did you know? Your NFTs can be listed on the marketplace or auction simultaneously!",
+    "Interesting: You can edit royalty percentages to earn from secondary sales!",
+    "Fun fact: NFTs you create are automatically added to your dashboard.",
+    "Did you know? You can track all your owned NFTs and their performance here!",
+    "Interesting: Most creators set royalties between 5-10% for fair value.",
+    "Fun fact: Your profile information is linked to your wallet address for security!",
+  ];
+
   React.useEffect(() => {
     if (!address) return;
 
@@ -97,7 +108,7 @@ export default function Page() {
         />
 
         {loading ? (
-          <Loader text="Loading NFT's..."/>
+          <Loader text="Loading NFT's..." facts={dashboardFacts}/>
         ) : filteredNFTs.length === 0 ? (
 <div className="text-center py-5 text-white space-y-2">
   <div>No NFTs found.</div>

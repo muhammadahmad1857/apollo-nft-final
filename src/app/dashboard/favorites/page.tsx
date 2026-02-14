@@ -31,6 +31,18 @@ export default function FavoritesPage() {
   const [filterAuction, setFilterAuction] = useState<FilterAuction>("all");
   const [search, setSearch] = useState("");
 
+  // Fun facts to display while loading
+  const funFacts = [
+    "Did you know? The first NFT ever minted was on May 3, 2014 by Kevin McCoy!",
+    "Fun fact: NFTs use blockchain technology to prove digital ownership and authenticity.",
+    "Interesting: Some NFTs have sold for millions of dollars at auctions!",
+    "Did you know? Each NFT has a unique digital signature that cannot be forged.",
+    "Fun fact: You can like multiple NFTs to keep track of your favorite creations!",
+    "Interesting: NFTs can represent art, music, collectibles, virtual real estate, and more!",
+    "Did you know? Smart contracts power the auction and trading features of NFTs.",
+    "Fun fact: Your liked NFTs are permanently stored and can be accessed anytime!",
+  ];
+
   // Filter and sort NFTs
   const filteredAndSortedNFTs = useMemo(() => {
     if (!likedNFTsData) return [];
@@ -90,9 +102,9 @@ export default function FavoritesPage() {
   if (!address) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <Heart className="w-16 h-16 text-zinc-400" />
+        <Heart className="w-16 h-16 text-zinc-200" />
         <h1 className="text-2xl font-bold">Connect Your Wallet</h1>
-        <p className="text-zinc-500">Please connect your wallet to view your favorites</p>
+        <p className="text-zinc-200">Please connect your wallet to view your favorites</p>
       </div>
     );
   }
@@ -102,7 +114,7 @@ export default function FavoritesPage() {
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <Heart className="w-16 h-16 text-red-400" />
         <h1 className="text-2xl font-bold">Error Loading Favorites</h1>
-        <p className="text-zinc-500">Something went wrong. Please try again.</p>
+        <p className="text-zinc-200">Something went wrong. Please try again.</p>
       </div>
     );
   }
@@ -111,12 +123,12 @@ export default function FavoritesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center gap-3">
           <Heart className="w-8 h-8 fill-red-500 text-red-500" />
           <h1 className="text-3xl font-bold">My Favorites</h1>
         </div>
-        <p className="text-zinc-500">
-          {filteredAndSortedNFTs.length} NFT{filteredAndSortedNFTs.length !== 1 ? "s" : ""} liked
+        <p className="text-zinc-200">
+          {likedNFTsData?.length || 0} NFT{likedNFTsData?.length !== 1 ? "s" : ""} liked
         </p>
       </div>
 
@@ -186,16 +198,16 @@ export default function FavoritesPage() {
       {/* Loading State */}
       {isLoading && (
         <div className="flex justify-center py-12">
-          <Loader />
+          <Loader text="Fetching your favorites..." facts={funFacts} />
         </div>
       )}
 
       {/* Empty State */}
       {!isLoading && filteredAndSortedNFTs.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 gap-4">
-          <Heart className="w-16 h-16 text-zinc-400" />
+          <Heart className="w-16 h-16 text-red-400" />
           <h2 className="text-xl font-semibold">No Favorites Yet</h2>
-          <p className="text-zinc-500 text-center max-w-md">
+          <p className="text-zinc-200 text-center max-w-md">
             {search
               ? "No NFTs match your search. Try adjusting your filters or search terms."
               : "Start exploring and like your favorite NFTs to see them here!"}

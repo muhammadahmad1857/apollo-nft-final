@@ -1,18 +1,40 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
+import "./Loader.css";
 
 interface LoaderProps {
   text?: string;
   fullScreen?: boolean;
+  facts?: string[];
 }
 
 const Loader: React.FC<LoaderProps> = ({
   text = "Loading...",
   fullScreen = false,
+  facts = [],
 }) => {
   const { theme } = useTheme();
+  const [currentFactIndex, setCurrentFactIndex] = useState(0);
+  const [fadeOut, setFadeOut] = useState(false);
+
+  // Cycle through facts every 4 seconds
+  useEffect(() => {
+    if (facts.length === 0) return;
+
+    const interval = setInterval(() => {
+      setFadeOut(true);
+      setTimeout(() => {
+        setCurrentFactIndex((prev) => (prev + 1) % facts.length);
+        setFadeOut(false);
+      }, 500);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [facts.length]);
+
+  const currentFact = facts.length > 0 ? facts[currentFactIndex] : null;
 
   return (
     <div
@@ -70,14 +92,35 @@ const Loader: React.FC<LoaderProps> = ({
         </div>
       </div>
 
-      {/* Loader Text */}
-      {text && (
-        <div
-          className="mt-4 text-lg text-white font-bold"
-        >
-          {text}
-        </div>
-      )}
+      {/* Loader Text or Fun Facts */}
+      <div className="mt-6 flex flex-col items-center gap-2 max-w-md">
+        {/* Main text */}
+        {text && (
+          <div className="text-lg font-bold text-white drop-shadow-lg">
+            {text}
+          </div>
+        )}
+
+        {/* Fun Facts */}
+        {currentFact && (
+          <div
+            className={`text-center text-sm md:text-base font-medium transition-opacity duration-500 min-h-[60px] flex items-center justify-center ${
+              fadeOut ? "opacity-0" : "opacity-100"
+            }`}
+          >
+            <p className="text-cyan-200 drop-shadow-md px-4 leading-relaxed">
+              💡 {currentFact}
+            </p>
+          </div>
+        )}
+
+        {/* Fact counter */}
+        {facts.length > 1 && (
+          <div className="text-xs text-cyan-100/70 mt-2">
+            {currentFactIndex + 1} / {facts.length}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

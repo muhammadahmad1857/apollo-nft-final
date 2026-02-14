@@ -11,6 +11,7 @@ import {
   getNFTLikesByUser,
   toggleNFTLike,
 } from "@/actions/nft-likes"; 
+import { NFTLikeModel } from "@/generated/prisma/models";
 
 interface LikeButtonProps {
   nftId: number;
@@ -18,6 +19,7 @@ interface LikeButtonProps {
   className?: string;
   showText?: boolean;
   userId: number; 
+  likes:NFTLikeModel[] | undefined;
 }
 
 export default function LikeButton({
@@ -25,11 +27,12 @@ export default function LikeButton({
   initialCount = 0,
   className = "",
   showText = false,
-  userId
+  userId,
+  likes
 }: LikeButtonProps) {
 
-  const [liked, setLiked] = useState(false);
-  const [count, setCount] = useState(initialCount);
+  const [liked, setLiked] = useState(likes ? likes.some((like) => like.userId === userId) : false);
+  const [count, setCount] = useState(likes?.length || initialCount);
   const [loading, setLoading] = useState(false);
 
   const classNameText = `px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-all ${className} ${
@@ -44,11 +47,11 @@ export default function LikeButton({
 
   useEffect(() => {
     let mounted = true;
-
+if (likes) return; // If likes are already provided, skip fetching
     (async () => {
       try {
-        const likes = await getNFTLikesByNFT(nftId);
-        if (mounted) setCount(likes.length);
+        const likesFunc = await getNFTLikesByNFT(nftId);
+        if (mounted) setCount(likesFunc.length);
 
         if (userId) {
           const userLikes = await getNFTLikesByUser(userId);

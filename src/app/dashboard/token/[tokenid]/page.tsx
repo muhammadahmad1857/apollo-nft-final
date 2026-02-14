@@ -23,6 +23,17 @@ export default function TokenDetailsPage() {
   console.log("Token data:", token);
   console.log("TokenID:", tokenid);
   console.log("Auction data:", auction);
+
+  const tokenFacts = [
+    "Token URIs store all your NFT metadata on IPFS for permanence!",
+    "Fun fact: Each NFT has a unique token ID that identifies it on the blockchain.",
+    "Did you know? Metadata includes your NFT's name, description, image, and media files.",
+    "Interesting: Token URIs are immutable and point to permanent IPFS storage!",
+    "Fun fact: Your NFT's royalty percentage is embedded in its smart contract.",
+    "Did you know? Token details are visible to everyone on the blockchain!",
+    "Interesting: You can view the complete history of your NFT's ownership!",
+    "Fun fact: Token metadata can be updated if stored in mutable storage!",
+  ];
   // Likes and creator fetched with react-query for caching
   const { data: likes = [] } = useQuery({
     queryKey: ["nft-likes", token?.id],
@@ -52,7 +63,7 @@ export default function TokenDetailsPage() {
 
   if (loading) {
     return (
-    <Loader text={`Loading token for tokenId: ${tokenid}`}/>
+    <Loader text={`Loading token for tokenId: ${tokenid}`} facts={tokenFacts}/>
     );
   }
   if (nftError) {
