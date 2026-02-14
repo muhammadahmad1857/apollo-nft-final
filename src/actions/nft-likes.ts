@@ -41,25 +41,37 @@ export async function checkIfUserLikedNFT(nftId: number, userId: number): Promis
 /* --------------------
    TOGGLE LIKE
 -------------------- */
-export async function toggleNFTLike(nftId: number, userId: number): Promise<{ liked: boolean }> {
-  const alreadyLiked = await checkIfUserLikedNFT(nftId, userId);
+export async function toggleNFTLike(nftId: number, userId: number) {
+  return await db.$transaction(async (tx) => {
 
-  if (alreadyLiked) {
-    await deleteNFTLike(nftId, userId);
-    return { liked: false };
-  } else {
-    await createNFTLike({ 
-      nft:{
-      connect: { tokenId: nftId },
+    let liked = false;
 
-    }, 
-    user: 
-    { 
-      connect: { 
-        id: userId
-       } 
-      } 
+    try {
+      await tx.nFTLike.create({
+        data: { nftId, userId }
+      });
+      liked = true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      if (err.code === "P2002") {
+        await tx.nFTLike.delete({
+          where: {
+            nftId_userId: {
+              nftId,
+              userId
+            }
+          }
+        });
+        liked = false;
+      } else {
+        throw err;
+      }
+    }
+
+    const count = await tx.nFTLike.count({
+      where: { nftId }
     });
-    return { liked: true };
-  }
+
+    return { liked, count };
+  });
 }

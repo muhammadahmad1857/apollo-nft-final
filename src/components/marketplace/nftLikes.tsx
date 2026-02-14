@@ -9,6 +9,7 @@ import {
   deleteNFTLike,
   getNFTLikesByNFT,
   getNFTLikesByUser,
+  toggleNFTLike,
 } from "@/actions/nft-likes"; 
 
 interface LikeButtonProps {
@@ -75,19 +76,10 @@ export default function LikeButton({
     setLoading(true);
 
     try {
-      if (!liked) {
-await createNFTLike({
-  nft: { connect: { tokenId: tokenId } },
-  user: { connect: { id: userId } }
-});        setLiked(true);
-        setCount((prev) => prev + 1);
-        toast.success("Added to favorites");
-      } else {
-        await deleteNFTLike(tokenId, userId);
-        setLiked(false);
-        setCount((prev) => prev - 1);
-        toast.success("Removed from favorites");
-      }
+   const result = await toggleNFTLike(tokenId, userId);
+setLiked(result.liked);
+setCount(result.count);
+
     } catch (err) {
       console.error("Like toggle failed:", err);
       toast.error("Failed to update like");
