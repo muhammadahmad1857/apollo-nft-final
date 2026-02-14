@@ -220,6 +220,7 @@ export default function FavoritesPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredAndSortedNFTs.map((like) => {
             const nft = like.nft;
+            const likes = like.nft.likes || [];
             if (!nft) return null;
 
             // Check if current user owns this NFT
@@ -257,6 +258,7 @@ export default function FavoritesPage() {
                   fileType={nft.fileType}
                   userId={user?.id}
                   address={address || ""}
+                  likes={likes}
                   auction={
                     nft.auction
                       ? {

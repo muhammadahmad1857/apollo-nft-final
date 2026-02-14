@@ -3,6 +3,8 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import type { Variants } from "framer-motion"
+import Link from 'next/link'
+import { Button } from '../ui/button'
 
 interface MobileSidebarProps {
   isOpen: boolean
@@ -101,7 +103,10 @@ export default function MobileSidebar({ isOpen, onClose, navItems }: MobileSideb
                   {item.label}
                 </motion.a>
               ))}
+                         <Link href="/dashboard" passHref><Button>Dashboard</Button></Link>
+              
             </nav>
+
           </motion.div>
         </>
       )}

@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useTheme } from 'next-themes'
-import Image from 'next/image'
-import { Moon, Sun, Menu } from 'lucide-react'
 import { motion } from 'framer-motion'
 import MobileSidebar from './sidebar/mobile-sidebar'
 import Logo from './Logo'
 import {CustomConnectButton} from "./ConnectButton"
+import { Button } from './ui/button'
+import Link from 'next/link'
+import { Menu } from 'lucide-react'
 export default function Header() {
   const [mounted, setMounted] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -45,7 +45,7 @@ export default function Header() {
           </motion.div>
 
           <nav className="hidden md:flex items-center gap-6">
-            {navItems.map((item, idx) => (
+            {navItems.map((item) => (
               <motion.a
                 key={item.label}
                 href={item.href}
@@ -83,7 +83,12 @@ export default function Header() {
             >
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </motion.button> */}
+            <div className="flex gap-2 items-center">
+              
             <CustomConnectButton/>
+           <Link href="/dashboard" passHref><Button>Dashboard</Button></Link>
+            </div>
+
           </div>
         </div>
       </header>

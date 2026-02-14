@@ -5,8 +5,7 @@ import { Heart } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  createNFTLike,
-  deleteNFTLike,
+
   getNFTLikesByNFT,
   getNFTLikesByUser,
   toggleNFTLike,
@@ -19,7 +18,7 @@ interface LikeButtonProps {
   className?: string;
   showText?: boolean;
   userId: number; 
-  likes:NFTLikeModel[] | undefined;
+  likes?:NFTLikeModel[] | undefined;
 }
 
 export default function LikeButton({

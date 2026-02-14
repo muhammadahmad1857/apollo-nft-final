@@ -1,13 +1,12 @@
 "use client";
-import { Play, X, Share } from "lucide-react";
-import { useEffect, useState } from "react";
+import {  X, Share } from "lucide-react";
+import {  useState } from "react";
 import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
 import { useAccount } from "wagmi";
 import { useBuyNFT } from "@/hooks/useMarketplace";
 import ShareModal from "./ShareModel";
 import LikeButton from "./nftLikes";
-import { toggleNFTLike, checkIfUserLikedNFT, getNFTLikesByNFT } from "@/actions/nft-likes";
 import UniversalMediaViewer from "../ui/UniversalMediaViewer";
 import { parseEther } from "viem";
 import { transferOwnership } from "@/actions/nft";
@@ -45,11 +44,9 @@ export default function NFTInteractiveContent({
   nftId
 }: NFTInteractiveContentProps) {
   const { address } = useAccount();
-  const { data: user, isLoading: loadingUser } = useUser(address);
+  const { data: user } = useUser(address);
   const { buyNFT, isPending } = useBuyNFT();
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
-  const [loadingLike, setLoadingLike] = useState(false);
+ 
   const [showVideo, setShowVideo] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showBuyConfirm, setShowBuyConfirm] = useState(false);
