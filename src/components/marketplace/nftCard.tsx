@@ -1,19 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Image from "next/image";
-import { Music, Play, Share, X } from "lucide-react";
+import { Share } from "lucide-react";
 import LikeButton from "./nftLikes";
 import ShareModal from "./ShareModel";
 import { useBuyNFT } from "@/hooks/useMarketplace";
 import { useRouter } from "next/navigation";
-import { useAccount } from "wagmi";
-import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
 import { transferOwnership } from "@/actions/nft";
-import { getFileTypeByIPFS } from "@/actions/files";
 import { parseEther } from "viem";
 import {
   Dialog,
@@ -130,82 +127,98 @@ const NFTCard = ({
   return (
     <>
       <motion.div
-        className="group cursor-pointer rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-background/20 backdrop-blur-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+        className="group cursor-pointer rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-background shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
         onClick={handleCardClick}
       >
-      
-
-        {/* Media preview (cover image) */}
-        <div className="aspect-square relative bg-zinc-100 p-2 dark:bg-zinc-800 overflow-hidden">
-          {cover ? (
-            <Image
-              src={cover}
-              alt={title}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-700"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            />
-
-          ) : (
-           <UniversalMediaIcon  tokenUri={token} uri={media} fileType={fileType} className="w-full h-full object-cover" />
-          )}
-            {/* Status badge */}
-
+        {/* Status badge */}
         {isAuctionActive && (
-          <div className="absolute top-3 left-3 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+          <div className="absolute top-3 left-3 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold z-10">
             Auction Live
           </div>
         )}
-        </div>
-        
 
-        {/* Content */}
-        <div className="p-5">
-          <h3 className="font-bold text-lg mb-1.5 truncate">{title}</h3>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 mb-1 min-h-12">
-            {description || "No description provided"}
-          </p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-500 mb-2">
-            By{" "}
-            <span className="font-medium text-zinc-700 dark:text-zinc-300">
-              {name}
-            </span>{" "}
-            • #{tokenId}
-          </p>
-          {mintPrice || auctionApproved && (
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3">
-              Price:{" "}
-              <span className="font-semibold">
-{(
-  !auctionApproved
-    ? mintPrice?.toFixed(4)
-    : auction?.highestBid != null && auction.highestBid > 0
-      ? auction.highestBid.toFixed(4)
-      : auction?.minBid != null && auction.minBid > 0
-        ? auction.minBid.toFixed(4)
-        : mintPrice?.toFixed(4)
-)} APOLLO
-              </span>
-            </p>
-          )}
-
-          {/* Media Preview (not cover) */}
-        {(media || token) && (
-          <div className="px-4 py-2">
+        {/* Main Media Preview - Large */}
+        <div className="relative w-full">
+          {media || token ? (
             <UniversalMediaViewer
               tokenUri={token}
               uri={media}
               fileType={fileType}
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="w-full"
-              style={{ maxHeight: 192 }}
+              style={{ height: 320 }}
             />
+          ) : null}
+        </div>
+
+        {/* Content */}
+        <div className="p-5 flex flex-col gap-3">
+          {/* Title, Cover Image, and Info */}
+          <div className="flex justify-between items-start gap-3">
+            <div className="flex-1 flex items-center gap-3">
+              {cover && (
+                <Image
+                  src={cover}
+                  alt={title}
+                  width={56}
+                  height={56}
+                  className="w-14 h-14 rounded-lg object-cover shrink-0 group-hover:scale-105 transition-transform duration-700"
+                />
+              )}
+              {!cover && token && (
+                <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0">
+                  <UniversalMediaIcon
+                    tokenUri={token}
+                    uri={media}
+                    fileType={fileType}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-base truncate" title={title}>
+                  {title}
+                </div>
+                <p className="text-xs text-zinc-500 dark:text-zinc-500">
+                  By{" "}
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                    {name}
+                  </span>{" "}
+                  • #{tokenId}
+                </p>
+              </div>
+            </div>
           </div>
-        )}
+
+          {/* Price */}
+          {(mintPrice || auctionApproved) && (
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Price:{" "}
+              <span className="font-semibold">
+                {(
+                  !auctionApproved
+                    ? mintPrice?.toFixed(4)
+                    : auction?.highestBid != null && auction.highestBid > 0
+                      ? auction.highestBid.toFixed(4)
+                      : auction?.minBid != null && auction.minBid > 0
+                        ? auction.minBid.toFixed(4)
+                        : mintPrice?.toFixed(4)
+                )} APOLLO
+              </span>
+            </p>
+          )}
+
+          {/* Description */}
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2">
+            {description || "No description provided"}
+          </p>
+
+          {/* Actions */}
+          <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
           {/* Actions */}
           <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
             <div onClick={(e) => e.stopPropagation()}>
@@ -222,51 +235,30 @@ const NFTCard = ({
               <Share size={18} />
               <span className="text-sm font-medium">Share</span>
             </button>
-            {/* {showBuyButton && mintPrice && (
+            {!address ? (
+              <p className="ml-auto text-sm text-foreground">Connect wallet</p>
+            ) : isAuctionActive ? (
               <button
-                onClick={() => setShowBuyConfirm(true)}
-                className="ml-auto px-4 py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-colors"
-                disabled={isPending}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/auction/${nftId}`);
+                }}
+                className="ml-auto px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
               >
-                {isPending ? "Buying..." : "Buy"}
+                View Auction
               </button>
-            )} */}
-           {
-  !address ? (
-    <p className="text-sm text-foreground">Connect your wallet to buy</p>
-  ) : isAuctionActive  ? (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        router.push(`/auction/${nftId}`);
-      }}
-      className="ml-auto px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
-    >
-      View Auction
-    </button>
-  ) : (
-    showBuyButton && mintPrice && (
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowBuyConfirm(true);
-        }}
-        className="ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors disabled:pointer-events-none"
-        disabled={isPending || !address || address === ownerAddress}
-      >
-        {address === ownerAddress
-          ? "My NFT"
-          : isPending
-          ? "Buying..."
-          : "Buy"
-        }
-      </button>
-    )
-  )
-}
-
-            
-
+            ) : showBuyButton && mintPrice ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowBuyConfirm(true);
+                }}
+                className="ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors disabled:pointer-events-none"
+                disabled={isPending || !address || address === ownerAddress}
+              >
+                {address === ownerAddress ? "My NFT" : isPending ? "Buying..." : "Buy"}
+              </button>
+            ) : null}
 
             {showEditRoyaltyButton && (
               <button
@@ -283,8 +275,6 @@ const NFTCard = ({
         </div>
       </motion.div>
 
-      {/* Video modal removed, handled by UniversalMediaViewer */}
-
       {/* Share Modal */}
       <ShareModal
         isOpen={showShareModal}
@@ -293,6 +283,7 @@ const NFTCard = ({
         title={title}
         name={name}
       />
+
       <Dialog open={showBuyConfirm} onOpenChange={setShowBuyConfirm}>
         <DialogContent className="sm:max-w-100">
           <DialogHeader>
