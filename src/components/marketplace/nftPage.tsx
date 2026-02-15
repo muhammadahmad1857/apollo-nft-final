@@ -125,8 +125,8 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
                         <Image
                           src={imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
                           alt={title || `NFT #${tokenId}`}
-                          width={800}
-                          height={800}
+                          width={200}
+                          height={200}
                           className="w-full aspect-square object-cover"
                           priority
                         />
