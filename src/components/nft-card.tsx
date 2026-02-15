@@ -46,13 +46,13 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
         >
           <Share className="text-lg text-primary" />
         </button>
-        <button
+        {/* <button
           className="bg-background/80 rounded-full p-2 hover:bg-primary/20 transition"
           onClick={handleEditPage}
           title="Edit NFT"
         >
           <Edit className="text-lg text-primary" />
-        </button>
+        </button> */}
       </div>
 
       {/* Media as Main Focus */}

@@ -127,7 +127,7 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
                           alt={title || `NFT #${tokenId}`}
                           width={200}
                           height={200}
-                          className="w-full aspect-square object-cover"
+                          className="w-auto h-auto aspect-square object-cover"
                           priority
                         />
                       ) : (

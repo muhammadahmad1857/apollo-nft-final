@@ -90,11 +90,11 @@ export default function TokenDetailsPage() {
               <CardTitle className="text-3xl font-bold text-center md:text-left w-full text-white">{String(identifier)}</CardTitle>
               <CardDescription className="text-xs mt-1 text-muted-foreground text-center md:text-left w-full">Token #{token.tokenId}</CardDescription>
             </div>
-            <CardAction>
+            {/* <CardAction>
               <Link href={`/dashboard/token/${token.tokenId}/edit`}>
                 <Button size="sm" variant="outline" className="border-white text-white">Edit</Button>
               </Link>
-            </CardAction>
+            </CardAction> */}
           </CardHeader>
           {pinataImage && (
             <div className="w-full flex justify-center py-6 border-b">
