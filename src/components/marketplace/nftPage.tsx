@@ -125,9 +125,9 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
                         <Image
                           src={imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
                           alt={title || `NFT #${tokenId}`}
-                          width={200}
+                          width={800}
                           height={200}
-                          className="w-auto h-auto aspect-square object-cover"
+                          className="w-full h-auto aspect-square object-cover"
                           priority
                         />
                       ) : (
@@ -145,6 +145,8 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
         >
           <LikeButton userId={user?.id||0} nftId={nftId} showText={true} />
         </button> */}
+        <br />
+
         <LikeButton userId={user?.id||0} nftId={nftId} showText={true} />
 
         <button

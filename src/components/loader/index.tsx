@@ -116,7 +116,7 @@ const Loader: React.FC<LoaderProps> = ({
 
         {/* Fact counter */}
         {facts.length > 1 && (
-          <div className="text-xs text-orange-500/70 mt-2">
+          <div className="text-xs  text-orange-500/70 mt-2">
             {currentFactIndex + 1} / {facts.length}
           </div>
         )}
