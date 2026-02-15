@@ -6,17 +6,8 @@ import { Share, Edit, Heart } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { CreateAuctionButton } from "./auction/createAuctionButton";
 import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
-import { MarketplaceListing } from "./marketplace/editMarketplace"; // our modal component
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
+
 import { UniversalMediaIcon } from "./ui/UniversalMediaIcon";
 import { NFTLikeModel, NFTModel } from "@/generated/prisma/models";
 import Link from "next/link";

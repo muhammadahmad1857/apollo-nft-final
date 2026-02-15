@@ -10,6 +10,7 @@ import Footer from "@/components/footer";
 import { NotFound } from "@/components/notFound";
 import { UniversalMediaIcon } from "@/components/ui/UniversalMediaIcon";
 import { getNFTByTokenId } from "@/actions/nft";
+import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 
 // Force dynamic rendering + light ISR
 export const dynamic = "force-dynamic";
@@ -102,19 +103,10 @@ console.log("tokenUri", dbNft);
           {/* Left - Media / Cover */}
           <div className="space-y-6">
             <div className="rounded-2xl overflow-hidden bg-linear-to-br from-zinc-900 to-black border border-zinc-800 shadow-2xl">
-              {dbNft.imageUrl ? (
-                <Image
-                  src={dbNft.imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
-                  alt={dbNft.title || `NFT #${tokenId}`}
-                  width={800}
-                  height={800}
-                  className="w-full aspect-square object-cover"
-                  priority
-                />
-              ) : (
-                <UniversalMediaIcon  tokenUri={dbNft.tokenUri} uri={dbNft.mediaUrl} fileType={dbNft.fileType} className="w-full aspect-square" />
-              )}
+                  <UniversalMediaViewer uri={dbNft.mediaUrl} tokenUri={dbNft.tokenUri} fileType={dbNft.fileType} className="w-full max-w-md rounded-lg shadow-lg" />
+
             </div>
+            
 
             {/* {media && mediaType !== "unknown" && (
               <div className="text-center text-sm text-zinc-500">
@@ -148,6 +140,12 @@ console.log("tokenUri", dbNft);
               </p>
             </div>
 
+            <div className="prose dark:prose-invert max-w-none">
+              <p className="text-lg leading-relaxed font-bold text-zinc-300">
+               <strong>Price:</strong> {dbNft.mintPrice && dbNft.mintPrice > 0 ? `${dbNft.mintPrice} APOLLO` : "Not for sale"}
+              </p>
+            </div>
+
             {/* Client-side interactive content */}
             <NFTInteractiveContent
               tokenId={tokenId}
@@ -159,6 +157,7 @@ console.log("tokenUri", dbNft);
               tokenUri={dbNft.tokenUri}
               fileType={dbNft.fileType}
               nftId={dbNft.id}
+              imageUrl={dbNft.imageUrl}
             />
 
             {/* Optional extra info */}

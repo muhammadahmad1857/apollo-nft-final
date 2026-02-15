@@ -1,5 +1,5 @@
 "use client";
-import {  X, Share } from "lucide-react";
+import {   Share } from "lucide-react";
 import {  useState } from "react";
 import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
@@ -7,7 +7,6 @@ import { useAccount } from "wagmi";
 import { useBuyNFT } from "@/hooks/useMarketplace";
 import ShareModal from "./ShareModel";
 import LikeButton from "./nftLikes";
-import UniversalMediaViewer from "../ui/UniversalMediaViewer";
 import { parseEther } from "viem";
 import { transferOwnership } from "@/actions/nft";
 import {
@@ -19,6 +18,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { UniversalMediaIcon } from "../ui/UniversalMediaIcon";
 
 interface NFTInteractiveContentProps {
   tokenId: number;
@@ -30,6 +31,7 @@ interface NFTInteractiveContentProps {
   tokenUri: string;
   fileType?: string;
   nftId:number
+  imageUrl?: string ;
 }
 
 export default function NFTInteractiveContent({
@@ -41,13 +43,13 @@ export default function NFTInteractiveContent({
   ownerAddress,
   tokenUri,
   fileType,
-  nftId
+  nftId,
+  imageUrl
 }: NFTInteractiveContentProps) {
   const { address } = useAccount();
   const { data: user } = useUser(address);
   const { buyNFT, isPending } = useBuyNFT();
  
-  const [showVideo, setShowVideo] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showBuyConfirm, setShowBuyConfirm] = useState(false);
   const [isProcessingBuy, setIsProcessingBuy] = useState(false);
@@ -119,8 +121,18 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
     <>
       {/* Media Controls */}
       <div className="mt-8 flex flex-wrap gap-4 justify-center sm:justify-start">
-       <UniversalMediaViewer uri={media} tokenUri={tokenUri} fileType={fileType} className="w-full max-w-md rounded-lg shadow-lg" />
-        
+         {imageUrl ? (
+                        <Image
+                          src={imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
+                          alt={title || `NFT #${tokenId}`}
+                          width={800}
+                          height={800}
+                          className="w-full aspect-square object-cover"
+                          priority
+                        />
+                      ) : (
+                        <UniversalMediaIcon  tokenUri={tokenUri} uri={media} fileType={fileType} className="w-full aspect-square" />
+                      )}
 
         {/* <button
           onClick={handleLike}
@@ -150,7 +162,7 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
           ) : (
             <button
               onClick={() => setShowBuyConfirm(true)}
-              className="px-6 py-3 rounded-lg font-medium bg-cyan-600 text-white hover:bg-cyan-700 transition-colors disabled:pointer-events-none"
+              className="px-6 py-3 rounded-lg font-medium bg-cyan-600 text-white hover:bg-cyan-700 transition-colors disabled:bg-cyan-700/60 disabled:pointer-events-none"
               disabled={isPending || address === ownerAddress}
             >
               {address === ownerAddress
@@ -165,7 +177,7 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
       </div>
 
       {/* Fullscreen Video Modal */}
-      {showVideo && media && (
+      {/* {showVideo && media && (
         <div
           className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
           onClick={() => setShowVideo(false)}
@@ -180,7 +192,7 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
             <video controls autoPlay className="w-full rounded-xl shadow-2xl" src={media} />
           </div>
         </div>
-      )}
+      )} */}
 
       <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} tokenId={tokenId} title={title} name={name} />
 

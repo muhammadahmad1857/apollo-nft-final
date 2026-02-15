@@ -210,7 +210,7 @@ export default function ListMarketplacePage() {
                 <div>
                   <Label className="text-base font-semibold">Price (APOLLO)</Label>
                   <div className="relative mt-2">
-                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" >APL</div>
                     <Input
                       type="number"
                       placeholder="0.05"
@@ -236,7 +236,7 @@ export default function ListMarketplacePage() {
                       </p>
                     </div>
                     <div className="bg-slate-100 dark:bg-slate-800 rounded-full p-4">
-                      <DollarSign className="w-8 h-8 text-slate-600 dark:text-slate-400" />
+                      <div className="w-8 h-8 text-slate-600 dark:text-slate-400" >APL</div>
                     </div>
                   </div>
                 </div>
