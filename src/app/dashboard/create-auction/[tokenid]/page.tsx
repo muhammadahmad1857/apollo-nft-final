@@ -182,7 +182,7 @@ export default function CreateAuctionPage() {
 
         {/* Stepper */}
         <div className="mb-12">
-          <div className="flex bg-background backdrop-blur-lg items-center justify-center gap-4">
+          <div className="flex bg-background/20 backdrop-blur-lg items-center justify-center gap-4">
             {[1, 2].map((step) => (
               <div key={step} className="flex items-center">
                 <motion.div

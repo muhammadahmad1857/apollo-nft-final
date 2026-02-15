@@ -102,7 +102,7 @@ console.log("tokenUri", dbNft);
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left - Media / Cover */}
           <div className="space-y-6">
-            <div className="rounded-2xl overflow-hidden bg-linear-to-br from-zinc-900 to-black border border-zinc-800 shadow-2xl">
+            <div className="rounded-2xl  bg-linear-to-br from-zinc-900 to-black border border-zinc-800 shadow-2xl">
                   <UniversalMediaViewer uri={dbNft.mediaUrl} tokenUri={dbNft.tokenUri} fileType={dbNft.fileType} className="w-full max-w-md rounded-lg shadow-lg" />
 
             </div>
@@ -142,7 +142,7 @@ console.log("tokenUri", dbNft);
 
             <div className="prose dark:prose-invert max-w-none">
               <p className="text-lg leading-relaxed font-bold text-zinc-300">
-               <strong>Price:</strong> {dbNft.mintPrice && dbNft.mintPrice > 0 ? `${dbNft.mintPrice} APOLLO` : "Not for sale"}
+               <strong>Price:</strong> {(dbNft.mintPrice && dbNft.mintPrice > 0 )? `${dbNft.mintPrice} APOLLO` : "Not for sale"}
               </p>
             </div>
 
