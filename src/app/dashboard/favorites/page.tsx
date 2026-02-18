@@ -6,7 +6,7 @@ import { useUser } from "@/hooks/useUser";
 import { useLikedNFTs } from "@/hooks/useLikedNFTs";
 import NFTCard from "@/components/marketplace/nftCard";
 import Loader from "@/components/loader/index";
-import { Heart, Search } from "lucide-react";
+import { Heart, Search, List, Grid3x3, PlayCircle } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -15,14 +15,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { DraggableFavoritesList } from "@/components/playlist/DraggableFavoritesList";
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { isPlayableNFT } from "@/lib/media";
 
 type SortOption = "newest" | "oldest" | "price-low" | "price-high";
 type FilterStatus = "all" | "listed" | "unlisted";
 type FilterAuction = "all" | "active" | "settled";
+type ViewMode = "grid" | "playlist";
 
 export default function FavoritesPage() {
   const { address } = useAccount();
   const { data: user } = useUser(address || "");
+  const { playAll } = useAudioPlayer();
   
   const { data: likedNFTsData, isLoading, isError } = useLikedNFTs(user?.id || null);
   
@@ -30,6 +36,7 @@ export default function FavoritesPage() {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [filterAuction, setFilterAuction] = useState<FilterAuction>("all");
   const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("playlist");
 
   // Fun facts to display while loading
   const funFacts = [
@@ -76,7 +83,12 @@ export default function FavoritesPage() {
         return true;
       });
 
-    // Sort
+    // In playlist view, preserve position order (no sorting)
+    if (viewMode === "playlist") {
+      return filtered;
+    }
+
+    // In grid view, apply sorting
     filtered.sort((a, b) => {
       const nftA = a.nft;
       const nftB = b.nft;
@@ -97,7 +109,20 @@ export default function FavoritesPage() {
     });
 
     return filtered;
-  }, [likedNFTsData, sort, filterStatus, filterAuction, search]);
+  }, [likedNFTsData, sort, filterStatus, filterAuction, search, viewMode]);
+
+  // Get playable NFTs for the "Play All" button
+  const playableNFTs = useMemo(() => {
+    return filteredAndSortedNFTs
+      .filter(like => isPlayableNFT(like.nft))
+      .map(like => like.nft);
+  }, [filteredAndSortedNFTs]);
+
+  const handlePlayAll = () => {
+    if (playableNFTs.length > 0) {
+      playAll(playableNFTs);
+    }
+  };
 
   if (!address) {
     return (
@@ -120,16 +145,59 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-32">
       {/* Header */}
       <div className="space-y-4">
-        <div className="flex items-center justify-center gap-3">
-          <Heart className="w-8 h-8 fill-red-500 text-red-500" />
-          <h1 className="text-3xl font-bold">My Favorites</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Heart className="w-8 h-8 fill-red-500 text-red-500" />
+            <div>
+              <h1 className="text-3xl font-bold">My Favorites</h1>
+              <p className="text-zinc-200">
+                {likedNFTsData?.length || 0} NFT{likedNFTsData?.length !== 1 ? "s" : ""} liked
+                {playableNFTs.length > 0 && (
+                  <span className="ml-2 text-green-400">
+                    · {playableNFTs.length} playable
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* View Mode Toggle & Play All */}
+          <div className="flex items-center gap-2">
+            {playableNFTs.length > 0 && (
+              <Button
+                onClick={handlePlayAll}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              >
+                <PlayCircle className="w-5 h-5 mr-2" />
+                Play All ({playableNFTs.length})
+              </Button>
+            )}
+            
+            <div className="flex gap-1 bg-white/5 rounded-lg p-1">
+              <Button
+                variant={viewMode === "playlist" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("playlist")}
+                className={viewMode === "playlist" ? "bg-purple-500" : ""}
+              >
+                <List className="w-4 h-4 mr-2" />
+                Playlist
+              </Button>
+              <Button
+                variant={viewMode === "grid" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("grid")}
+                className={viewMode === "grid" ? "bg-purple-500" : ""}
+              >
+                <Grid3x3 className="w-4 h-4 mr-2" />
+                Grid
+              </Button>
+            </div>
+          </div>
         </div>
-        <p className="text-zinc-200">
-          {likedNFTsData?.length || 0} NFT{likedNFTsData?.length !== 1 ? "s" : ""} liked
-        </p>
       </div>
 
       {/* Filters and Search */}
@@ -180,7 +248,11 @@ export default function FavoritesPage() {
           {/* Sort */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Sort By</label>
-            <Select value={sort} onValueChange={(value) => setSort(value as SortOption)}>
+            <Select 
+              value={sort} 
+              onValueChange={(value) => setSort(value as SortOption)}
+              disabled={viewMode === "playlist"}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -191,6 +263,11 @@ export default function FavoritesPage() {
                 <SelectItem value="price-high">Price: High to Low</SelectItem>
               </SelectContent>
             </Select>
+            {viewMode === "playlist" && (
+              <p className="text-xs text-yellow-500/80">
+                Sorting disabled in playlist view. Drag to reorder.
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -215,8 +292,23 @@ export default function FavoritesPage() {
         </div>
       )}
 
-      {/* NFT Grid */}
-      {!isLoading && filteredAndSortedNFTs.length > 0 && (
+      {/* Playlist View */}
+      {!isLoading && filteredAndSortedNFTs.length > 0 && viewMode === "playlist" && user && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-white/60">
+              Drag and drop to reorder your playlist
+            </p>
+          </div>
+          <DraggableFavoritesList 
+            likedNFTs={filteredAndSortedNFTs} 
+            userId={user.id}
+          />
+        </div>
+      )}
+
+      {/* NFT Grid View */}
+      {!isLoading && filteredAndSortedNFTs.length > 0 && viewMode === "grid" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredAndSortedNFTs.map((like) => {
             const nft = like.nft;

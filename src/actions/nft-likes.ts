@@ -52,7 +52,21 @@ export async function toggleNFTLike(nftId: number, userId: number) {
       const count = await tx.nFTLike.count({ where: { nftId } });
       return { liked: false, count };
     } else {
-      await tx.nFTLike.create({ data: { nftId, userId } });
+      // Get the highest position and add 1
+      const maxPosition = await tx.nFTLike.findFirst({
+        where: { userId },
+        orderBy: { position: "desc" },
+        select: { position: true }
+      });
+      const newPosition = (maxPosition?.position ?? -1) + 1;
+      
+      await tx.nFTLike.create({ 
+        data: { 
+          nftId, 
+          userId, 
+          position: newPosition 
+        } 
+      });
       const count = await tx.nFTLike.count({ where: { nftId } });
       return { liked: true, count };
     }
@@ -76,6 +90,56 @@ export async function getLikedNFTsWithDetails(userId: number) {
         }
       }
     },
-    orderBy: { createdAt: "desc" }
+    orderBy: { position: "asc" }
+  });
+}
+
+/* --------------------
+   REORDER FAVORITES (PLAYLIST)
+-------------------- */
+export async function reorderFavorites(
+  userId: number, 
+  updates: { nftId: number; position: number }[]
+) {
+  return await db.$transaction(async (tx) => {
+    // Update each NFTLike position
+    for (const update of updates) {
+      await tx.nFTLike.update({
+        where: {
+          nftId_userId: {
+            nftId: update.nftId,
+            userId: userId
+          }
+        },
+        data: { position: update.position }
+      });
+    }
+    
+    return { success: true };
+  });
+}
+
+/* --------------------
+   INITIALIZE FAVORITES ORDER (FOR EXISTING USERS)
+-------------------- */
+export async function initializeFavoritesOrder(userId: number) {
+  const likes = await db.nFTLike.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" }
+  });
+  
+  return await db.$transaction(async (tx) => {
+    for (let i = 0; i < likes.length; i++) {
+      await tx.nFTLike.update({
+        where: {
+          nftId_userId: {
+            nftId: likes[i].nftId,
+            userId: userId
+          }
+        },
+        data: { position: i }
+      });
+    }
+    return { success: true, count: likes.length };
   });
 }

@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "@rainbow-me/rainbowkit/styles.css";
 import Provider from "@/components/provider";
+import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
+import { PersistentAudioPlayer } from "@/components/playlist/PersistentAudioPlayer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,8 +32,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Provider>
-          {children}
-          
+          <AudioPlayerProvider>
+            {children}
+            <PersistentAudioPlayer />
+          </AudioPlayerProvider>
         </Provider>
       </body>
     </html>
