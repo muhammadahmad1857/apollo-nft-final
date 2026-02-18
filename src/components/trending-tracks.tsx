@@ -1,11 +1,13 @@
 'use client'
 
-import { ArrowRight, Play } from 'lucide-react'
-import { easeOut, motion } from 'framer-motion'
+import { ArrowRight, Play, X } from 'lucide-react'
+import { easeOut, motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { getAllNFTs } from '@/actions/nft'
+import UniversalMediaViewer from '@/components/ui/UniversalMediaViewer'
+import Portal from '@/components/ui/Portal'
 
 interface TrackData {
   id: number
@@ -13,6 +15,7 @@ interface TrackData {
   artist: string
   price: string
   image: string
+  media: string
 }
 
 // Skeleton Loader Component
@@ -64,6 +67,7 @@ const itemVariants = {
 
 export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
   const [playingId, setPlayingId] = useState<number | null>(null)
+  const [selectedTrack, setSelectedTrack] = useState<TrackData | null>(null)
   const [tracks, setTracks] = useState<TrackData[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -96,9 +100,9 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
     fetchTracks()
   }, [])
 
-  const handlePlay = (id: number) => {
-    setPlayingId(id)
-    setTimeout(() => setPlayingId(null), 2000)
+  const handlePlay = (track: TrackData) => {
+    setSelectedTrack(track)
+    setPlayingId(track.id)
   }
 
   return (
@@ -145,7 +149,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
 
                   {/* Play Button Overlay */}
                   <button
-                    onClick={() => handlePlay(track.id)}
+                    onClick={() => handlePlay(track)}
                     className="absolute inset-0 flex items-center justify-center"
                   >
                     <motion.div
@@ -181,7 +185,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
                       <p className="text-lg font-semibold">{track.price}</p>
                     </div>
                     <motion.button
-                      onClick={() => handlePlay(track.id)}
+                      onClick={() => handlePlay(track)}
                       className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium transition-all duration-300"
                       whileTap={{ scale: 0.95 }}
                     >
@@ -219,6 +223,68 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
           </Link>
         </motion.div>
       </div>
+
+      {/* Media Viewer Modal */}
+      <AnimatePresence>
+        {selectedTrack && (
+          <Portal>
+            <motion.div
+              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setSelectedTrack(null)
+                setPlayingId(null)
+              }}
+            >
+              <div 
+                className="relative w-full max-w-3xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Close Button */}
+                <button
+                  onClick={() => {
+                    setSelectedTrack(null)
+                    setPlayingId(null)
+                  }}
+                  className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors z-50"
+                >
+                  <X size={28} />
+                </button>
+
+                {/* Media Viewer */}
+                <div className="bg-background rounded-2xl overflow-hidden border border-border">
+                  <UniversalMediaViewer
+                    uri={selectedTrack.media}
+                    className="w-full"
+                  />
+                  
+                  {/* Track Info Display */}
+                  <div className="p-6 border-t border-border">
+                    <h3 className="text-2xl font-bold mb-2">{selectedTrack.title}</h3>
+                    <p className="text-muted-foreground text-lg mb-4">{selectedTrack.artist}</p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Current Price</p>
+                        <p className="text-xl font-semibold">{selectedTrack.price}</p>
+                      </div>
+                      <Link href="/marketplace">
+                        <motion.button
+                          className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          View Details
+                        </motion.button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </Portal>
+        )}
+      </AnimatePresence>
     </section>
   )
 }

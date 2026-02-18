@@ -2,7 +2,7 @@
 
 import { easeOut, motion } from 'framer-motion'
 import Image from 'next/image'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, User } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { getTrendingSellers } from '@/actions/users'
@@ -77,7 +77,7 @@ export default function TrendingArtists() {
           name: seller.name || 'Unknown Artist',
           earnings: `${seller.totalLikes || 0} Likes`,
           tracks: `${seller.nftCount || 0} NFTs`,
-          image: seller.image || '/placeholder.svg',
+          image: seller.image ,
         }))
         
         setArtists(mappedArtists)
@@ -125,15 +125,25 @@ export default function TrendingArtists() {
                 className="group relative overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300"
               >
                 {/* Cover Image */}
-                <div className="relative h-48 overflow-hidden bg-muted">
-                  <Image
-                    src={artist.image || "/placeholder.svg"}
-                    alt={artist.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent" />
-                </div>
+             <div className="relative h-48 overflow-hidden bg-muted flex items-center justify-center">
+  {artist.image ? (
+    <>
+      <Image
+        src={artist.image}
+        alt={artist.name}
+        fill
+        className="object-cover group-hover:scale-105 transition-transform duration-500"
+      />
+      <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent" />
+    </>
+  ) : (
+    <div className="flex flex-col items-center justify-center text-muted-foreground">
+      <User size={64} strokeWidth={1.5} />
+      <span className="mt-2 text-sm">No Image</span>
+    </div>
+  )}
+</div>
+
 
                 {/* Artist Info */}
                 <div className="p-6">
