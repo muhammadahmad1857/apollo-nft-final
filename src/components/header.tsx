@@ -80,17 +80,7 @@ export default function Header() {
               <Search size={20} />
             </motion.button>
 
-            {/* Mobile menu button */}
-            <motion.button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="md:hidden p-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-              aria-label="Toggle menu"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              animate={sidebarOpen ? { rotate: 90 } : { rotate: 0 }}
-            >
-              <Menu size={20} />
-            </motion.button>
+           
 
             {/* Theme toggle */}
             {/* <motion.button
@@ -105,7 +95,18 @@ export default function Header() {
             <div className="flex gap-2 items-center">
               
             <CustomConnectButton/>
-           <Link href="/dashboard" passHref><Button>Dashboard</Button></Link>
+             {/* Mobile menu button */}
+            <motion.button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="md:hidden p-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              aria-label="Toggle menu"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              animate={sidebarOpen ? { rotate: 90 } : { rotate: 0 }}
+            >
+              <Menu size={20} />
+            </motion.button>
+           <Link href="/dashboard" passHref className="sm:block hidden"><Button>Dashboard</Button></Link>
             </div>
 
           </div>

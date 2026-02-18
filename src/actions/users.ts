@@ -158,7 +158,7 @@ export async function getTrendingSellers(limit: number = 2) {
       id: user.id,
       name: user.name,
       walletAddress: user.walletAddress,
-      image: user.avatarUrl || "/placeholder.svg",
+      image: user.avatarUrl,
       totalLikes,
       nftCount,
       createdAt: user.createdAt,

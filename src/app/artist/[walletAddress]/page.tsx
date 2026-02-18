@@ -15,9 +15,9 @@ export default async function ArtistPage({ params }: ArtistPageProps) {
   
   // Decode the wallet address in case it's URL encoded
   const decodedAddress = decodeURIComponent(walletAddress);
-  
+console.log("Decoded wallet address:", decodedAddress);
   const profileData = await getArtistProfileData(decodedAddress);
-
+console.log("Fetched profile data:", profileData);
   if (!profileData) {
     notFound();
   }

@@ -16,6 +16,7 @@ interface TrackData {
   price: string
   image: string
   media: string
+  tokenId:number
 }
 
 // Skeleton Loader Component
@@ -84,8 +85,9 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
           title: nft.title || nft.name || 'Untitled',
           artist: nft.owner?.name || 'Unknown Artist',
           price: nft.mintPrice ? `${(nft.mintPrice / 1000).toFixed(1)}K APL` : '0 APL',
-          image: nft.imageUrl.replace("ipfs://",`${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs`) || '/placeholder.svg',
-          media:nft.mediaUrl.replace("ipfs://",`${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs`) || '',
+          image: nft.imageUrl || '',
+          media:nft.mediaUrl || '',
+          tokenId:nft.tokenId,
         }))
         
         setTracks(mappedTracks)
@@ -144,7 +146,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
                 {/* Cover Image */}
                 <div className="relative h-48 overflow-hidden bg-muted">
                   <Image
-                    src={track.image || "/placeholder.svg"}
+                    src={track.image.replace("ipfs://",`${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs`)}
                     alt={track.title}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -273,7 +275,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
                         <p className="text-xs text-muted-foreground">Current Price</p>
                         <p className="text-xl font-semibold">{selectedTrack.price}</p>
                       </div>
-                      <Link href="/marketplace">
+                            <Link href={`/marketplace/${selectedTrack.tokenId}`}>
                         <motion.button
                           className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
                           whileTap={{ scale: 0.95 }}

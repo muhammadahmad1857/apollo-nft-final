@@ -59,7 +59,7 @@ export function MobileSearchModal({ isOpen, onClose }: MobileSearchModalProps) {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50 md:hidden rounded-t-2xl"
+            className="fixed bottom-0 left-0 top-0 bg-background border-t border-border z-50 md:hidden rounded-t-2xl"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">

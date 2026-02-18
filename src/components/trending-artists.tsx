@@ -79,7 +79,7 @@ export default function TrendingArtists() {
           walletAddress: seller.walletAddress,
           earnings: `${seller.totalLikes || 0} Likes`,
           tracks: `${seller.nftCount || 0} NFTs`,
-          image: seller.image ,
+          image: seller.image || '' ,
         }))
         
         setArtists(mappedArtists)
