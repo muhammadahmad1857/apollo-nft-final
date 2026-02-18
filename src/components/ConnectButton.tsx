@@ -45,7 +45,7 @@ export const CustomConnectButton = () => {
         const ready = mounted && authenticationStatus !== 'loading';
         const connected =
           ready && account && chain && (!authenticationStatus || authenticationStatus === 'authenticated');
-
+        console.log(account)
         return (
           <div
             {...(!ready && {
