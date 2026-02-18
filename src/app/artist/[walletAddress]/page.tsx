@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getArtistProfileData } from "@/actions/users";
 import { ArtistProfileHeader, ArtistProfileHeaderSkeleton } from "@/components/artist/ArtistProfileHeader";
 import { ArtistNFTGrid, ArtistNFTGridSkeleton } from "@/components/artist/ArtistNFTGrid";
+import Header from "@/components/header";
+import Footer from "@/components/footer";
 
 interface ArtistPageProps {
   params: {
@@ -24,6 +26,7 @@ console.log("Fetched profile data:", profileData);
 
   return (
     <div className="min-h-screen pt-24 pb-12">
+          <Header/>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-8">
           {/* Header */}
@@ -46,6 +49,8 @@ console.log("Fetched profile data:", profileData);
           </div>
         </div>
       </div>
+      <Footer/>
+
     </div>
   );
 }

@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { getAllNFTs } from '@/actions/nft'
 import UniversalMediaViewer from '@/components/ui/UniversalMediaViewer'
 import Portal from '@/components/ui/Portal'
+import { UniversalMediaIcon } from './ui/UniversalMediaIcon'
 
 interface TrackData {
   id: number
@@ -147,12 +148,12 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
               >
                 {/* Cover Image */}
                 <div className="relative h-48 overflow-hidden bg-muted">
-                  <Image
+                 { track.image?<Image
                     src={track.image.replace("ipfs://",`${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs`)}
                     alt={track.title}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+                  />:<UniversalMediaIcon fileType={track.fileType} uri={track.media}/>}
                   <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-all duration-300" />
 
                   {/* Play Button Overlay */}
@@ -190,7 +191,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-muted-foreground">Price</p>
-                      <p className="text-lg font-semibold">{track.price}</p>
+                      <p className="text-lg font-semibold">{track.price} APOLLO</p>
                     </div>
                     <motion.button
                       onClick={() => handlePlay(track)}
@@ -266,7 +267,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
                   <UniversalMediaViewer
                     uri={selectedTrack.media}
                     fileType={selectedTrack.fileType}
-                    
+
                     className="w-full"
                   />
                   
