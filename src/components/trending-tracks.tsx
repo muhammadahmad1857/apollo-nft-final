@@ -13,10 +13,11 @@ interface TrackData {
   id: number
   title: string
   artist: string
-  price: string
+  price: number
   image: string
   media: string
   tokenId:number
+  fileType:string
 }
 
 // Skeleton Loader Component
@@ -84,10 +85,11 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
           id: nft.id,
           title: nft.title || nft.name || 'Untitled',
           artist: nft.owner?.name || 'Unknown Artist',
-          price: nft.mintPrice ? `${(nft.mintPrice / 1000).toFixed(1)}K APL` : '0 APL',
+          price: nft.mintPrice,
           image: nft.imageUrl || '',
           media:nft.mediaUrl || '',
           tokenId:nft.tokenId,
+          fileType:nft.fileType,
         }))
         
         setTracks(mappedTracks)
@@ -263,6 +265,8 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
                 <div className="bg-background rounded-2xl overflow-hidden border border-border">
                   <UniversalMediaViewer
                     uri={selectedTrack.media}
+                    fileType={selectedTrack.fileType}
+                    
                     className="w-full"
                   />
                   

@@ -11,7 +11,7 @@ interface ArtistPageProps {
 }
 
 export default async function ArtistPage({ params }: ArtistPageProps) {
-  const { walletAddress } = params;
+  const { walletAddress } = await params;
   
   // Decode the wallet address in case it's URL encoded
   const decodedAddress = decodeURIComponent(walletAddress);
