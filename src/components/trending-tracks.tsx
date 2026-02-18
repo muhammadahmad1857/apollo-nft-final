@@ -73,13 +73,15 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
         const nfts = await getAllNFTs(false)
         // Get the 2 most recent listed NFTs
         const recentNFTs = nfts.slice(0, 2)
-        
+        console.log("recentNFTs",recentNFTs)
+
         const mappedTracks: TrackData[] = recentNFTs.map((nft) => ({
           id: nft.id,
           title: nft.title || nft.name || 'Untitled',
           artist: nft.owner?.name || 'Unknown Artist',
           price: nft.mintPrice ? `${(nft.mintPrice / 1000).toFixed(1)}K APL` : '0 APL',
-          image: nft.imageUrl || '/placeholder.svg',
+          image: nft.imageUrl.replace("ipfs://",`${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs`) || '/placeholder.svg',
+          media:nft.mediaUrl.replace("ipfs://",`${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs`) || '',
         }))
         
         setTracks(mappedTracks)

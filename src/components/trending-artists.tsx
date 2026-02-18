@@ -71,7 +71,7 @@ export default function TrendingArtists() {
     const fetchArtists = async () => {
       try {
         const sellers = await getTrendingSellers(2)
-        
+        console.log("sellers",sellers)
         const mappedArtists: ArtistData[] = sellers.map((seller) => ({
           id: seller.id,
           name: seller.name || 'Unknown Artist',
