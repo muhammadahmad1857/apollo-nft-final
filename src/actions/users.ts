@@ -132,3 +132,46 @@ export async function deleteUserByWallet(
 //     data: { approvedMarket: true },
 //   });
 // }
+
+/* ----------------------------------------
+   GET TRENDING SELLERS BY LIKES
+---------------------------------------- */
+export async function getTrendingSellers(limit: number = 2) {
+  // Get all users with their owned NFTs and likes
+  const users = await db.user.findMany({
+    include: {
+      
+      nftsOwned: {
+        include: {
+          likes: true, // Get all likes on each NFT
+        },
+      },
+    },
+  });
+
+  // Calculate total likes for each user and create seller objects
+  const sellersWithMetrics = users.map((user) => {
+    const totalLikes = user.nftsOwned.reduce((sum, nft) => sum + nft.likes.length, 0);
+    const nftCount = user.nftsOwned.length;
+
+    return {
+      id: user.id,
+      name: user.name,
+      image: user.avatarUrl || "/placeholder.svg",
+      totalLikes,
+      nftCount,
+      createdAt: user.createdAt,
+    };
+  });
+
+  // Sort by total likes (desc), then by createdAt (desc for more recent users)
+  sellersWithMetrics.sort((a, b) => {
+    if (a.totalLikes !== b.totalLikes) {
+      return b.totalLikes - a.totalLikes; // Descending by likes
+    }
+    return b.createdAt.getTime() - a.createdAt.getTime(); // Descending by createdAt (newer first)
+  });
+
+  // Return top N sellers
+  return sellersWithMetrics.slice(0, limit);
+}
