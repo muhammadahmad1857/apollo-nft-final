@@ -47,7 +47,7 @@ export function ArtistNFTGrid({ nfts }: ArtistNFTGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8">
       {nfts.map((nft) => {
         const isInAuction = nft.auction && !nft.auction.settled;
         const linkHref = isInAuction ? `/auction/${nft.tokenId}` : `/marketplace/${nft.tokenId}`;
@@ -57,25 +57,26 @@ export function ArtistNFTGrid({ nfts }: ArtistNFTGridProps) {
 
         return (
           <Link key={nft.id} href={linkHref}>
-            <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer border-border">
+            <Card className="group relative overflow-hidden rounded-2xl bg-background/80 backdrop-blur-sm border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_16px_50px_rgba(0,0,0,0.14)] transition-all duration-300 hover:-translate-y-1 cursor-pointer">
               <CardContent className="p-0">
                 {/* Media */}
                 <div className="relative aspect-square overflow-hidden bg-muted">
                   <UniversalMediaViewer
                     uri={nft.mediaUrl || nft.imageUrl || "/placeholder.svg"}
                     fileType={nft.fileType || "image"}
-                    className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover w-full h-full group-hover:scale-[1.04] transition-transform duration-500"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300" />
                   
                   {/* Status Badge */}
-                  <div className="absolute top-2 right-2">
+                  <div className="absolute top-3 right-3">
                     {isInAuction ? (
-                      <Badge variant="default" className="bg-blue-500 hover:bg-blue-600">
+                      <Badge className="bg-white/85 text-foreground border border-white/40 backdrop-blur-sm shadow-sm">
                         <Clock className="h-3 w-3 mr-1" />
                         Auction
                       </Badge>
                     ) : (
-                      <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                      <Badge className="bg-white/85 text-foreground border border-white/40 backdrop-blur-sm shadow-sm">
                         Listed
                       </Badge>
                     )}
@@ -83,7 +84,7 @@ export function ArtistNFTGrid({ nfts }: ArtistNFTGridProps) {
 
                   {/* Likes */}
                   {nft.likes.length > 0 && (
-                    <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-full">
+                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-white/85 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/40 shadow-sm">
                       <Heart className="h-3 w-3 fill-red-500 text-red-500" />
                       <span className="text-xs font-medium">{nft.likes.length}</span>
                     </div>
@@ -91,16 +92,15 @@ export function ArtistNFTGrid({ nfts }: ArtistNFTGridProps) {
                 </div>
 
                 {/* Info */}
-                <div className="p-4 space-y-2">
-                  <h3 className="font-semibold truncate">
+                <div className="px-5 pt-4 pb-5 space-y-3">
+                  <h3 className="text-lg font-semibold leading-snug line-clamp-2">
                     {nft.title || nft.name || `NFT #${nft.tokenId}`}
                   </h3>
-                  
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
                       {isInAuction ? "Current Bid" : "Price"}
                     </span>
-                    <span className="font-bold">
+                    <span className="text-lg font-semibold">
                       {price ? `${price} ETH` : "N/A"}
                     </span>
                   </div>
@@ -116,16 +116,16 @@ export function ArtistNFTGrid({ nfts }: ArtistNFTGridProps) {
 
 export function ArtistNFTGridSkeleton() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8">
       {[...Array(8)].map((_, i) => (
-        <Card key={i} className="overflow-hidden border-border">
+        <Card key={i} className="overflow-hidden rounded-2xl border border-white/10 bg-background/80">
           <CardContent className="p-0">
             <Skeleton className="aspect-square w-full" />
-            <div className="p-4 space-y-2">
-              <Skeleton className="h-5 w-3/4" />
+            <div className="px-5 pt-4 pb-5 space-y-3">
+              <Skeleton className="h-6 w-4/5" />
               <div className="flex items-center justify-between">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-5 w-20" />
               </div>
             </div>
           </CardContent>
