@@ -75,7 +75,7 @@ export function MobileSearchModal({ isOpen, onClose }: MobileSearchModalProps) {
             </div>
 
             {/* Search Content */}
-            <div className="p-4 max-h-[70vh] overflow-y-auto">
+            <div className="p-4 min-h-[70vh] overflow-y-auto">
               <SearchBar />
             </div>
           </motion.div>

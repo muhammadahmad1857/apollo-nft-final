@@ -246,7 +246,7 @@ export function SearchBar() {
 
       {/* Dropdown Results */}
       {isOpen && query.trim().length > 0 && (
-        <div className="absolute top-full mt-2 w-full bg-background border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+        <div className="absolute top-full mt-2 w-full bg-background/20 max-sm:backdrop-blur-md sm:bg-background border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
           {isLoading ? (
             <div className="p-2 space-y-2">
               {[...Array(3)].map((_, i) => (
