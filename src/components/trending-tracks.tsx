@@ -120,10 +120,14 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
 
         <motion.div 
           className="grid grid-cols-1 md:grid-cols-2 gap-8"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
+          // variants={containerVariants}
+          // initial="hidden"
+          // whileInView="visible"
+                  initial={{ opacity: 0, y: 20 }}  // move variants inline
+        animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: easeOut }}
+
+          // viewport={{ once: true, amount: 0.3 }}
         >
           {loading ? (
             <>

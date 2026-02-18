@@ -157,6 +157,7 @@ export async function getTrendingSellers(limit: number = 2) {
     return {
       id: user.id,
       name: user.name,
+      walletAddress: user.walletAddress,
       image: user.avatarUrl || "/placeholder.svg",
       totalLikes,
       nftCount,
@@ -174,4 +175,115 @@ export async function getTrendingSellers(limit: number = 2) {
 
   // Return top N sellers
   return sellersWithMetrics.slice(0, limit);
+}
+
+/* ----------------------------------------
+   SEARCH USERS
+---------------------------------------- */
+export async function searchUsers(query: string) {
+  if (!query || query.trim().length === 0) {
+    return [];
+  }
+
+  const users = await db.user.findMany({
+    where: {
+      OR: [
+        {
+          name: {
+            contains: query.trim(),
+            mode: "insensitive",
+          },
+        },
+        {
+          walletAddress: {
+            contains: query.trim(),
+            mode: "insensitive",
+          },
+        },
+      ],
+    },
+    select: {
+      id: true,
+      walletAddress: true,
+      name: true,
+      avatarUrl: true,
+    },
+    take: 15,
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return users;
+}
+
+/* ----------------------------------------
+   GET ARTIST PROFILE DATA
+---------------------------------------- */
+export async function getArtistProfileData(walletAddress: string) {
+  const user = await db.user.findUnique({
+    where: { walletAddress },
+    include: {
+      nftsOwned: {
+        where: {
+          OR: [
+            { isListed: true },
+            { auction: { isNot: null } },
+          ],
+        },
+        include: {
+          auction: {
+            include: {
+              highestBidder: {
+                select: {
+                  walletAddress: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          likes: true,
+          owner: {
+            select: {
+              walletAddress: true,
+              name: true,
+              avatarUrl: true,
+            },
+          },
+          creator: {
+            select: {
+              walletAddress: true,
+              name: true,
+              avatarUrl: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    return null;
+  }
+
+  // Calculate stats
+  const totalNFTs = user.nftsOwned.length;
+  const activeListings = user.nftsOwned.filter((nft) => nft.isListed && !nft.auction).length;
+  const activeAuctions = user.nftsOwned.filter((nft) => nft.auction).length;
+
+  return {
+    user: {
+      id: user.id,
+      walletAddress: user.walletAddress,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      email: user.email,
+    },
+    stats: {
+      totalNFTs,
+      activeListings,
+      activeAuctions,
+    },
+    nfts: user.nftsOwned,
+  };
 }

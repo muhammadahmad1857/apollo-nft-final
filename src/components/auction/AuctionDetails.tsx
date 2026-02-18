@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { AuctionModel, NFTModel, UserModel } from "@/generated/prisma/models";
 import Image from "next/image";
+import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "@/components/ui/button";
 import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
@@ -82,7 +83,7 @@ export function AuctionDetails({
           </p>
 
           {/* Seller Info */}
-          <div className="mt-4 flex items-center gap-3">
+          <Link href={`/artist/${auction.seller.walletAddress}`} className="mt-4 flex items-center gap-3 hover:opacity-80 transition-opacity w-fit">
             <Avatar className="w-12 h-12">
               <AvatarImage
                 src={auction.seller.avatarUrl ?? ""}
@@ -94,11 +95,11 @@ export function AuctionDetails({
             </Avatar>
             <div className="text-sm text-zinc-700 dark:text-zinc-300">
               Seller:{" "}
-              <span className="font-medium">
+              <span className="font-medium hover:underline">
                 {auction.seller.name || auction.seller.walletAddress}
               </span>
             </div>
-          </div>
+          </Link>
 
           {/* Auction Stats */}
           <div className="mt-4 grid grid-cols-2 gap-4 text-sm">

@@ -7,10 +7,13 @@ import Logo from './Logo'
 import {CustomConnectButton} from "./ConnectButton"
 import { Button } from './ui/button'
 import Link from 'next/link'
-import { Menu } from 'lucide-react'
+import { Menu, Search } from 'lucide-react'
+import { SearchBar } from './search/SearchBar'
+import { MobileSearchModal } from './search/MobileSearchModal'
 export default function Header() {
   const [mounted, setMounted] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [searchModalOpen, setSearchModalOpen] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -58,9 +61,25 @@ export default function Header() {
                 {item.label}
               </motion.a>
             ))}
+            
+            {/* Desktop Search Bar */}
+            <div className="ml-4">
+              <SearchBar />
+            </div>
           </nav>
 
           <div className="flex items-center gap-2">
+            {/* Mobile search button */}
+            <motion.button
+              onClick={() => setSearchModalOpen(true)}
+              className="md:hidden p-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              aria-label="Search"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <Search size={20} />
+            </motion.button>
+
             {/* Mobile menu button */}
             <motion.button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -97,6 +116,11 @@ export default function Header() {
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
         navItems={navItems}
+      />
+
+      <MobileSearchModal 
+        isOpen={searchModalOpen} 
+        onClose={() => setSearchModalOpen(false)} 
       />
     </>
   )

@@ -10,6 +10,7 @@ import { getTrendingSellers } from '@/actions/users'
 interface ArtistData {
   id: number
   name: string
+  walletAddress: string
   earnings: string
   tracks: string
   image: string
@@ -75,6 +76,7 @@ export default function TrendingArtists() {
         const mappedArtists: ArtistData[] = sellers.map((seller) => ({
           id: seller.id,
           name: seller.name || 'Unknown Artist',
+          walletAddress: seller.walletAddress,
           earnings: `${seller.totalLikes || 0} Likes`,
           tracks: `${seller.nftCount || 0} NFTs`,
           image: seller.image ,
@@ -107,10 +109,13 @@ export default function TrendingArtists() {
 
         <motion.div 
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
+          // variants={containerVariants}
+          // initial="hidden"
+          // whileInView="visible"
+          // viewport={{ once: true, amount: 0.3 }}
+                  transition={{ duration: 0.6, ease: easeOut }}
+        initial={{ opacity: 0, y: 20 }}  // move variants inline
+        animate={{ opacity: 1, y: 0 }}
         >
           {loading ? (
             <>
@@ -157,19 +162,20 @@ export default function TrendingArtists() {
                     </div>
                   </div>
 
-                  <motion.button
-                    onClick={() => console.log(`Viewing ${artist.name}`)}
-                    className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium flex items-center justify-between group/btn hover:bg-primary/90 transition-colors duration-300"
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    See His Work
-                    <motion.div
-                      animate={{ x: [0, 4, 0] }}
-                      transition={{ duration: 2, repeat: Infinity }}
+                  <Link href={`/artist/${artist.walletAddress}`}>
+                    <motion.button
+                      className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium flex items-center justify-between group/btn hover:bg-primary/90 transition-colors duration-300"
+                      whileTap={{ scale: 0.98 }}
                     >
-                      <ArrowRight size={18} />
-                    </motion.div>
-                  </motion.button>
+                      See His Work
+                      <motion.div
+                        animate={{ x: [0, 4, 0] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <ArrowRight size={18} />
+                      </motion.div>
+                    </motion.button>
+                  </Link>
                 </div>
               </motion.div>
             ))

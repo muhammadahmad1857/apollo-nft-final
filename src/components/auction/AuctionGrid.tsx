@@ -63,7 +63,14 @@ export default function AuctionGrid({
                 <h3 className="text-lg font-semibold">{auction.nft.title}</h3>
 
                 <p className="text-sm text-muted-foreground">
-                  Seller: {auction.seller.name}
+                  Seller:{" "}
+                  <Link 
+                    href={`/artist/${auction.seller.walletAddress}`}
+                    className="hover:text-primary hover:underline transition"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {auction.seller.name}
+                  </Link>
                 </p>
 
                 <div className="flex items-center justify-between">
