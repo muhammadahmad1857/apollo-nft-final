@@ -23,7 +23,7 @@ const PageHeading = ({title,description}:{
         />
       </h1>
       <p className="mt-4 text-zinc-600 dark:text-zinc-400">
-        {description || "Discover the latest Music track NFTs minted by artists."}
+        {description || "Discover the latest NFTs minted and added to Marketplace."}
       </p>
     </motion.div>
   );
