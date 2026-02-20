@@ -144,7 +144,7 @@ export function PlaylistNFTCard({
       >
         {nft.imageUrl ? (
           <Image
-            src={nft.imageUrl}
+            src={nft.imageUrl.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
             alt={nft.title || nft.name}
             fill
             className="object-cover"

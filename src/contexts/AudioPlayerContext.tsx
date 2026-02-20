@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from "react";
-import { isPlayableNFT } from "@/lib/media";
+import { getMediaType, isPlayableNFT } from "@/lib/media";
 
 // NFT type from the database with relations
 type NFTWithRelations = {
@@ -39,6 +39,7 @@ type AudioPlayerContextType = {
   currentTime: number;
   duration: number;
   isLoading: boolean;
+  currentMediaType: "audio" | "video" | "unknown";
   
   // Methods
   playTrack: (nft: NFTWithRelations, playlist?: NFTWithRelations[]) => void;
@@ -50,14 +51,16 @@ type AudioPlayerContextType = {
   seek: (time: number) => void;
   clearPlaylist: () => void;
   
-  // Audio element ref
+  // Media element refs
   audioRef: React.RefObject<HTMLAudioElement | null>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
 };
 
 const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined);
 
 export function AudioPlayerProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   
   const [currentTrack, setCurrentTrack] = useState<NFTWithRelations | null>(null);
   const [playlist, setPlaylist] = useState<NFTWithRelations[]>([]);
@@ -67,11 +70,87 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentMediaType, setCurrentMediaType] = useState<"audio" | "video" | "unknown">("unknown");
 
-  // Update audio element volume
+  const normalizeMediaUrl = useCallback((url: string | null | undefined) => {
+    if (!url) return "";
+
+    if (url.startsWith("ipfs://")) {
+      const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL;
+      if (!gatewayUrl) {
+        return url;
+      }
+      return url.replace("ipfs://", `https://${gatewayUrl}/ipfs/`);
+    }
+
+    return url;
+  }, []);
+
+  const getTrackMediaType = useCallback((track: NFTWithRelations | null): "audio" | "video" | "unknown" => {
+    if (!track) return "unknown";
+    const mediaType = getMediaType(track);
+    if (mediaType === "video") return "video";
+    if (mediaType === "audio") return "audio";
+    return "unknown";
+  }, []);
+
+  const getActiveMediaElement = useCallback(() => {
+    return currentMediaType === "video" ? videoRef.current : audioRef.current;
+  }, [currentMediaType]);
+
+  const stopInactiveMedia = useCallback((activeType: "audio" | "video" | "unknown") => {
+    if (activeType !== "audio" && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.removeAttribute("src");
+      audioRef.current.load();
+    }
+
+    if (activeType !== "video" && videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.removeAttribute("src");
+      videoRef.current.load();
+    }
+  }, []);
+
+  const loadAndPlayTrack = useCallback((track: NFTWithRelations) => {
+    const mediaType = getTrackMediaType(track);
+    const resolvedMediaUrl = normalizeMediaUrl(track.mediaUrl);
+
+    if (!resolvedMediaUrl || mediaType === "unknown") {
+      console.warn("Track has unsupported or missing media source:", track);
+      setIsPlaying(false);
+      return;
+    }
+
+    setCurrentMediaType(mediaType);
+    stopInactiveMedia(mediaType);
+
+    const targetElement = mediaType === "video" ? videoRef.current : audioRef.current;
+
+    if (!targetElement) {
+      console.warn("Media element is not mounted yet");
+      setIsPlaying(false);
+      return;
+    }
+
+    if (targetElement.src !== resolvedMediaUrl) {
+      targetElement.src = resolvedMediaUrl;
+      targetElement.load();
+    }
+
+    targetElement.play().catch(err => {
+      console.error("Error playing track:", err);
+      setIsPlaying(false);
+    });
+  }, [getTrackMediaType, normalizeMediaUrl, stopInactiveMedia]);
+
+  // Update media element volume
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
+    }
+    if (videoRef.current) {
+      videoRef.current.volume = volume;
     }
   }, [volume]);
 
@@ -94,14 +173,8 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
       if (isPlayableNFT(nextTrack)) {
         setCurrentIndex(nextIndex);
         setCurrentTrack(nextTrack);
-        
-        if (audioRef.current) {
-          audioRef.current.src = nextTrack.mediaUrl;
-          audioRef.current.play().catch(err => {
-            console.error("Error playing next track:", err);
-            setIsPlaying(false);
-          });
-        }
+
+        loadAndPlayTrack(nextTrack);
         return;
       }
 
@@ -112,15 +185,16 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     // No playable tracks found
     console.warn("No playable tracks found in playlist");
     setIsPlaying(false);
-  }, [playlist, currentIndex]);
+  }, [playlist, currentIndex, loadAndPlayTrack]);
 
   // Skip to previous track
   const playPrevious = useCallback(() => {
     if (playlist.length === 0) return;
 
     // If more than 3 seconds into track, restart it
-    if (currentTime > 3 && audioRef.current) {
-      audioRef.current.currentTime = 0;
+    const activeElement = getActiveMediaElement();
+    if (currentTime > 3 && activeElement) {
+      activeElement.currentTime = 0;
       return;
     }
 
@@ -139,14 +213,8 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
       if (isPlayableNFT(prevTrack)) {
         setCurrentIndex(prevIndex);
         setCurrentTrack(prevTrack);
-        
-        if (audioRef.current) {
-          audioRef.current.src = prevTrack.mediaUrl;
-          audioRef.current.play().catch(err => {
-            console.error("Error playing previous track:", err);
-            setIsPlaying(false);
-          });
-        }
+
+        loadAndPlayTrack(prevTrack);
         return;
       }
 
@@ -156,19 +224,19 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
 
     console.warn("No playable tracks found in playlist");
     setIsPlaying(false);
-  }, [playlist, currentIndex, currentTime]);
+  }, [playlist, currentIndex, currentTime, getActiveMediaElement, loadAndPlayTrack]);
 
-  // Audio event listeners
+  // Active media event listeners
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    const mediaElement = getActiveMediaElement();
+    if (!mediaElement) return;
 
     const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime);
+      setCurrentTime(mediaElement.currentTime);
     };
 
     const handleDurationChange = () => {
-      setDuration(audio.duration);
+      setDuration(mediaElement.duration);
     };
 
     const handleEnded = () => {
@@ -192,24 +260,24 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
       setIsPlaying(false);
     };
 
-    audio.addEventListener("timeupdate", handleTimeUpdate);
-    audio.addEventListener("durationchange", handleDurationChange);
-    audio.addEventListener("ended", handleEnded);
-    audio.addEventListener("loadstart", handleLoadStart);
-    audio.addEventListener("canplay", handleCanPlay);
-    audio.addEventListener("play", handlePlay);
-    audio.addEventListener("pause", handlePause);
+    mediaElement.addEventListener("timeupdate", handleTimeUpdate);
+    mediaElement.addEventListener("durationchange", handleDurationChange);
+    mediaElement.addEventListener("ended", handleEnded);
+    mediaElement.addEventListener("loadstart", handleLoadStart);
+    mediaElement.addEventListener("canplay", handleCanPlay);
+    mediaElement.addEventListener("play", handlePlay);
+    mediaElement.addEventListener("pause", handlePause);
 
     return () => {
-      audio.removeEventListener("timeupdate", handleTimeUpdate);
-      audio.removeEventListener("durationchange", handleDurationChange);
-      audio.removeEventListener("ended", handleEnded);
-      audio.removeEventListener("loadstart", handleLoadStart);
-      audio.removeEventListener("canplay", handleCanPlay);
-      audio.removeEventListener("play", handlePlay);
-      audio.removeEventListener("pause", handlePause);
+      mediaElement.removeEventListener("timeupdate", handleTimeUpdate);
+      mediaElement.removeEventListener("durationchange", handleDurationChange);
+      mediaElement.removeEventListener("ended", handleEnded);
+      mediaElement.removeEventListener("loadstart", handleLoadStart);
+      mediaElement.removeEventListener("canplay", handleCanPlay);
+      mediaElement.removeEventListener("play", handlePlay);
+      mediaElement.removeEventListener("pause", handlePause);
     };
-  }, [playNext]);
+  }, [currentMediaType, getActiveMediaElement, playNext]);
 
   // Play a single track
   const playTrack = useCallback((nft: NFTWithRelations, customPlaylist?: NFTWithRelations[]) => {
@@ -224,15 +292,9 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     setCurrentTrack(nft);
     setPlaylist(newPlaylist);
     setCurrentIndex(index);
-    
-    if (audioRef.current) {
-      audioRef.current.src = nft.mediaUrl;
-      audioRef.current.play().catch(err => {
-        console.error("Error playing audio:", err);
-        setIsPlaying(false);
-      });
-    }
-  }, []);
+
+    loadAndPlayTrack(nft);
+  }, [loadAndPlayTrack]);
 
   // Play all tracks in a playlist
   const playAll = useCallback((playlistToPlay: NFTWithRelations[], startIndex: number = 0) => {
@@ -250,30 +312,25 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     setPlaylist(playablePlaylist);
     setCurrentIndex(validStartIndex);
     setCurrentTrack(firstTrack);
-    
-    if (audioRef.current) {
-      audioRef.current.src = firstTrack.mediaUrl;
-      audioRef.current.play().catch(err => {
-        console.error("Error playing audio:", err);
-        setIsPlaying(false);
-      });
-    }
-  }, []);
+
+    loadAndPlayTrack(firstTrack);
+  }, [loadAndPlayTrack]);
 
 
   // Toggle play/pause
   const togglePlay = useCallback(() => {
-    if (!audioRef.current || !currentTrack) return;
+    const activeElement = getActiveMediaElement();
+    if (!activeElement || !currentTrack) return;
 
     if (isPlaying) {
-      audioRef.current.pause();
+      activeElement.pause();
     } else {
-      audioRef.current.play().catch(err => {
+      activeElement.play().catch(err => {
         console.error("Error toggling play:", err);
         setIsPlaying(false);
       });
     }
-  }, [isPlaying, currentTrack]);
+  }, [isPlaying, currentTrack, getActiveMediaElement]);
 
   // Set volume
   const setVolume = useCallback((newVolume: number) => {
@@ -283,18 +340,25 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
 
   // Seek to time
   const seek = useCallback((time: number) => {
-    if (audioRef.current && !isNaN(duration)) {
+    const activeElement = getActiveMediaElement();
+    if (activeElement && !isNaN(duration)) {
       const clampedTime = Math.max(0, Math.min(time, duration));
-      audioRef.current.currentTime = clampedTime;
+      activeElement.currentTime = clampedTime;
       setCurrentTime(clampedTime);
     }
-  }, [duration]);
+  }, [duration, getActiveMediaElement]);
 
   // Clear playlist and stop playback
   const clearPlaylist = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.src = "";
+      audioRef.current.removeAttribute("src");
+      audioRef.current.load();
+    }
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.removeAttribute("src");
+      videoRef.current.load();
     }
     setCurrentTrack(null);
     setPlaylist([]);
@@ -302,6 +366,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);
+    setCurrentMediaType("unknown");
   }, []);
 
   const value: AudioPlayerContextType = {
@@ -313,6 +378,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     currentTime,
     duration,
     isLoading,
+    currentMediaType,
     playTrack,
     playAll,
     playNext,
@@ -322,13 +388,12 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     seek,
     clearPlaylist,
     audioRef,
+    videoRef,
   };
 
   return (
     <AudioPlayerContext.Provider value={value}>
       {children}
-      {/* Hidden audio element */}
-      <audio ref={audioRef} preload="metadata" />
     </AudioPlayerContext.Provider>
   );
 }

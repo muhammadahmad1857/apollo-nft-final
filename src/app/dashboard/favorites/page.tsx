@@ -126,7 +126,7 @@ export default function FavoritesPage() {
 
   if (!address) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+      <div className="flex flex-col p-4 items-center justify-center min-h-screen gap-4">
         <Heart className="w-16 h-16 text-zinc-200" />
         <h1 className="text-2xl font-bold">Connect Your Wallet</h1>
         <p className="text-zinc-200">Please connect your wallet to view your favorites</p>
@@ -136,7 +136,7 @@ export default function FavoritesPage() {
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+      <div className="flex flex-col p-4 items-center justify-center min-h-screen gap-4">
         <Heart className="w-16 h-16 text-red-400" />
         <h1 className="text-2xl font-bold">Error Loading Favorites</h1>
         <p className="text-zinc-200">Something went wrong. Please try again.</p>
@@ -145,7 +145,7 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="space-y-6 pb-32">
+    <div className="space-y-6 pt-4 px-4 pb-32">
       {/* Header */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
