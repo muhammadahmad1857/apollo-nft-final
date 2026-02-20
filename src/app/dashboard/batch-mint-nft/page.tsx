@@ -39,18 +39,18 @@ const totalPriceHuman = !isPriceLoading
     setIsMinting(true);
 
     try {
-      const success = await mint({
-        tokenURIs: selectedFiles,
+      const { success } = await mint({
+        tokenURI: selectedFiles[0],
         quantity: selectedFiles.length,
         royaltyBps,
-        isBatch: true,
       });
 
-      // if (success) {
+      if (!success) {
+        return;
+      }
+
         setShowSuccess(true);
         removeRoyalty("BATCH"); // remove after successful mint
-
-      // }
     } finally {
       // ✅ ALWAYS stop loader (success OR error)
       setIsMinting(false);

@@ -279,7 +279,6 @@
 //   };
 // }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useCallback } from "react";
 import {
   useAccount,
@@ -289,7 +288,6 @@ import {
 } from "wagmi";
 import { toast } from "sonner";
 import type { BaseError } from "wagmi";
-import type { Abi } from "abitype";
 
 import { getFilesByWallet, updateFile } from "@/actions/files";
 import {
@@ -305,7 +303,9 @@ export function useMintContract() {
   const resolveRef = useRef<
     ((v: { success: boolean; tokenId?: bigint }) => void) | null
   >(null);
-  const rejectRef = useRef<(() => void) | null>(null);
+  const rejectRef = useRef<
+    ((v: { success: boolean; tokenId?: bigint }) => void) | null
+  >(null);
 
   const mintedUrisRef = useRef<string[]>([]);
   const [isBusy, setIsBusy] = useState(false);
@@ -362,39 +362,44 @@ export function useMintContract() {
   ---------------------------------------- */
   const mint = useCallback(
     async ({
-      tokenURIs,
+      tokenURI,
       quantity = 1,
       royaltyBps = 0,
-      isBatch = false,
     }: {
-      tokenURIs: string | string[];
+      tokenURI: string;
       quantity?: number;
       royaltyBps?: number;
-      isBatch?: boolean;
     }): Promise<{ success: boolean; tokenId?: bigint }> => {
       if (!isConnected) {
         toast.error("Connect your wallet first");
         return { success: false };
       }
 
-      const urisArray = Array.isArray(tokenURIs) ? tokenURIs : [tokenURIs];
-
-      if (!urisArray.length) {
+      if (!tokenURI || tokenURI.trim() === "") {
         toast.error("No token URI provided");
         return { success: false };
       }
+
+      if (!Number.isInteger(quantity) || quantity < 1) {
+        toast.error("Quantity must be a whole number greater than 0");
+        return { success: false };
+      }
+
+      const normalizedQuantity = quantity;
+      const isBatch = normalizedQuantity > 1;
+
 
       if (!mintPrice) {
         toast.error("Mint price not loaded yet");
         return { success: false };
       }
 
-      mintedUrisRef.current = urisArray;
+      mintedUrisRef.current = [tokenURI];
       setIsBusy(true);
 
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         resolveRef.current = resolve;
-        rejectRef.current = reject;
+        rejectRef.current = resolve;
 
         try {
           writeContract({
@@ -402,20 +407,20 @@ export function useMintContract() {
             abi,
             functionName: isBatch ? "batchMint" : "mint",
             args: isBatch
-              ? [urisArray[0], quantity, royaltyBps]
-              : [urisArray[0], royaltyBps],
+              ? [tokenURI, normalizedQuantity, royaltyBps]
+              : [tokenURI, royaltyBps],
             value: isBatch
-              ? (mintPrice as bigint) * BigInt(quantity)
+              ? (mintPrice as bigint) * BigInt(normalizedQuantity)
               : (mintPrice as bigint),
           });
         } catch (err) {
           console.error(err);
           setIsBusy(false);
-          reject();
+          resolve({ success: false });
         }
       });
     },
-    [abi, contractAddress, isConnected, writeContract, mintPrice],
+    [isConnected, writeContract, mintPrice],
   );
 
   /* ----------------------------------------
@@ -433,7 +438,7 @@ export function useMintContract() {
           : msg,
       );
 
-      rejectRef.current?.();
+      rejectRef.current?.({ success: false });
       resolveRef.current = null;
       rejectRef.current = null;
       setIsBusy(false);
@@ -513,7 +518,7 @@ export function useMintContract() {
         id: toastIdRef.current,
       });
 
-      rejectRef.current?.();
+      rejectRef.current?.({ success: false });
       resolveRef.current = null;
       rejectRef.current = null;
 

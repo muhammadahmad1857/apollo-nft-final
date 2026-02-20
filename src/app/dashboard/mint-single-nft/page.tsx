@@ -78,10 +78,14 @@ export default function MintSingleNFTPage() {
     setIsMinting(true);
 
     try {
-      const success = await mint({
-        tokenURIs: selectedFile,
+      const { success } = await mint({
+        tokenURI: selectedFile,
         royaltyBps,
       });
+
+      if (!success) {
+        return;
+      }
 
         setShowSuccess(true);
         removeRoyalty("SINGLE"); // remove after successful mint
