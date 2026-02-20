@@ -62,12 +62,14 @@ model NFTLike {
   id        Int     @id @default(autoincrement())
   nftId     Int
   userId    Int
+  position  Int     @default(0)
   createdAt DateTime @default(now())
 
   nft  NFT  @relation(fields: [nftId], references: [id])
   user User @relation(fields: [userId], references: [id])
 
   @@unique([nftId, userId])
+  @@index([userId, position])
 }
 
 model Auction {

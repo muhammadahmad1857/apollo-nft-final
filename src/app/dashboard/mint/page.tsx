@@ -115,7 +115,7 @@ export default function MintPage() {
 
       // Mint with metadata URL as token URI
       const {success,tokenId} = await mint({
-        tokenURIs: metadataUrl,
+        tokenURI: metadataUrl,
         royaltyBps: formValues.royaltyBps,
       });
 
