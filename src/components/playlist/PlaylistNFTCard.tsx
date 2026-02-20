@@ -3,7 +3,7 @@
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { isPlayableNFT, getMediaType } from "@/lib/media";
 import type { HTMLAttributes, MouseEvent } from "react";
-import { Play, Pause, GripVertical, Heart, Music, Video, Image as ImageIcon, FileText } from "lucide-react";
+import { Play, Pause, GripVertical, Heart, Music, Video, Image as ImageIcon, FileText, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -58,13 +58,14 @@ export function PlaylistNFTCard({
   index,
   totalItems 
 }: PlaylistNFTCardProps) {
-  const { currentTrack, isPlaying, playTrack } = useAudioPlayer();
+  const { currentTrack, isPlaying, isLoading, playTrack } = useAudioPlayer();
   const nft = likedNFT.nft;
   
   const isPlayable = isPlayableNFT(nft);
   const mediaType = getMediaType(nft);
   const isCurrentTrack = currentTrack?.id === nft.id;
   const isCurrentlyPlaying = isCurrentTrack && isPlaying;
+  const isCurrentlyLoading = isCurrentTrack && isLoading;
 
   const handlePlayClick = (e: MouseEvent) => {
     e.preventDefault();
@@ -115,16 +116,23 @@ export function PlaylistNFTCard({
         {isPlayable ? (
           <button
             onClick={handlePlayClick}
+            disabled={isCurrentlyLoading}
             className={`
               w-10 h-10 rounded-full flex items-center justify-center
-              transition-all duration-200
+              transition-all duration-200 relative
               ${isCurrentlyPlaying 
-                ? 'bg-purple-500 text-white' 
+                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/50' 
                 : 'bg-white/10 text-white/80 hover:bg-white/20 hover:scale-110'
               }
+              ${isCurrentlyLoading ? 'opacity-50 cursor-not-allowed' : ''}
             `}
           >
-            {isCurrentlyPlaying ? (
+            {isCurrentlyLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
+              </>
+            ) : isCurrentlyPlaying ? (
               <Pause className="w-4 h-4 fill-white" />
             ) : (
               <Play className="w-4 h-4 fill-white ml-0.5" />
@@ -155,14 +163,19 @@ export function PlaylistNFTCard({
           </div>
         )}
         
-        {/* Playing indicator overlay */}
-        {isCurrentlyPlaying && (
+        {/* Playing/Loading indicator overlay */}
+        {isCurrentlyLoading && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
+            <Loader2 className="w-6 h-6 text-purple-400 animate-spin" />
+          </div>
+        )}
+        {isCurrentlyPlaying && !isCurrentlyLoading && (
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
             <div className="flex gap-0.5">
               {[...Array(3)].map((_, i) => (
                 <motion.div
                   key={i}
-                  className="w-1 bg-white rounded-full"
+                  className="w-1 bg-purple-400 rounded-full"
                   animate={{
                     height: ["8px", "16px", "8px"],
                   }}
