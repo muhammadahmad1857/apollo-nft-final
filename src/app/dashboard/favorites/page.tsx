@@ -169,7 +169,6 @@ export default function FavoritesPage() {
             {playableNFTs.length > 0 && (
               <Button
                 onClick={handlePlayAll}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
               >
                 <PlayCircle className="w-5 h-5 mr-2" />
                 Play All ({playableNFTs.length})
@@ -336,7 +335,7 @@ export default function FavoritesPage() {
                   title={nft.title}
                   description={nft.description}
                   name={nft.creator?.name || "Unknown"}
-                  cover={nft.imageUrl}
+                  cover={nft.imageUrl.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
                   media={nft.mediaUrl}
                   minted={true}
                   tokenId={nft.tokenId}
