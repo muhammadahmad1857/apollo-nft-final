@@ -50,17 +50,6 @@ export function PersistentAudioPlayer() {
   // Calculate progress percentage
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
-  // Handle volume toggle
-  const toggleMute = () => {
-    if (isMuted) {
-      setVolume(0.7);
-      setIsMuted(false);
-    } else {
-      setVolume(0);
-      setIsMuted(true);
-    }
-  };
-
   // Handle volume change
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
@@ -229,7 +218,16 @@ export function PersistentAudioPlayer() {
                 {/* Volume control */}
                 <div className="flex items-center gap-2 flex-shrink-0 relative">
                   <button
-                    onClick={() => setShowVolumeSlider(prev => !prev)}
+                    onClick={() => {
+                      if (isMuted) {
+                        setVolume(0.7);
+                        setIsMuted(false);
+                      } else {
+                        setVolume(0);
+                        setIsMuted(true);
+                      }
+                      setShowVolumeSlider(true);
+                    }}
                     className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/80 hover:text-white"
                     title={isMuted ? "Unmute" : "Mute"}
                   >
