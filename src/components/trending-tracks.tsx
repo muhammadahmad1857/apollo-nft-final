@@ -149,7 +149,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
                 {/* Cover Image */}
                 <div className="relative h-48 overflow-hidden bg-muted">
                  { track.image?<Image
-                    src={track.image.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs`)}
+                    src={track.image.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
                     alt={track.title}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
