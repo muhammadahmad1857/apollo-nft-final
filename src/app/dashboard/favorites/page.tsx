@@ -36,7 +36,7 @@ export default function FavoritesPage() {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [filterAuction, setFilterAuction] = useState<FilterAuction>("all");
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("playlist");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   // Fun facts to display while loading
   const funFacts = [
@@ -155,17 +155,17 @@ export default function FavoritesPage() {
               <h1 className="text-3xl font-bold">My Favorites</h1>
               <p className="text-zinc-200">
                 {likedNFTsData?.length || 0} NFT{likedNFTsData?.length !== 1 ? "s" : ""} liked
-                {playableNFTs.length > 0 && (
+                {/* {playableNFTs.length > 0 && (
                   <span className="ml-2 text-green-400">
                     · {playableNFTs.length} playable
                   </span>
-                )}
+                )} */}
               </p>
             </div>
           </div>
 
           {/* View Mode Toggle & Play All */}
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             {playableNFTs.length > 0 && (
               <Button
                 onClick={handlePlayAll}
@@ -195,7 +195,7 @@ export default function FavoritesPage() {
                 Grid
               </Button>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -292,7 +292,7 @@ export default function FavoritesPage() {
       )}
 
       {/* Playlist View */}
-      {!isLoading && filteredAndSortedNFTs.length > 0 && viewMode === "playlist" && user && (
+      {/* {!isLoading && filteredAndSortedNFTs.length > 0 && viewMode === "playlist" && user && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-white/60">
@@ -304,7 +304,7 @@ export default function FavoritesPage() {
             userId={user.id}
           />
         </div>
-      )}
+      )} */}
 
       {/* NFT Grid View */}
       {!isLoading && filteredAndSortedNFTs.length > 0 && viewMode === "grid" && (
