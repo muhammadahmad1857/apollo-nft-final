@@ -165,7 +165,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
 
     if (targetElement.src !== resolvedMediaUrl) {
       targetElement.src = resolvedMediaUrl;
-      targetElement.preload = "auto";  // Switch to auto after user initiates
+      targetElement.preload = "metadata";  // Only load metadata; browser streams chunks via HTTP range requests
       targetElement.load();
     }
 

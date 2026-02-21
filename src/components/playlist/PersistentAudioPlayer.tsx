@@ -212,7 +212,12 @@ export function PersistentAudioPlayer() {
               {/* Playback controls */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
-                  onClick={playPrevious}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("[UI] Previous button clicked");
+                    playPrevious();
+                  }}
                   className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/80 hover:text-white"
                   title="Previous track"
                 >
@@ -220,7 +225,11 @@ export function PersistentAudioPlayer() {
                 </button>
 
                 <button
-                  onClick={togglePlay}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    togglePlay();
+                  }}
                   disabled={isLoading || isBuffering}
                   className="relative p-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                   title={isLoading || isBuffering ? "Loading..." : isPlaying ? "Pause" : "Play"}
@@ -238,7 +247,12 @@ export function PersistentAudioPlayer() {
                 </button>
 
                 <button
-                  onClick={playNext}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("[UI] Next button clicked");
+                    playNext();
+                  }}
                   className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/80 hover:text-white"
                   title="Next track"
                 >
@@ -387,14 +401,23 @@ export function PersistentAudioPlayer() {
                     {/* Center controls */}
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={playPrevious}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log("[UI] Modal previous button clicked");
+                          playPrevious();
+                        }}
                         className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
                       >
                         <SkipBack className="w-4 h-4" />
                       </button>
                       
                       <button
-                        onClick={togglePlay}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          togglePlay();
+                        }}
                         disabled={isLoading || isBuffering}
                         className="p-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg disabled:opacity-50"
                       >
@@ -408,7 +431,12 @@ export function PersistentAudioPlayer() {
                       </button>
                       
                       <button
-                        onClick={playNext}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log("[UI] Modal next button clicked");
+                          playNext();
+                        }}
                         className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
                       >
                         <SkipForward className="w-4 h-4" />
