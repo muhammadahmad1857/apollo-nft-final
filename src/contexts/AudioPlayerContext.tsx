@@ -172,14 +172,18 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     // DETERMINISTIC: Wait for metadata before playing
     await waitForLoadedMetadata(targetElement);
 
-    // Only play if still the current track (user didn't switch)
-    if (currentTrack?.id === track.id) {
-      targetElement.play().catch(err => {
-        console.error("Play error:", err);
-        setIsPlaying(false);
-      });
+    // Always attempt to play once metadata is ready
+    // If user switched tracks, a new loadAndPlayTrack call will handle the new track
+    console.log("[MEDIA] attempting play after metadata ready");
+    
+    try {
+      await targetElement.play();
+      console.log("[MEDIA] play() promise resolved successfully");
+    } catch (err) {
+      console.error("Play error:", err);
+      setIsPlaying(false);
     }
-  }, [getTrackMediaType, normalizeMediaUrl, stopInactiveMedia, currentTrack?.id]);
+  }, [getTrackMediaType, normalizeMediaUrl, stopInactiveMedia]);
 
   // Update media element volume
   useEffect(() => {
