@@ -27,6 +27,7 @@ export function PersistentAudioPlayer() {
     currentTime,
     duration,
     isLoading,
+    isBuffering,
     currentMediaType,
     togglePlay,
     playNext,
@@ -41,7 +42,6 @@ export function PersistentAudioPlayer() {
   const [isMuted, setIsMuted] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
-  const [isBuffering, setIsBuffering] = useState(false);
   const inlineVideoRef = useRef<HTMLVideoElement>(null);
 
   // Format time in MM:SS
@@ -88,51 +88,13 @@ export function PersistentAudioPlayer() {
     return url.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`);
   };
 
-  // Sync inline video with main video element
+  // REFINEMENT 4: Kill dual timeupdate sync - single media element source of truth
+  // Inline video paused when modal closes (no event listener duplication)
   useEffect(() => {
-    if (currentMediaType === "video" && inlineVideoRef.current && videoRef.current) {
-      const mainVideo = videoRef.current;
-      const inlineVideo = inlineVideoRef.current;
-      
-      // Sync source
-      if (mainVideo.src && inlineVideo.src !== mainVideo.src) {
-        inlineVideo.src = mainVideo.src;
-      }
-      
-      // Keep inline video in sync with main video
-      const syncVideoState = () => {
-        if (inlineVideo.paused !== mainVideo.paused) {
-          if (mainVideo.paused) {
-            inlineVideo.pause();
-          } else {
-            inlineVideo.play().catch(() => {});
-          }
-        }
-        inlineVideo.currentTime = mainVideo.currentTime;
-        inlineVideo.volume = mainVideo.volume;
-      };
-
-      const handleWaiting = () => setIsBuffering(true);
-      const handleCanPlay = () => setIsBuffering(false);
-      const handlePlaying = () => setIsBuffering(false);
-
-      mainVideo.addEventListener('timeupdate', syncVideoState);
-      mainVideo.addEventListener('play', syncVideoState);
-      mainVideo.addEventListener('pause', syncVideoState);
-      mainVideo.addEventListener('waiting', handleWaiting);
-      mainVideo.addEventListener('canplay', handleCanPlay);
-      mainVideo.addEventListener('playing', handlePlaying);
-      
-      return () => {
-        mainVideo.removeEventListener('timeupdate', syncVideoState);
-        mainVideo.removeEventListener('play', syncVideoState);
-        mainVideo.removeEventListener('pause', syncVideoState);
-        mainVideo.removeEventListener('waiting', handleWaiting);
-        mainVideo.removeEventListener('canplay', handleCanPlay);
-        mainVideo.removeEventListener('playing', handlePlaying);
-      };
+    if (!showVideoModal && inlineVideoRef.current) {
+      inlineVideoRef.current.pause();
     }
-  }, [currentMediaType, videoRef, currentTime]);
+  }, [showVideoModal]);
 
   if (!currentTrack) return null;
 

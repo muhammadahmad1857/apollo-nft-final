@@ -39,6 +39,7 @@ type AudioPlayerContextType = {
   currentTime: number;
   duration: number;
   isLoading: boolean;
+  isBuffering: boolean;
   currentMediaType: "audio" | "video" | "unknown";
   
   // Methods
@@ -58,6 +59,31 @@ type AudioPlayerContextType = {
 
 const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined);
 
+// REFINEMENT 1: Promise-based metadata loading - deterministic, prevents race conditions
+const waitForLoadedMetadata = (mediaElement: HTMLMediaElement): Promise<void> => {
+  return new Promise((resolve) => {
+    // If metadata already loaded and duration is valid, resolve immediately
+    if (mediaElement.readyState >= 1 && mediaElement.duration > 0 && !isNaN(mediaElement.duration)) {
+      resolve();
+      return;
+    }
+    
+    // Otherwise attach one-time listener
+    const handleLoadedMetadata = () => {
+      mediaElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      resolve();
+    };
+    
+    mediaElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+    
+    // Safety timeout: if metadata doesn't arrive in 15s, resolve anyway (corrupted file)
+    setTimeout(() => {
+      mediaElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      resolve();
+    }, 15000);
+  });
+};
+
 export function AudioPlayerProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -70,6 +96,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const [currentMediaType, setCurrentMediaType] = useState<"audio" | "video" | "unknown">("unknown");
 
   const normalizeMediaUrl = useCallback((url: string | null | undefined) => {
@@ -112,7 +139,8 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     }
   }, []);
 
-  const loadAndPlayTrack = useCallback((track: NFTWithRelations) => {
+  // REFINEMENT 1: Updated loadAndPlayTrack to use promise-based metadata loading
+  const loadAndPlayTrack = useCallback(async (track: NFTWithRelations) => {
     const mediaType = getTrackMediaType(track);
     const resolvedMediaUrl = normalizeMediaUrl(track.mediaUrl);
 
@@ -133,16 +161,25 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
       return;
     }
 
+    setIsLoading(true);
+
     if (targetElement.src !== resolvedMediaUrl) {
       targetElement.src = resolvedMediaUrl;
+      targetElement.preload = "auto";  // Switch to auto after user initiates
       targetElement.load();
     }
 
-    targetElement.play().catch(err => {
-      console.error("Error playing track:", err);
-      setIsPlaying(false);
-    });
-  }, [getTrackMediaType, normalizeMediaUrl, stopInactiveMedia]);
+    // DETERMINISTIC: Wait for metadata before playing
+    await waitForLoadedMetadata(targetElement);
+
+    // Only play if still the current track (user didn't switch)
+    if (currentTrack?.id === track.id) {
+      targetElement.play().catch(err => {
+        console.error("Play error:", err);
+        setIsPlaying(false);
+      });
+    }
+  }, [getTrackMediaType, normalizeMediaUrl, stopInactiveMedia, currentTrack?.id]);
 
   // Update media element volume
   useEffect(() => {
@@ -226,58 +263,119 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     setIsPlaying(false);
   }, [playlist, currentIndex, currentTime, getActiveMediaElement, loadAndPlayTrack]);
 
-  // Active media event listeners
+  // REFINEMENT 3 & 5: Stable event listener registration with comprehensive buffering tracking and debug logging
+  // Effect ONLY depends on currentMediaType to ensure listeners registered once per element
   useEffect(() => {
     const mediaElement = getActiveMediaElement();
     if (!mediaElement) return;
 
+    const DEBUG_MEDIA = true;  // REFINEMENT 5: Debug logging
+    
+    // Define handlers as stable references within the effect
     const handleTimeUpdate = () => {
       setCurrentTime(mediaElement.currentTime);
     };
 
     const handleDurationChange = () => {
-      setDuration(mediaElement.duration);
+      if (mediaElement.duration > 0 && !isNaN(mediaElement.duration)) {
+        void (DEBUG_MEDIA && console.log("[MEDIA] durationchange", { duration: mediaElement.duration }));
+        setDuration(mediaElement.duration);
+      }
+    };
+
+    const handleLoadedMetadata = () => {
+      void (DEBUG_MEDIA && console.log("[MEDIA] loadedmetadata", { duration: mediaElement.duration, readyState: mediaElement.readyState }));
+      // Duration should now be valid
+      if (mediaElement.duration > 0 && !isNaN(mediaElement.duration)) {
+        setDuration(mediaElement.duration);
+      }
+    };
+
+    const handleCanPlay = () => {
+      void (DEBUG_MEDIA && console.log("[MEDIA] canplay", { readyState: mediaElement.readyState }));
+      setIsLoading(false);
+    };
+
+    const handleCanPlayThrough = () => {
+      void (DEBUG_MEDIA && console.log("[MEDIA] canplaythrough", { readyState: mediaElement.readyState }));
+      setIsLoading(false);
+      setIsBuffering(false);
+    };
+
+    const handleWaiting = () => {
+      void (DEBUG_MEDIA && console.log("[MEDIA] waiting", { readyState: mediaElement.readyState }));
+      setIsBuffering(true);
+    };
+
+    const handleStalled = () => {
+      void (DEBUG_MEDIA && console.log("[MEDIA] stalled", { networkState: mediaElement.networkState }));
+      setIsBuffering(true);
+    };
+
+    const handlePlaying = () => {
+      void (DEBUG_MEDIA && console.log("[MEDIA] playing"));
+      setIsPlaying(true);
+      setIsBuffering(false);
     };
 
     const handleEnded = () => {
-      // Auto-advance to next track
+      void (DEBUG_MEDIA && console.log("[MEDIA] ended"));
       playNext();
     };
 
     const handleLoadStart = () => {
+      void (DEBUG_MEDIA && console.log("[MEDIA] loadstart"));
       setIsLoading(true);
     };
 
-    const handleCanPlay = () => {
-      setIsLoading(false);
-    };
-
     const handlePlay = () => {
+      void (DEBUG_MEDIA && console.log("[MEDIA] play"));
       setIsPlaying(true);
     };
 
     const handlePause = () => {
+      void (DEBUG_MEDIA && console.log("[MEDIA] pause"));
       setIsPlaying(false);
     };
 
+    const handleError = () => {
+      void (DEBUG_MEDIA && console.error("[MEDIA] error", mediaElement.error));
+      setIsLoading(false);
+      setIsPlaying(false);
+    };
+
+    // Register all listeners at once
     mediaElement.addEventListener("timeupdate", handleTimeUpdate);
     mediaElement.addEventListener("durationchange", handleDurationChange);
+    mediaElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+    mediaElement.addEventListener("canplay", handleCanPlay);
+    mediaElement.addEventListener("canplaythrough", handleCanPlayThrough);
+    mediaElement.addEventListener("waiting", handleWaiting);
+    mediaElement.addEventListener("stalled", handleStalled);
+    mediaElement.addEventListener("playing", handlePlaying);
     mediaElement.addEventListener("ended", handleEnded);
     mediaElement.addEventListener("loadstart", handleLoadStart);
-    mediaElement.addEventListener("canplay", handleCanPlay);
     mediaElement.addEventListener("play", handlePlay);
     mediaElement.addEventListener("pause", handlePause);
+    mediaElement.addEventListener("error", handleError);
 
+    // CRITICAL: Cleanup function removes ALL listeners
     return () => {
       mediaElement.removeEventListener("timeupdate", handleTimeUpdate);
       mediaElement.removeEventListener("durationchange", handleDurationChange);
+      mediaElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      mediaElement.removeEventListener("canplay", handleCanPlay);
+      mediaElement.removeEventListener("canplaythrough", handleCanPlayThrough);
+      mediaElement.removeEventListener("waiting", handleWaiting);
+      mediaElement.removeEventListener("stalled", handleStalled);
+      mediaElement.removeEventListener("playing", handlePlaying);
       mediaElement.removeEventListener("ended", handleEnded);
       mediaElement.removeEventListener("loadstart", handleLoadStart);
-      mediaElement.removeEventListener("canplay", handleCanPlay);
       mediaElement.removeEventListener("play", handlePlay);
       mediaElement.removeEventListener("pause", handlePause);
+      mediaElement.removeEventListener("error", handleError);
     };
-  }, [currentMediaType, getActiveMediaElement, playNext]);
+  }, [currentMediaType, playNext, getActiveMediaElement]);
 
   // Play a single track
   const playTrack = useCallback((nft: NFTWithRelations, customPlaylist?: NFTWithRelations[]) => {
@@ -378,6 +476,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     currentTime,
     duration,
     isLoading,
+    isBuffering,
     currentMediaType,
     playTrack,
     playAll,
