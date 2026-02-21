@@ -60,33 +60,37 @@ type AudioPlayerContextType = {
 const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined);
 
 // REFINEMENT 1: Promise-based metadata loading - deterministic, prevents race conditions
-const waitForLoadedMetadata = (mediaElement: HTMLMediaElement): Promise<void> => {
+const waitForLoadedMetadata = (mediaElement: HTMLMediaElement, timeoutMs: number = 5000): Promise<boolean> => {
   return new Promise((resolve) => {
     // If metadata already loaded and duration is valid, resolve immediately
     if (mediaElement.readyState >= 1 && mediaElement.duration > 0 && !isNaN(mediaElement.duration)) {
-      resolve();
+      console.log("[MEDIA] metadata already loaded, resolving immediately");
+      resolve(true);
       return;
     }
     
     // Otherwise attach one-time listener
     const handleLoadedMetadata = () => {
       mediaElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
-      resolve();
+      console.log("[MEDIA] metadata arrived via event");
+      resolve(true);
     };
     
     mediaElement.addEventListener("loadedmetadata", handleLoadedMetadata);
     
-    // Safety timeout: if metadata doesn't arrive in 15s, resolve anyway (corrupted file)
+    // Reduced timeout from 15s to 5s for faster retry on stalled connections
     setTimeout(() => {
       mediaElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
-      resolve();
-    }, 15000);
+      console.warn(`[MEDIA] metadata timeout after ${timeoutMs}ms - will retry on next attempt`);
+      resolve(false);
+    }, timeoutMs);
   });
 };
 
 export function AudioPlayerProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const loadAttemptRef = useRef(0);
   
   const [currentTrack, setCurrentTrack] = useState<NFTWithRelations | null>(null);
   const [playlist, setPlaylist] = useState<NFTWithRelations[]>([]);
@@ -147,6 +151,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     if (!resolvedMediaUrl || mediaType === "unknown") {
       console.warn("Track has unsupported or missing media source:", track);
       setIsPlaying(false);
+      setIsLoading(false);
       return;
     }
 
@@ -155,33 +160,65 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
 
     const targetElement = mediaType === "video" ? videoRef.current : audioRef.current;
 
+    // GUARD 1: Refs might not be mounted yet
     if (!targetElement) {
-      console.warn("Media element is not mounted yet");
+      console.warn("[MEDIA] refs not mounted - element not available yet");
       setIsPlaying(false);
+      setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
 
-    if (targetElement.src !== resolvedMediaUrl) {
-      targetElement.src = resolvedMediaUrl;
-      targetElement.preload = "metadata";  // Only load metadata; browser streams chunks via HTTP range requests
-      targetElement.load();
+    // GUARD 2: Prevent duplicate loads of the same URL
+    if (targetElement.src === resolvedMediaUrl && targetElement.readyState >= 1) {
+      console.log("[MEDIA] URL already loaded, attempting play directly");
+      try {
+        await targetElement.play();
+        console.log("[MEDIA] play() promise resolved successfully");
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Play error:", err);
+        setIsPlaying(false);
+        setIsLoading(false);
+      }
+      return;
     }
 
-    // DETERMINISTIC: Wait for metadata before playing
-    await waitForLoadedMetadata(targetElement);
+    // Start fresh load
+    targetElement.src = resolvedMediaUrl;
+    targetElement.preload = "metadata";
+    targetElement.load();
+    loadAttemptRef.current = 0;
+
+    // Wait for metadata (5s timeout for faster retry)
+    const metadataArrived = await waitForLoadedMetadata(targetElement, 5000);
+
+    // If metadata didn't arrive, retry once before giving up
+    if (!metadataArrived && loadAttemptRef.current === 0) {
+      console.warn("[MEDIA] metadata timeout on first attempt, retrying...");
+      loadAttemptRef.current += 1;
+      await new Promise(r => setTimeout(r, 500));
+      const retryMetadata = await waitForLoadedMetadata(targetElement, 5000);
+      if (!retryMetadata) {
+        console.error("[MEDIA] metadata still not available after retry - aborting playback");
+        setIsPlaying(false);
+        setIsLoading(false);
+        return;
+      }
+    }
 
     // Always attempt to play once metadata is ready
-    // If user switched tracks, a new loadAndPlayTrack call will handle the new track
     console.log("[MEDIA] attempting play after metadata ready");
     
     try {
       await targetElement.play();
       console.log("[MEDIA] play() promise resolved successfully");
+      setIsLoading(false);
     } catch (err) {
       console.error("Play error:", err);
       setIsPlaying(false);
+      setIsLoading(false);
     }
   }, [getTrackMediaType, normalizeMediaUrl, stopInactiveMedia]);
 
@@ -422,15 +459,31 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   // Toggle play/pause
   const togglePlay = useCallback(() => {
     const activeElement = getActiveMediaElement();
-    if (!activeElement || !currentTrack) return;
+    if (!activeElement) {
+      console.warn("[UI] togglePlay: no active media element");
+      return;
+    }
+    if (!currentTrack) {
+      console.warn("[UI] togglePlay: no current track");
+      return;
+    }
 
     if (isPlaying) {
+      console.log("[UI] pausing");
       activeElement.pause();
+      setIsPlaying(false);
+      setIsBuffering(false);
     } else {
-      activeElement.play().catch(err => {
-        console.error("Error toggling play:", err);
-        setIsPlaying(false);
-      });
+      console.log("[UI] playing");
+      activeElement.play()
+        .then(() => {
+          console.log("[UI] play() resolved");
+          setIsPlaying(true);
+        })
+        .catch(err => {
+          console.error("[UI] play error:", err);
+          setIsPlaying(false);
+        });
     }
   }, [isPlaying, currentTrack, getActiveMediaElement]);
 
