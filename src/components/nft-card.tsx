@@ -5,7 +5,6 @@ import { Button } from "../components/ui/button";
 import { Share, Edit, ListPlus, Heart } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAccount } from "wagmi";
 import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
@@ -22,7 +21,6 @@ interface NFTCardProps {
 }
 
 export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
-  const router = useRouter();
   const { address } = useAccount();
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
@@ -34,10 +32,6 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
     const url = `${window.location.origin}/marketplace/${nft.id}`;
     navigator.clipboard.writeText(url);
     toast.success("Link copied to clipboard!");
-  };
-
-  const handleEditPage = () => {
-    router.push(`/dashboard/token/${nft.id}/edit`);
   };
 
   return (
@@ -74,8 +68,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
               uri={nft.mediaUrl}
               fileType={nft.fileType}
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
-              className="w-full"
-              style={{ height: 320 }}
+              className="h-60 w-full sm:h-80"
             />
           </div>
         )}
@@ -185,10 +178,12 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center gap-2 w-full"
+              className="flex items-center justify-center gap-2 w-full"
               onClick={() => setShowPlaylistModal(true)}
             >
-              <ListPlus className="h-4 w-4" /> Add to Playlist
+              <ListPlus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add to Playlist</span>
+              <span className="sm:hidden">Playlist</span>
             </Button>
           </div>
         )}

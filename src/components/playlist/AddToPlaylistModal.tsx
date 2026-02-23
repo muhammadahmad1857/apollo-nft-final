@@ -25,6 +25,26 @@ interface Playlist {
   _count?: { items: number };
 }
 
+const isPlaylist = (value: unknown): value is Playlist => {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as { id?: unknown; name?: unknown };
+  return typeof candidate.id === "number" && typeof candidate.name === "string";
+};
+
+type ApiJson = Record<string, unknown>;
+
+const safeParseJson = async (response: Response) => {
+  const text = await response.text();
+  if (!text) return null;
+
+  try {
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === "object" ? (parsed as ApiJson) : null;
+  } catch {
+    return null;
+  }
+};
+
 export function AddToPlaylistModal({
   nftId,
   walletAddress,
@@ -49,7 +69,14 @@ export function AddToPlaylistModal({
     setFetchingPlaylists(true);
     try {
       const response = await fetch(`/api/playlists?walletAddress=${walletAddress}`);
-      const json = await response.json();
+      const json = await safeParseJson(response);
+      if (!response.ok) {
+        const errorMessage = typeof json?.error === "string" ? json.error : "Failed to load playlists";
+        toast.error(errorMessage);
+        setPlaylists([]);
+        setAddedPlaylists(new Set());
+        return;
+      }
       const data = Array.isArray(json?.playlists) ? json.playlists : [];
       setPlaylists(data);
 
@@ -61,7 +88,11 @@ export function AddToPlaylistModal({
             const itemsResponse = await fetch(
               `/api/playlists/${playlist.id}/items?walletAddress=${walletAddress}`
             );
-            const itemsJson = await itemsResponse.json();
+            const itemsJson = await safeParseJson(itemsResponse);
+            if (!itemsResponse.ok) {
+              console.error(`Failed to fetch playlist ${playlist.id} items`, itemsJson);
+              return;
+            }
             const items = Array.isArray(itemsJson?.items) ? itemsJson.items : [];
             if (items.some((item: { nftId: number }) => item.nftId === nftId)) {
               added.add(playlist.id);
@@ -94,14 +125,15 @@ export function AddToPlaylistModal({
         body: JSON.stringify({ walletAddress, name: newPlaylistName.trim() }),
       });
 
-      const json = await response.json();
+      const json = await safeParseJson(response);
       if (!response.ok) {
-        toast.error(json?.error || "Failed to create playlist");
+        const errorMessage = typeof json?.error === "string" ? json.error : "Failed to create playlist";
+        toast.error(errorMessage);
         return;
       }
 
       const created = json?.playlist;
-      if (created?.id && created?.name) {
+      if (isPlaylist(created)) {
         setPlaylists((prev) => [created, ...prev]);
         setNewPlaylistName("");
         toast.success("Playlist created");
@@ -132,9 +164,10 @@ export function AddToPlaylistModal({
           }
         );
 
-        const json = await response.json();
+        const json = await safeParseJson(response);
+        const errorMessage = typeof json?.error === "string" ? json.error : "Failed to remove from playlist";
         if (!response.ok) {
-          toast.error(json?.error || "Failed to remove from playlist");
+          toast.error(errorMessage);
           return;
         }
 
@@ -155,9 +188,10 @@ export function AddToPlaylistModal({
           }
         );
 
-        const json = await response.json();
+        const json = await safeParseJson(response);
+        const errorMessage = typeof json?.error === "string" ? json.error : "Failed to add to playlist";
         if (!response.ok) {
-          toast.error(json?.error || "Failed to add to playlist");
+          toast.error(errorMessage);
           return;
         }
 
@@ -178,7 +212,7 @@ export function AddToPlaylistModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-[95vw] max-w-md sm:w-full">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ListPlus className="h-5 w-5" />
@@ -190,7 +224,7 @@ export function AddToPlaylistModal({
           {/* Create New Playlist */}
           <div className="space-y-2">
             <p className="text-sm font-medium text-zinc-300">Create New Playlist</p>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Input
                 value={newPlaylistName}
                 onChange={(e) => setNewPlaylistName(e.target.value)}
@@ -202,6 +236,7 @@ export function AddToPlaylistModal({
                 onClick={handleCreatePlaylist}
                 disabled={isCreating || !newPlaylistName.trim()}
                 size="sm"
+                className="sm:w-auto"
               >
                 {isCreating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

@@ -231,7 +231,7 @@ const NFTCard = ({
           </p>
 
           {/* Actions */}
-          <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
               <LikeButton userId={userId||0} nftId={nftId} likes={likes} />
               {isOwner && (
@@ -240,11 +240,11 @@ const NFTCard = ({
                     e.stopPropagation();
                     setShowPlaylistModal(true);
                   }}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white border border-zinc-700"
+                  className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
                   aria-label="Add to playlist"
                 >
                   <ListPlus size={16} />
-                  <span>Playlist</span>
+                  <span className="hidden sm:inline">Playlist</span>
                 </button>
               )}
             </div>
@@ -253,21 +253,21 @@ const NFTCard = ({
                 e.stopPropagation();
                 setShowShareModal(true);
               }}
-              className="flex items-center gap-1.5 text-zinc-500 hover:text-blue-500 transition-colors"
+              className="flex items-center gap-1.5 text-zinc-500 hover:text-blue-500 transition-colors sm:ml-auto"
               aria-label="Share"
             >
               <Share size={18} />
-              <span className="text-sm font-medium">Share</span>
+              <span className="text-xs font-medium sm:text-sm">Share</span>
             </button>
             {!address ? (
-              <p className="ml-auto text-sm text-foreground">Connect wallet</p>
+              <p className="text-sm text-foreground sm:ml-auto">Connect wallet</p>
             ) : isAuctionActive ? (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   router.push(`/auction/${nftId}`);
                 }}
-                className="ml-auto px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+                className="sm:ml-auto px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
               >
                 View Auction
               </button>
@@ -277,7 +277,7 @@ const NFTCard = ({
                   e.stopPropagation();
                   setShowBuyConfirm(true);
                 }}
-                className="ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors disabled:pointer-events-none"
+                className="sm:ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors disabled:pointer-events-none"
                 disabled={isPending || !address || address === ownerAddress}
               >
                 {address === ownerAddress ? "My NFT" : isPending ? "Buying..." : "Buy"}
@@ -290,7 +290,7 @@ const NFTCard = ({
                   e.stopPropagation();
                   router.push(`/dashboard/list-marketplace/${tokenId}/`);
                 }}
-                className="ml-auto px-4 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors"
+                className="sm:ml-auto px-4 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors"
               >
                 Edit Listing
               </button>

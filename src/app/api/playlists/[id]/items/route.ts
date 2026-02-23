@@ -22,6 +22,37 @@ async function resolveUserAndPlaylist(req: NextRequest, id: string) {
   return { playlist };
 }
 
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const resolved = await resolveUserAndPlaylist(req, id);
+    if ("error" in resolved) return resolved.error;
+
+    const { playlist } = resolved;
+
+    const items = await db.playlistItem.findMany({
+      where: { playlistId: playlist.id },
+      orderBy: { position: "asc" },
+      include: {
+        nft: {
+          select: {
+            id: true,
+            tokenId: true,
+            title: true,
+            fileType: true,
+            mediaUrl: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({ items });
+  } catch (error) {
+    console.error("GET /api/playlists/[id]/items error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -65,10 +96,21 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if ("error" in resolved) return resolved.error;
 
     const playlistId = Number(id);
-    const nftId = Number(req.nextUrl.searchParams.get("nftId"));
+    const nftIdFromQuery = req.nextUrl.searchParams.get("nftId");
+    let nftIdFromBody: unknown = undefined;
+
+    try {
+      const body = await req.json();
+      nftIdFromBody = body?.nftId;
+    } catch {
+      nftIdFromBody = undefined;
+    }
+
+    const rawNftId = nftIdFromQuery ?? nftIdFromBody;
+    const nftId = Number(rawNftId);
 
     if (Number.isNaN(nftId)) {
-      return NextResponse.json({ error: "nftId query param is required" }, { status: 400 });
+      return NextResponse.json({ error: "nftId is required in query param or request body" }, { status: 400 });
     }
 
     await db.playlistItem.delete({

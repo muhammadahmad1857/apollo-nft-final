@@ -68,6 +68,19 @@ type AudioPlayerContextType = {
 
 const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined);
 
+const AUDIO_PLAYER_STORAGE_KEY = "apollo-audio-player-state";
+
+type PersistedAudioPlayerState = {
+  playlist: NFTWithRelations[];
+  currentTrack: NFTWithRelations | null;
+  currentIndex: number;
+  playbackRate: number;
+  volume: number;
+  currentMediaType: "audio" | "video" | "unknown";
+  currentTime: number;
+  isPlaying: boolean;
+};
+
 // REFINEMENT 1: Promise-based metadata loading - deterministic, prevents race conditions
 const waitForLoadedMetadata = (mediaElement: HTMLMediaElement, timeoutMs: number = 5000): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -113,6 +126,9 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   const [isBuffering, setIsBuffering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentMediaType, setCurrentMediaType] = useState<"audio" | "video" | "unknown">("unknown");
+  const [hasHydrated, setHasHydrated] = useState(false);
+  const [shouldResumeAfterHydration, setShouldResumeAfterHydration] = useState(false);
+  const pendingResumeTimeRef = useRef<number>(0);
 
   const normalizeMediaUrl = useCallback((url: string | null | undefined) => {
     return resolveIPFS(url || "");
@@ -129,6 +145,78 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   const getActiveMediaElement = useCallback(() => {
     return currentMediaType === "video" ? videoRef.current : audioRef.current;
   }, [currentMediaType]);
+
+  useEffect(() => {
+    try {
+      const rawState = localStorage.getItem(AUDIO_PLAYER_STORAGE_KEY);
+      if (!rawState) {
+        setHasHydrated(true);
+        return;
+      }
+
+      const parsed = JSON.parse(rawState) as Partial<PersistedAudioPlayerState>;
+      const restoredPlaylist = Array.isArray(parsed?.playlist) ? parsed.playlist : [];
+      const restoredTrack = parsed?.currentTrack && typeof parsed.currentTrack === "object" ? parsed.currentTrack : null;
+      const restoredIndex = typeof parsed?.currentIndex === "number" ? parsed.currentIndex : -1;
+      const restoredRate = typeof parsed?.playbackRate === "number" ? parsed.playbackRate : 1;
+      const restoredVolume = typeof parsed?.volume === "number" ? parsed.volume : 0.7;
+      const restoredMediaType =
+        parsed?.currentMediaType === "audio" || parsed?.currentMediaType === "video" || parsed?.currentMediaType === "unknown"
+          ? parsed.currentMediaType
+          : "unknown";
+      const restoredTime = typeof parsed?.currentTime === "number" ? parsed.currentTime : 0;
+      const restoredIsPlaying = parsed?.isPlaying === true;
+
+      setPlaylist(restoredPlaylist);
+      setCurrentTrack(restoredTrack);
+      setCurrentIndex(restoredIndex);
+      setPlaybackRateState(restoredRate);
+      setVolumeState(Math.max(0, Math.min(1, restoredVolume)));
+      setCurrentMediaType(restoredMediaType);
+      setCurrentTime(Math.max(0, restoredTime));
+      setIsPlaying(restoredIsPlaying);
+
+      if (restoredTrack && restoredIsPlaying && isPlayableNFT(restoredTrack)) {
+        pendingResumeTimeRef.current = Math.max(0, restoredTime);
+        setShouldResumeAfterHydration(true);
+      }
+    } catch (error) {
+      console.warn("Failed to hydrate audio player state", error);
+    } finally {
+      setHasHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+
+    const stateToPersist: PersistedAudioPlayerState = {
+      playlist,
+      currentTrack,
+      currentIndex,
+      playbackRate,
+      volume,
+      currentMediaType,
+      currentTime,
+      isPlaying,
+    };
+
+    try {
+      localStorage.setItem(AUDIO_PLAYER_STORAGE_KEY, JSON.stringify(stateToPersist));
+    } catch (error) {
+      console.warn("Failed to persist audio player state", error);
+    }
+  }, [
+    hasHydrated,
+    playlist,
+    currentTrack,
+    currentIndex,
+    playbackRate,
+    volume,
+    currentMediaType,
+    currentTime,
+    isPlaying,
+  ]);
 
   const stopInactiveMedia = useCallback((activeType: "audio" | "video" | "unknown") => {
     if (activeType !== "audio" && audioRef.current) {
@@ -228,6 +316,36 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
       setIsLoading(false);
     }
   }, [getTrackMediaType, normalizeMediaUrl, stopInactiveMedia]);
+
+  useEffect(() => {
+    if (!hasHydrated || !shouldResumeAfterHydration || !currentTrack) return;
+
+    const expectedMediaType = getTrackMediaType(currentTrack);
+    const targetElement = expectedMediaType === "video" ? videoRef.current : audioRef.current;
+
+    if (!targetElement) return;
+
+    let isCancelled = false;
+
+    const resumePlayback = async () => {
+      await loadAndPlayTrack(currentTrack);
+      if (isCancelled) return;
+
+      const activeElement = expectedMediaType === "video" ? videoRef.current : audioRef.current;
+      if (activeElement && pendingResumeTimeRef.current > 0) {
+        activeElement.currentTime = pendingResumeTimeRef.current;
+      }
+
+      setShouldResumeAfterHydration(false);
+      pendingResumeTimeRef.current = 0;
+    };
+
+    void resumePlayback();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [hasHydrated, shouldResumeAfterHydration, currentTrack, getTrackMediaType, loadAndPlayTrack]);
 
   // Update media element volume
   useEffect(() => {
@@ -561,6 +679,11 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     setCurrentTime(0);
     setDuration(0);
     setCurrentMediaType("unknown");
+    try {
+      localStorage.removeItem(AUDIO_PLAYER_STORAGE_KEY);
+    } catch (error) {
+      console.warn("Failed to clear persisted audio player state", error);
+    }
   }, []);
 
   const value: AudioPlayerContextType = {
