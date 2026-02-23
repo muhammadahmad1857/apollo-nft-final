@@ -2,7 +2,7 @@
 
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Share, Edit, ListPlus } from "lucide-react";
+import { Share, Edit, ListPlus, Heart } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
