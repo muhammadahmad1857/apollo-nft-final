@@ -31,7 +31,17 @@ export function PlaylistView({ items, mode, view }: PlaylistViewProps) {
   });
 
   if (playable.length === 0) {
-    return <p className="text-sm text-zinc-400">No playable media in this filter.</p>;
+    return (
+      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-yellow-500/30 bg-yellow-500/5 p-8 text-center">
+        <PlayCircle className="mb-2 h-12 w-12 text-yellow-500/40" />
+        <p className="font-medium text-yellow-500">No playable media found</p>
+        <p className="mt-1 text-xs text-zinc-400">
+          {mode === "all" 
+            ? "This playlist contains no audio or video files"
+            : `No ${mode} files in this playlist`}
+        </p>
+      </div>
+    );
   }
 
   return (

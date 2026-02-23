@@ -2,17 +2,18 @@
 
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Share, Edit, Heart } from "lucide-react";
+import { Share, Edit, ListPlus } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAccount } from "wagmi";
 import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 
 import { UniversalMediaIcon } from "./ui/UniversalMediaIcon";
 import { NFTLikeModel, NFTModel } from "@/generated/prisma/models";
 import Link from "next/link";
+import { AddToPlaylistModal } from "./playlist/AddToPlaylistModal";
 
 interface NFTCardProps {
   nft: NFTModel & { likes?: NFTLikeModel[] };
@@ -23,29 +24,7 @@ interface NFTCardProps {
 export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
   const router = useRouter();
   const { address } = useAccount();
-  const [playlists, setPlaylists] = useState<{ id: number; name: string }[]>([]);
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState<number | null>(null);
-  const [isAddingToPlaylist, setIsAddingToPlaylist] = useState(false);
-  const [newPlaylistName, setNewPlaylistName] = useState("");
-  const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
-
-  useEffect(() => {
-    const fetchPlaylists = async () => {
-      if (!owner || !address) return;
-
-      try {
-        const response = await fetch(`/api/playlists?walletAddress=${address}`);
-        const json = await response.json();
-        const data = Array.isArray(json?.playlists) ? json.playlists : [];
-        setPlaylists(data);
-        setSelectedPlaylistId(data[0]?.id ?? null);
-      } catch (error) {
-        console.error("Failed to fetch playlists", error);
-      }
-    };
-
-    void fetchPlaylists();
-  }, [address, owner]);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   const handleShare = () => {
     if (!nft.isListed) {
@@ -59,70 +38,6 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
 
   const handleEditPage = () => {
     router.push(`/dashboard/token/${nft.id}/edit`);
-  };
-
-  const handleAddToPlaylist = async () => {
-    if (!address || !selectedPlaylistId) {
-      toast.error("Select a playlist first");
-      return;
-    }
-
-    setIsAddingToPlaylist(true);
-    try {
-      const response = await fetch(`/api/playlists/${selectedPlaylistId}/items?walletAddress=${address}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nftId: nft.id }),
-      });
-
-      const json = await response.json();
-      if (!response.ok) {
-        toast.error(json?.error || "Failed to add to playlist");
-        return;
-      }
-
-      toast.success("Added to playlist");
-    } catch (error) {
-      console.error("Failed to add to playlist", error);
-      toast.error("Failed to add to playlist");
-    } finally {
-      setIsAddingToPlaylist(false);
-    }
-  };
-
-  const handleCreatePlaylist = async () => {
-    if (!address || !newPlaylistName.trim()) {
-      toast.error("Enter playlist name");
-      return;
-    }
-
-    setIsCreatingPlaylist(true);
-    try {
-      const response = await fetch("/api/playlists", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ walletAddress: address, name: newPlaylistName.trim() }),
-      });
-
-      const json = await response.json();
-      if (!response.ok) {
-        toast.error(json?.error || "Failed to create playlist");
-        return;
-      }
-
-      const created = json?.playlist;
-      if (created?.id && created?.name) {
-        setPlaylists((prev) => [...prev, { id: created.id, name: created.name }]);
-        setSelectedPlaylistId(created.id);
-      }
-      setNewPlaylistName("");
-      toast.success("Playlist created");
-    } catch (error) {
-      console.error("Failed to create playlist", error);
-      toast.error("Failed to create playlist");
-    } finally {
-      setIsCreatingPlaylist(false);
-    }
   };
 
   return (
@@ -267,53 +182,14 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
               </p>
             )}
 
-            <div className="flex items-center gap-2">
-              <div className="flex flex-1 flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <select
-                    value={selectedPlaylistId ?? ""}
-                    onChange={(e) => setSelectedPlaylistId(Number(e.target.value))}
-                    className="h-9 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-2 text-sm"
-                  >
-                    {playlists.length === 0 ? (
-                      <option value="">No playlists</option>
-                    ) : (
-                      playlists.map((playlist) => (
-                        <option key={playlist.id} value={playlist.id}>
-                          {playlist.name}
-                        </option>
-                      ))
-                    )}
-                  </select>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={isAddingToPlaylist || playlists.length === 0}
-                    onClick={handleAddToPlaylist}
-                  >
-                    {isAddingToPlaylist ? "Adding..." : "Add to Playlist"}
-                  </Button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    value={newPlaylistName}
-                    onChange={(e) => setNewPlaylistName(e.target.value)}
-                    placeholder="New playlist name"
-                    className="h-9 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-2 text-sm"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={isCreatingPlaylist || !newPlaylistName.trim()}
-                    onClick={handleCreatePlaylist}
-                  >
-                    {isCreatingPlaylist ? "Creating..." : "Create"}
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 w-full"
+              onClick={() => setShowPlaylistModal(true)}
+            >
+              <ListPlus className="h-4 w-4" /> Add to Playlist
+            </Button>
           </div>
         )}
 
@@ -328,6 +204,15 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
           </Button>
         )}
       </div>
+
+      {address && owner && (
+        <AddToPlaylistModal
+          nftId={nft.id}
+          walletAddress={address}
+          open={showPlaylistModal}
+          onOpenChange={setShowPlaylistModal}
+        />
+      )}
     </Card>
   );
 }

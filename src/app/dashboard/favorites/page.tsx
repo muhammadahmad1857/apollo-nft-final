@@ -174,13 +174,17 @@ export default function FavoritesPage() {
 
           {/* View Mode Toggle & Play All */}
           <div className="flex items-center gap-2">
-            {playableNFTs.length > 0 && (
+            {playableNFTs.length > 0 ? (
               <Button
                 onClick={handlePlayAll}
               >
                 <PlayCircle className="w-5 h-5 mr-2" />
                 Play All ({playableNFTs.length})
               </Button>
+            ) : likedNFTsData && likedNFTsData.length > 0 && (
+              <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 px-3 py-1.5">
+                <p className="text-xs text-yellow-500">No playable media found</p>
+              </div>
             )}
             
             <div className="flex gap-1 bg-white/5 rounded-lg p-1">

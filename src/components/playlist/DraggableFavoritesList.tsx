@@ -52,10 +52,21 @@ export function DraggableFavoritesList({ likedNFTs, userId }: { likedNFTs: Liked
 
   return (
     <div className="space-y-3">
+      {playableItems.length === 0 && items.length > 0 && (
+        <div className="rounded-lg border border-dashed border-yellow-500/30 bg-yellow-500/5 px-4 py-2">
+          <p className="text-sm text-yellow-500">No playable media in your favorites</p>
+        </div>
+      )}
+      
       <div className="flex items-center justify-end gap-2">
-        <Button size="sm" variant="outline" onClick={() => playableItems.length > 0 && playQueue(playableItems)}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => playableItems.length > 0 && playQueue(playableItems)}
+          disabled={playableItems.length === 0}
+        >
           <PlayCircle className="mr-2 h-4 w-4" />
-          Play All
+          Play All {playableItems.length > 0 && `(${playableItems.length})`}
         </Button>
         <Button size="sm" onClick={persistOrder} disabled={saving}>
           {saving ? "Saving..." : "Save Order"}
