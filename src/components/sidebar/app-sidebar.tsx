@@ -10,6 +10,7 @@ import {
   GalleryVerticalEnd,
   Heart,
   LayoutDashboard,
+  ListMusic,
   
   ShoppingCart,
   User,
@@ -128,6 +129,11 @@ const data = {
       url: "/dashboard/favorites",
       icon: Heart,
       
+    },
+    {
+      title: "Playlists",
+      url: "/dashboard/playlist",
+      icon: ListMusic,
     },
     {
       title: "User Settings",

@@ -43,6 +43,7 @@ export interface NFTCardProps {
   fileType?: string;
   userId?:number
   address:string
+  onCardClick?: () => void;
   auction: {
     id: number;
     startTime: string;
@@ -71,7 +72,8 @@ const NFTCard = ({
   auctionApproved,
   fileType,
   userId,
-  address
+  address,
+  onCardClick
 }: NFTCardProps) => {
   const { buyNFT, isPending } = useBuyNFT();
   const router = useRouter();
@@ -112,6 +114,11 @@ const NFTCard = ({
   };
 
   const handleCardClick = () => {
+    if (onCardClick) {
+      onCardClick();
+      return;
+    }
+
     if (isAuctionActive) {
       router.push(`/auction/${nftId}`);
     } else {

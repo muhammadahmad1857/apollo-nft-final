@@ -36,7 +36,7 @@ export function isPlayableNFT(nft: { fileType?: string | null; mediaUrl?: string
   // Check fileType for audio or video MIME types
   if (nft.fileType) {
     const fileType = nft.fileType.toLowerCase();
-    if (fileType.startsWith("audio/") || fileType.startsWith("video/")) {
+    if (fileType.startsWith("audio") || fileType.startsWith("video")) {
       return true;
     }
   }
@@ -57,9 +57,9 @@ export function isPlayableNFT(nft: { fileType?: string | null; mediaUrl?: string
 export function getMediaType(nft: { fileType?: string | null; mediaUrl?: string | null }): string {
   if (nft.fileType) {
     const fileType = nft.fileType.toLowerCase();
-    if (fileType.startsWith("audio/")) return "audio";
-    if (fileType.startsWith("video/")) return "video";
-    if (fileType.startsWith("image/")) return "image";
+    if (fileType.startsWith("audio")) return "audio";
+    if (fileType.startsWith("video")) return "video";
+    if (fileType.startsWith("image")) return "image";
     if (fileType.includes("pdf") || fileType.includes("document")) return "document";
   }
   

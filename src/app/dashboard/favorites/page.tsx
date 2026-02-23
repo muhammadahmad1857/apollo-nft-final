@@ -19,24 +19,27 @@ import { Button } from "@/components/ui/button";
 import { DraggableFavoritesList } from "@/components/playlist/DraggableFavoritesList";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { isPlayableNFT } from "@/lib/media";
+import { resolveIPFS } from "@/lib/ipfs";
 
 type SortOption = "newest" | "oldest" | "price-low" | "price-high";
 type FilterStatus = "all" | "listed" | "unlisted";
 type FilterAuction = "all" | "active" | "settled";
-type ViewMode = "grid" | "playlist";
+type FilterMediaMode = "audio" | "video" | "all";
+type ViewMode = "grid" | "list";
 
 export default function FavoritesPage() {
   const { address } = useAccount();
   const { data: user } = useUser(address || "");
-  const { playAll } = useAudioPlayer();
+  const { playAll, playSingle } = useAudioPlayer();
   
   const { data: likedNFTsData, isLoading, isError } = useLikedNFTs(user?.id || null);
   
   const [sort, setSort] = useState<SortOption>("newest");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [filterAuction, setFilterAuction] = useState<FilterAuction>("all");
+  const [mode, setMode] = useState<FilterMediaMode>("all");
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   // Fun facts to display while loading
   const funFacts = [
@@ -80,11 +83,16 @@ export default function FavoritesPage() {
           if (!nft.auction?.settled) return false;
         }
 
+        // Media mode filter
+        const fileType = (nft.fileType || "").toLowerCase();
+        if (mode === "audio" && !fileType.startsWith("audio")) return false;
+        if (mode === "video" && !fileType.startsWith("video")) return false;
+
         return true;
       });
 
-    // In playlist view, preserve position order (no sorting)
-    if (viewMode === "playlist") {
+    // In list view, preserve position order (no sorting)
+    if (viewMode === "list") {
       return filtered;
     }
 
@@ -109,7 +117,7 @@ export default function FavoritesPage() {
     });
 
     return filtered;
-  }, [likedNFTsData, sort, filterStatus, filterAuction, search, viewMode]);
+  }, [likedNFTsData, sort, filterStatus, filterAuction, mode, search, viewMode]);
 
   // Get playable NFTs for the "Play All" button
   const playableNFTs = useMemo(() => {
@@ -155,17 +163,17 @@ export default function FavoritesPage() {
               <h1 className="text-3xl font-bold">My Favorites</h1>
               <p className="text-zinc-200">
                 {likedNFTsData?.length || 0} NFT{likedNFTsData?.length !== 1 ? "s" : ""} liked
-                {/* {playableNFTs.length > 0 && (
+                {playableNFTs.length > 0 && (
                   <span className="ml-2 text-green-400">
                     · {playableNFTs.length} playable
                   </span>
-                )} */}
+                )}
               </p>
             </div>
           </div>
 
           {/* View Mode Toggle & Play All */}
-          {/* <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             {playableNFTs.length > 0 && (
               <Button
                 onClick={handlePlayAll}
@@ -177,13 +185,13 @@ export default function FavoritesPage() {
             
             <div className="flex gap-1 bg-white/5 rounded-lg p-1">
               <Button
-                variant={viewMode === "playlist" ? "default" : "ghost"}
+                variant={viewMode === "list" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setViewMode("playlist")}
-                className={viewMode === "playlist" ? "bg-purple-500" : ""}
+                onClick={() => setViewMode("list")}
+                className={viewMode === "list" ? "bg-purple-500" : ""}
               >
                 <List className="w-4 h-4 mr-2" />
-                Playlist
+                List
               </Button>
               <Button
                 variant={viewMode === "grid" ? "default" : "ghost"}
@@ -195,7 +203,7 @@ export default function FavoritesPage() {
                 Grid
               </Button>
             </div>
-          </div> */}
+          </div>
         </div>
       </div>
 
@@ -213,7 +221,7 @@ export default function FavoritesPage() {
         </div>
 
         {/* Filters Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Status Filter */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Status</label>
@@ -250,7 +258,7 @@ export default function FavoritesPage() {
             <Select 
               value={sort} 
               onValueChange={(value) => setSort(value as SortOption)}
-              disabled={viewMode === "playlist"}
+              disabled={viewMode === "list"}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -262,11 +270,25 @@ export default function FavoritesPage() {
                 <SelectItem value="price-high">Price: High to Low</SelectItem>
               </SelectContent>
             </Select>
-            {viewMode === "playlist" && (
+            {viewMode === "list" && (
               <p className="text-xs text-yellow-500/80">
-                Sorting disabled in playlist view. Drag to reorder.
+                Sorting disabled in list view. Drag to reorder.
               </p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Mode</label>
+            <Select value={mode} onValueChange={(value) => setMode(value as FilterMediaMode)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All (Audio + Video)</SelectItem>
+                <SelectItem value="audio">Audio Only</SelectItem>
+                <SelectItem value="video">Video Only</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -291,12 +313,12 @@ export default function FavoritesPage() {
         </div>
       )}
 
-      {/* Playlist View */}
-      {/* {!isLoading && filteredAndSortedNFTs.length > 0 && viewMode === "playlist" && user && (
+      {/* List View */}
+      {!isLoading && filteredAndSortedNFTs.length > 0 && viewMode === "list" && user && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-white/60">
-              Drag and drop to reorder your playlist
+              Drag and drop to reorder your favorites playlist
             </p>
           </div>
           <DraggableFavoritesList 
@@ -304,7 +326,7 @@ export default function FavoritesPage() {
             userId={user.id}
           />
         </div>
-      )} */}
+      )}
 
       {/* NFT Grid View */}
       {!isLoading && filteredAndSortedNFTs.length > 0 && viewMode === "grid" && (
@@ -335,7 +357,7 @@ export default function FavoritesPage() {
                   title={nft.title}
                   description={nft.description}
                   name={nft.creator?.name || "Unknown"}
-                  cover={nft.imageUrl.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
+                  cover={resolveIPFS(nft.imageUrl)}
                   media={nft.mediaUrl}
                   minted={true}
                   tokenId={nft.tokenId}
@@ -349,6 +371,7 @@ export default function FavoritesPage() {
                   fileType={nft.fileType}
                   userId={user?.id}
                   address={address || ""}
+                  onCardClick={() => playSingle(nft)}
                   likes={likes}
                   auction={
                     nft.auction

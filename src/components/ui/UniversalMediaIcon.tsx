@@ -88,9 +88,9 @@ export function UniversalMediaIcon({ tokenUri, gateway, uri, className = "", sty
   let IconComponent = File;
   const size = 120;
 
-  if (fileType.startsWith("audio/")) IconComponent = Music;
-  else if (fileType.startsWith("video/")) IconComponent = Video;
-  else if (fileType.startsWith("image/")) IconComponent = ImageIcon;
+  if (fileType.startsWith("audio")) IconComponent = Music;
+  else if (fileType.startsWith("video")) IconComponent = Video;
+  else if (fileType.startsWith("image")) IconComponent = ImageIcon;
   else if (fileType.startsWith("txt/")) IconComponent = FileText;
   else if (fileType === "pdf") IconComponent = FilePdf;
   else if (fileType === "doc/doc" || fileType === "doc/docx") IconComponent = FileDoc;

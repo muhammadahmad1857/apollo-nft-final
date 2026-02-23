@@ -6,6 +6,7 @@ import { Play, X, FileText, File } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { getFileTypeByIPFS } from "@/actions/files";
+import { resolveIPFS } from "@/lib/ipfs";
 import Portal from "./Portal";
 
 interface UniversalMediaViewerProps {
@@ -18,6 +19,7 @@ interface UniversalMediaViewerProps {
 }
 
 export function resolveIpfs(uri: string, gateway = process.env.NEXT_PUBLIC_GATEWAY_URL) {
+  if (!gateway) return resolveIPFS(uri);
   if (!uri) return "";
   if (uri.startsWith("ipfs://")) {
     return `https://${gateway}/ipfs/${uri.replace("ipfs://", "")}`;
@@ -143,11 +145,11 @@ export default function UniversalMediaViewer({
       .finally(() => setLoading(false));
   }, [mediaUri, providedFileType]);
 
-  const src = resolveIpfs(mediaUri, gateway);
+  const src = resolveIPFS(resolveIpfs(mediaUri, gateway));
 
-  const isVideo = fileType.startsWith("video/");
-  const isAudio = fileType.startsWith("audio/");
-  const isImage = fileType.startsWith("image/");
+  const isVideo = fileType.startsWith("video");
+  const isAudio = fileType.startsWith("audio");
+  const isImage = fileType.startsWith("image");
   const isTxt = fileType.startsWith("txt/");
   const isPdf = fileType === "pdf";
   const isDoc = fileType === "doc/doc";
