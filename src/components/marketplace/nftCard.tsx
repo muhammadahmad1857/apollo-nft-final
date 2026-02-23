@@ -83,6 +83,8 @@ const NFTCard = ({
   const [playlists, setPlaylists] = useState<{ id: number; name: string }[]>([]);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<number | null>(null);
   const [isAddingToPlaylist, setIsAddingToPlaylist] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState("");
+  const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
  
   const now = new Date();
   const isOwner = !!address && address === ownerAddress;
@@ -177,6 +179,44 @@ const NFTCard = ({
       toast.error("Failed to add to playlist");
     } finally {
       setIsAddingToPlaylist(false);
+    }
+  };
+
+  const handleCreatePlaylist = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!address || !newPlaylistName.trim()) {
+      toast.error("Enter playlist name");
+      return;
+    }
+
+    setIsCreatingPlaylist(true);
+    try {
+      const response = await fetch("/api/playlists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletAddress: address, name: newPlaylistName.trim() }),
+      });
+
+      const json = await response.json();
+      if (!response.ok) {
+        toast.error(json?.error || "Failed to create playlist");
+        return;
+      }
+
+      const created = json?.playlist;
+      if (created?.id && created?.name) {
+        setPlaylists((prev) => [...prev, { id: created.id, name: created.name }]);
+        setSelectedPlaylistId(created.id);
+      }
+      setNewPlaylistName("");
+      toast.success("Playlist created");
+    } catch (error) {
+      console.error("Failed to create playlist", error);
+      toast.error("Failed to create playlist");
+    } finally {
+      setIsCreatingPlaylist(false);
     }
   };
 
@@ -287,28 +327,43 @@ const NFTCard = ({
               <LikeButton userId={userId||0} nftId={nftId} likes={likes} />
               {isOwner && (
                 <>
-                  <select
-                    value={selectedPlaylistId ?? ""}
-                    onChange={(e) => setSelectedPlaylistId(Number(e.target.value))}
-                    className="h-8 rounded-md border border-zinc-700 bg-zinc-900 px-2 text-xs"
-                  >
-                    {playlists.length === 0 ? (
-                      <option value="">No playlists</option>
-                    ) : (
-                      playlists.map((playlist) => (
-                        <option key={playlist.id} value={playlist.id}>
-                          {playlist.name}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                  <button
-                    onClick={handleAddToPlaylist}
-                    disabled={isAddingToPlaylist || playlists.length === 0}
-                    className="px-2 py-1 rounded-md border border-zinc-700 text-xs hover:border-zinc-500 disabled:opacity-50"
-                  >
-                    {isAddingToPlaylist ? "Adding..." : "Add to Playlist"}
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      value={selectedPlaylistId ?? ""}
+                      onChange={(e) => setSelectedPlaylistId(Number(e.target.value))}
+                      className="h-8 rounded-md border border-zinc-700 bg-zinc-900 px-2 text-xs"
+                    >
+                      {playlists.length === 0 ? (
+                        <option value="">No playlists</option>
+                      ) : (
+                        playlists.map((playlist) => (
+                          <option key={playlist.id} value={playlist.id}>
+                            {playlist.name}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    <button
+                      onClick={handleAddToPlaylist}
+                      disabled={isAddingToPlaylist || playlists.length === 0}
+                      className="px-2 py-1 rounded-md border border-zinc-700 text-xs hover:border-zinc-500 disabled:opacity-50"
+                    >
+                      {isAddingToPlaylist ? "Adding..." : "Add to Playlist"}
+                    </button>
+                    <input
+                      value={newPlaylistName}
+                      onChange={(e) => setNewPlaylistName(e.target.value)}
+                      placeholder="New playlist"
+                      className="h-8 w-28 rounded-md border border-zinc-700 bg-zinc-900 px-2 text-xs"
+                    />
+                    <button
+                      onClick={handleCreatePlaylist}
+                      disabled={isCreatingPlaylist || !newPlaylistName.trim()}
+                      className="px-2 py-1 rounded-md border border-zinc-700 text-xs hover:border-zinc-500 disabled:opacity-50"
+                    >
+                      {isCreatingPlaylist ? "Creating..." : "Create"}
+                    </button>
+                  </div>
                 </>
               )}
             </div>

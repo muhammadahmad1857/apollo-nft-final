@@ -26,6 +26,8 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
   const [playlists, setPlaylists] = useState<{ id: number; name: string }[]>([]);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<number | null>(null);
   const [isAddingToPlaylist, setIsAddingToPlaylist] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState("");
+  const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
 
   useEffect(() => {
     const fetchPlaylists = async () => {
@@ -85,6 +87,41 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
       toast.error("Failed to add to playlist");
     } finally {
       setIsAddingToPlaylist(false);
+    }
+  };
+
+  const handleCreatePlaylist = async () => {
+    if (!address || !newPlaylistName.trim()) {
+      toast.error("Enter playlist name");
+      return;
+    }
+
+    setIsCreatingPlaylist(true);
+    try {
+      const response = await fetch("/api/playlists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletAddress: address, name: newPlaylistName.trim() }),
+      });
+
+      const json = await response.json();
+      if (!response.ok) {
+        toast.error(json?.error || "Failed to create playlist");
+        return;
+      }
+
+      const created = json?.playlist;
+      if (created?.id && created?.name) {
+        setPlaylists((prev) => [...prev, { id: created.id, name: created.name }]);
+        setSelectedPlaylistId(created.id);
+      }
+      setNewPlaylistName("");
+      toast.success("Playlist created");
+    } catch (error) {
+      console.error("Failed to create playlist", error);
+      toast.error("Failed to create playlist");
+    } finally {
+      setIsCreatingPlaylist(false);
     }
   };
 
@@ -231,30 +268,51 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
             )}
 
             <div className="flex items-center gap-2">
-              <select
-                value={selectedPlaylistId ?? ""}
-                onChange={(e) => setSelectedPlaylistId(Number(e.target.value))}
-                className="h-9 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-2 text-sm"
-              >
-                {playlists.length === 0 ? (
-                  <option value="">No playlists</option>
-                ) : (
-                  playlists.map((playlist) => (
-                    <option key={playlist.id} value={playlist.id}>
-                      {playlist.name}
-                    </option>
-                  ))
-                )}
-              </select>
+              <div className="flex flex-1 flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedPlaylistId ?? ""}
+                    onChange={(e) => setSelectedPlaylistId(Number(e.target.value))}
+                    className="h-9 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-2 text-sm"
+                  >
+                    {playlists.length === 0 ? (
+                      <option value="">No playlists</option>
+                    ) : (
+                      playlists.map((playlist) => (
+                        <option key={playlist.id} value={playlist.id}>
+                          {playlist.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
 
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isAddingToPlaylist || playlists.length === 0}
-                onClick={handleAddToPlaylist}
-              >
-                {isAddingToPlaylist ? "Adding..." : "Add to Playlist"}
-              </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isAddingToPlaylist || playlists.length === 0}
+                    onClick={handleAddToPlaylist}
+                  >
+                    {isAddingToPlaylist ? "Adding..." : "Add to Playlist"}
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    value={newPlaylistName}
+                    onChange={(e) => setNewPlaylistName(e.target.value)}
+                    placeholder="New playlist name"
+                    className="h-9 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-2 text-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isCreatingPlaylist || !newPlaylistName.trim()}
+                    onClick={handleCreatePlaylist}
+                  >
+                    {isCreatingPlaylist ? "Creating..." : "Create"}
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         )}
