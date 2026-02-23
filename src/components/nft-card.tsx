@@ -6,6 +6,8 @@ import { Share, Edit, Heart } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useAccount } from "wagmi";
 import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 
 import { UniversalMediaIcon } from "./ui/UniversalMediaIcon";
@@ -20,6 +22,28 @@ interface NFTCardProps {
 
 export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
   const router = useRouter();
+  const { address } = useAccount();
+  const [playlists, setPlaylists] = useState<{ id: number; name: string }[]>([]);
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<number | null>(null);
+  const [isAddingToPlaylist, setIsAddingToPlaylist] = useState(false);
+
+  useEffect(() => {
+    const fetchPlaylists = async () => {
+      if (!owner || !address) return;
+
+      try {
+        const response = await fetch(`/api/playlists?walletAddress=${address}`);
+        const json = await response.json();
+        const data = Array.isArray(json?.playlists) ? json.playlists : [];
+        setPlaylists(data);
+        setSelectedPlaylistId(data[0]?.id ?? null);
+      } catch (error) {
+        console.error("Failed to fetch playlists", error);
+      }
+    };
+
+    void fetchPlaylists();
+  }, [address, owner]);
 
   const handleShare = () => {
     if (!nft.isListed) {
@@ -33,6 +57,35 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
 
   const handleEditPage = () => {
     router.push(`/dashboard/token/${nft.id}/edit`);
+  };
+
+  const handleAddToPlaylist = async () => {
+    if (!address || !selectedPlaylistId) {
+      toast.error("Select a playlist first");
+      return;
+    }
+
+    setIsAddingToPlaylist(true);
+    try {
+      const response = await fetch(`/api/playlists/${selectedPlaylistId}/items?walletAddress=${address}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nftId: nft.id }),
+      });
+
+      const json = await response.json();
+      if (!response.ok) {
+        toast.error(json?.error || "Failed to add to playlist");
+        return;
+      }
+
+      toast.success("Added to playlist");
+    } catch (error) {
+      console.error("Failed to add to playlist", error);
+      toast.error("Failed to add to playlist");
+    } finally {
+      setIsAddingToPlaylist(false);
+    }
   };
 
   return (
@@ -111,7 +164,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground flex-shrink-0">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
             <span>
               <Heart fill="red" color="red" size={16} />
             </span>{" "}
@@ -176,6 +229,33 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
                 approved for the auction.
               </p>
             )}
+
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedPlaylistId ?? ""}
+                onChange={(e) => setSelectedPlaylistId(Number(e.target.value))}
+                className="h-9 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-2 text-sm"
+              >
+                {playlists.length === 0 ? (
+                  <option value="">No playlists</option>
+                ) : (
+                  playlists.map((playlist) => (
+                    <option key={playlist.id} value={playlist.id}>
+                      {playlist.name}
+                    </option>
+                  ))
+                )}
+              </select>
+
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isAddingToPlaylist || playlists.length === 0}
+                onClick={handleAddToPlaylist}
+              >
+                {isAddingToPlaylist ? "Adding..." : "Add to Playlist"}
+              </Button>
+            </div>
           </div>
         )}
 
