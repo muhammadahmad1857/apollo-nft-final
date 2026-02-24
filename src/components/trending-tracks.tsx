@@ -278,7 +278,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-xs text-muted-foreground">Current Price</p>
-                        <p className="text-xl font-semibold">{selectedTrack.price}</p>
+                        <p className="text-xl font-semibold">{selectedTrack.price} APOLLO</p>
                       </div>
                             <Link href={`/marketplace/${selectedTrack.tokenId}`}>
                         <motion.button
