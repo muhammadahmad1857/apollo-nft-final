@@ -136,7 +136,8 @@ export default function TrendingArtists() {
       <Image
         src={artist.image}
         alt={artist.name}
-        fill
+        height={192}
+        width={384}
         className="object-cover group-hover:scale-105 transition-transform duration-500"
       />
       <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent" />

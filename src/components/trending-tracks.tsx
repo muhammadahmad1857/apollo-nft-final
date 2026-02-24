@@ -151,7 +151,8 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
                  { track.image?<Image
                     src={track.image.replace("ipfs://",`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
                     alt={track.title}
-                    fill
+                    height={192}
+        width={384}
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />:<UniversalMediaIcon fileType={track.fileType} uri={track.media}/>}
                   <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-all duration-300" />
