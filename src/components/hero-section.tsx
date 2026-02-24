@@ -139,7 +139,7 @@ export default function HeroSection() {
             </motion.div>
           </motion.div>
 
-          {/* Right Side - Hero Image */}
+          {/* Right Side - Hero Image
           <motion.div 
             className="relative h-96 sm:h-125 flex items-center justify-center"
             variants={imageVariants}
@@ -162,9 +162,10 @@ export default function HeroSection() {
                 fill
                 className="object-contain dark:hidden"
                 priority
-              /> */}
+              /> 
             </motion.div>
           </motion.div>
+           */}
         </motion.div>
       </div>
     </section>
