@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 
 import { UniversalMediaIcon } from "../ui/UniversalMediaIcon";
+import { useAccount } from "wagmi";
 
 
 export function AuctionDetails({
@@ -20,7 +21,7 @@ export function AuctionDetails({
 }) {
   const ended = new Date() >= new Date(auction.endTime);
   const highestBid = auction.highestBid || auction.minBid;
-
+  const { address } = useAccount();
   // Countdown timer state
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
@@ -192,6 +193,7 @@ transition-all duration-300"
                 gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
                 className="w-full"
                 style={{ maxHeight: 384 }}
+                showDownload={auction.seller.walletAddress.toLowerCase() === address?.toLowerCase()}
               />
             </div>
           )}

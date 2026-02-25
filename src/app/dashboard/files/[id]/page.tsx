@@ -442,6 +442,7 @@ export default function FileDetailPage() {
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="w-full"
               style={{ maxHeight: 192 }}
+              showDownload={true}
             />
           </div>
         )}

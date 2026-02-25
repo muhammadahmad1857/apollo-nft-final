@@ -163,6 +163,7 @@ const NFTCard = ({
               fileType={fileType}
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="w-full"
+              showDownload={isOwner}
               style={{ height: 320 }}
             />
           ) : null}

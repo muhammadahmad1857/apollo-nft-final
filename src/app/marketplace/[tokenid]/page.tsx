@@ -103,7 +103,7 @@ console.log("tokenUri", dbNft);
           {/* Left - Media / Cover */}
           <div className="space-y-6">
             <div className="rounded-2xl  bg-linear-to-br from-zinc-900 to-black border border-zinc-800 shadow-2xl">
-                  <UniversalMediaViewer uri={dbNft.mediaUrl} tokenUri={dbNft.tokenUri} fileType={dbNft.fileType} className="w-full h-full min-h-84 sm:min-h-128 max-w-md rounded-lg shadow-lg" />
+                  <UniversalMediaViewer uri={dbNft.mediaUrl} tokenUri={dbNft.tokenUri} fileType={dbNft.fileType} className="w-full h-full min-h-84 sm:min-h-128 max-w-md rounded-lg shadow-lg" showDownload={false} />
 
             </div>
             

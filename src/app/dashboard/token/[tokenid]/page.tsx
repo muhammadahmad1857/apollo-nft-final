@@ -14,6 +14,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Loader from "@/components/loader";
 import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
+import { useAccount } from "wagmi";
+import { useUser } from "@/hooks/useUser";
 
 
 export default function TokenDetailsPage() {
@@ -45,6 +47,7 @@ export default function TokenDetailsPage() {
     queryFn: () => token?.creatorId ? getUserById(token.creatorId) : null,
     enabled: !!token?.creatorId,
   });
+  const isOwner = creator?.walletAddress.toLowerCase() === useAccount().address?.toLowerCase();
   // TokenURI JSON preview
   const [tokenJson, setTokenJson] = useState<Record<string, unknown> | null>(null);
   useEffect(() => {
@@ -141,7 +144,7 @@ export default function TokenDetailsPage() {
                         <span className="text-xs underline text-white cursor-pointer">Hover to preview</span>
                       </Tooltip.TooltipTrigger>
                       <Tooltip.TooltipContent sideOffset={8}>
-                        <UniversalMediaViewer uri={media} fileType={token?.fileType} className="w-40 h-40 object-cover" />
+                        <UniversalMediaViewer uri={media} fileType={token?.fileType} showDownload={isOwner} className="w-40 h-40 object-cover" />
                       </Tooltip.TooltipContent>
                     </Tooltip.Tooltip>
                   </Tooltip.TooltipProvider>

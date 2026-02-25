@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { getFileTypeByIPFS } from "@/actions/files";
 import { resolveIPFS } from "@/lib/ipfs";
 import Portal from "./Portal";
+import { useAccount } from "wagmi";
 
 interface UniversalMediaViewerProps {
   tokenUri?: string; // now we pass the NFT token URI (points to JSON)
@@ -16,6 +17,7 @@ interface UniversalMediaViewerProps {
   style?: React.CSSProperties;
   uri?: string;
   fileType?: string; // Pass fileType directly from nft.fileType
+  showDownload?:boolean
 }
 
 export function resolveIpfs(uri: string, gateway = process.env.NEXT_PUBLIC_GATEWAY_URL) {
@@ -91,6 +93,7 @@ export default function UniversalMediaViewer({
   gateway,
   className = "",
   style = {},
+  showDownload=true,
   fileType: providedFileType,
 }: UniversalMediaViewerProps) {
   const [mediaUri, setMediaUri] = useState<string>(""); // actual media url
@@ -98,7 +101,8 @@ export default function UniversalMediaViewer({
   const [text, setText] = useState<string>("");
   const [fileType, setFileType] = useState<string>("other");
   const [loading, setLoading] = useState(true);
-  console.log("Props:", { tokenUri, uri, gateway, providedFileType });
+  const {address} = useAccount()
+  console.log("Props:", { tokenUri, uri, gateway, providedFileType,  });
   // Fetch the media URI, prioritizing 'uri' over 'tokenUri'
   useEffect(() => {
     setLoading(true);
@@ -235,7 +239,9 @@ export default function UniversalMediaViewer({
         >
           <Play size={20} />
         </Button>
-        <video src={src} className="w-full h-full object-contain rounded-xl" controls={false} />
+        <video src={src}   controlsList="nodownload" 
+  onContextMenu={(e) => e.preventDefault()}
+  disablePictureInPicture className="w-full h-full object-contain rounded-xl" controls={false} />
         <AnimatePresence>
           {showModal && (
             <Portal>
@@ -256,7 +262,14 @@ export default function UniversalMediaViewer({
                 >
                   <X size={24} />
                 </Button>
+               {showDownload ? (
+                <video src={src}  controlsList="nodownload" 
+  onContextMenu={(e) => e.preventDefault()}
+  disablePictureInPicture controls autoPlay className="w-full h-full rounded-xl" />
+               ) : (
                 <video src={src} controls autoPlay className="w-full h-full rounded-xl" />
+               )}
+
               </div>
             </motion.div>
           </Portal>
@@ -273,11 +286,25 @@ export default function UniversalMediaViewer({
         className={`w-full flex flex-col items-center bg-black/20 backdrop-blur-lg rounded-xl p-4 ${className}`}
         style={style}
       >
-        <audio controls   controlsList="nodownload"
+        
+         { showDownload ?
+          <audio controls       
+            controlsList="nodownload noplaybackrate"
+      onContextMenu={(e) => e.preventDefault()}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {...({ disableRemotePlayback: true } as any)}
+
  className="w-full">
           <source src={src} />
           Your browser does not support the audio element.
         </audio>
+        :
+          <audio controls   
+ className="w-full">
+          <source src={src} />
+          Your browser does not support the audio element.
+        </audio>
+        }
       </div>
     );
   }

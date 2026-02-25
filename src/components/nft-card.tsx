@@ -69,6 +69,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
               fileType={nft.fileType}
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="h-60 w-full sm:h-80"
+              showDownload={owner}
             />
           </div>
         )}

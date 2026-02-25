@@ -64,6 +64,7 @@ export function ArtistNFTGrid({ nfts }: ArtistNFTGridProps) {
                   <UniversalMediaViewer
                     uri={nft.mediaUrl || nft.imageUrl || "/placeholder.svg"}
                     fileType={nft.fileType || "image"}
+                    showDownload={false}
                     className="object-cover w-full h-full group-hover:scale-[1.04] transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300" />
