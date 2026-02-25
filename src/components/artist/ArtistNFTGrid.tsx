@@ -101,7 +101,7 @@ export function ArtistNFTGrid({ nfts }: ArtistNFTGridProps) {
                       {isInAuction ? "Current Bid" : "Price"}
                     </span>
                     <span className="text-lg font-semibold">
-                      {price ? `${price} ETH` : "N/A"}
+                      {price ? `${price} APOLLO` : "N/A"}
                     </span>
                   </div>
                 </div>

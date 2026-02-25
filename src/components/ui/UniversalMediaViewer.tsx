@@ -273,7 +273,8 @@ export default function UniversalMediaViewer({
         className={`w-full flex flex-col items-center bg-black/20 backdrop-blur-lg rounded-xl p-4 ${className}`}
         style={style}
       >
-        <audio controls className="w-full">
+        <audio controls   controlsList="nodownload"
+ className="w-full">
           <source src={src} />
           Your browser does not support the audio element.
         </audio>

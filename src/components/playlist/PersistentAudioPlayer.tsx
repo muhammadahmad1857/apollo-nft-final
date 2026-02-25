@@ -152,7 +152,8 @@ export function PersistentAudioPlayer() {
 
         {/* Hidden Audio Element */}
         {currentMediaType === "audio" && (
-          <audio ref={audioRef} src={mediaSrc} preload="metadata" className="hidden" />
+          <audio ref={audioRef} src={mediaSrc} preload="metadata" className="hidden"   controlsList="nodownload"
+ />
         )}
       </div>
     </div>
