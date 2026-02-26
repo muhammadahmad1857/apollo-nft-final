@@ -3,34 +3,43 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, Loader2, ArrowLeft, DollarSign, } from "lucide-react";
+import { CheckCircle2, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { useAccount } from "wagmi";
-import { useUser } from "@/hooks/useUser";
-import { useListNFT } from "@/hooks/useMarketplace";
+import { useListNFT, useCancelListing, useListing } from "@/hooks/useMarketplace";
 import { ApproveMarketButton } from "@/components/marketplace/marketplaceApproveButton";
 import { getNFTByTokenId } from "@/actions/nft";
 import { useUpdateNFT } from "@/hooks/useNft";
 import { NFTModel } from "@/generated/prisma/models";
 import Link from "next/link"; 
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
 export default function ListMarketplacePage() {
   const params = useParams();
   const router = useRouter();
   const tokenId = Number(params.tokenid);
-  const { address } = useAccount();
-  const { data: user } = useUser(address || "");
+  const safeTokenId = Number.isFinite(tokenId) && tokenId > 0 ? tokenId : 0;
 
   const [currentStep, setCurrentStep] = useState(1);
   const [nft, setNft] = useState<NFTModel | null>(null);
-  const [isApproved, setIsApproved] = useState(false);
   const [priceEth, setPriceEth] = useState("");
 
-  const { listNFT } = useListNFT();
+  const { listNFT, isPending: listPending } = useListNFT();
+  const { cancelListing, isPending: cancelPending } = useCancelListing();
+  const { data: listing } = useListing(BigInt(safeTokenId)) as {
+    data?: readonly [string, bigint] | [string, bigint] | [string, string];
+  };
+
   const updateNFT = useUpdateNFT();
   const [isListing, setIsListing] = useState(false);
+  const [isDelisting, setIsDelisting] = useState(false);
+
+  const isListedOnChain = Boolean(listing && listing[0] && listing[0] !== ZERO_ADDRESS);
+  const effectiveIsListed = isListedOnChain || Boolean(nft?.isListed);
+  const isActionPending = isListing || isDelisting || listPending || cancelPending || updateNFT.isPending;
 
   // Fetch NFT data
   useEffect(() => {
@@ -39,7 +48,6 @@ export default function ListMarketplacePage() {
         const data = await getNFTByTokenId(tokenId);
         if (data) {
           setNft(data);
-          setIsApproved(data.approvedMarket);
           if (data.approvedMarket) {
             setCurrentStep(2);
           }
@@ -57,13 +65,31 @@ export default function ListMarketplacePage() {
       }
     };
 
+    if (!Number.isFinite(tokenId) || tokenId <= 0) {
+      toast.error("Invalid token ID");
+      router.push("/dashboard");
+      return;
+    }
+
     if (tokenId) {
       fetchNFT();
     }
   }, [tokenId, router]);
 
+  useEffect(() => {
+    if (!nft) return;
+    if (effectiveIsListed || nft.approvedMarket) {
+      setCurrentStep(2);
+      return;
+    }
+    setCurrentStep(1);
+  }, [effectiveIsListed, nft]);
+
   const handleListNFT = async () => {
     if (!nft) return toast.error("NFT not found");
+    if (nft.approvedAuction) {
+      return toast.error("This NFT is approved for auction and cannot be listed on the marketplace.");
+    }
     if (!priceEth || Number(priceEth) <= 0) return toast.error("Please enter a valid price");
 
     setIsListing(true);
@@ -81,6 +107,8 @@ export default function ListMarketplacePage() {
         },
       });
 
+      setNft((prev) => (prev ? { ...prev, isListed: true, mintPrice: Number(priceEth) } : prev));
+
       toast.success("NFT listed on marketplace! 🎉");
       
       setTimeout(() => {
@@ -91,6 +119,41 @@ export default function ListMarketplacePage() {
       toast.error((err as Error)?.message || "Failed to list NFT");
     } finally {
       setIsListing(false);
+    }
+  };
+
+  const handleDelistNFT = async () => {
+    if (!nft) return toast.error("NFT not found");
+    if (nft.approvedAuction) {
+      return toast.error("This NFT is approved for auction and cannot be listed on the marketplace.");
+    }
+
+    setIsDelisting(true);
+
+    try {
+      await cancelListing(BigInt(tokenId));
+
+      await updateNFT.mutateAsync({
+        id: nft.id,
+        data: {
+          isListed: false,
+          mintPrice: 0,
+        },
+      });
+
+      setNft((prev) => (prev ? { ...prev, isListed: false, mintPrice: 0 } : prev));
+      setPriceEth("");
+
+      toast.success("NFT delisted from marketplace");
+
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      toast.error((err as Error)?.message || "Failed to delist NFT");
+    } finally {
+      setIsDelisting(false);
     }
   };
 
@@ -187,7 +250,7 @@ export default function ListMarketplacePage() {
                 tokenId={tokenId}
                 nftId={nft.id}
                 onSuccess={() => {
-                  setIsApproved(true);
+                  setNft((prev) => (prev ? { ...prev, approvedMarket: true } : prev));
                   setCurrentStep(2);
                   toast.success("NFT approved! Now set your price and list it.");
                 }}
@@ -203,10 +266,13 @@ export default function ListMarketplacePage() {
               exit={{ opacity: 0, x: -20 }}
               className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 shadow-xl"
             >
-              <h2 className="text-2xl font-bold mb-4">Step 2: Set Price & List</h2>
+              <h2 className="text-2xl font-bold mb-4">
+                {effectiveIsListed ? "Step 2: Manage Listing" : "Step 2: Set Price & List"}
+              </h2>
 
               <div className="space-y-6">
                 {/* Price Input */}
+                {!effectiveIsListed && (
                 <div>
                   <Label className="text-base font-semibold">Price (APOLLO)</Label>
                   <div className="relative mt-2">
@@ -225,9 +291,18 @@ export default function ListMarketplacePage() {
                     Enter the price in APOLLO tokens
                   </p>
                 </div>
+                )}
+
+                {effectiveIsListed && (
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/30">
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                      This NFT is currently listed on the marketplace. You can delist it below.
+                    </p>
+                  </div>
+                )}
 
                 {/* Preview Box */}
-                <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900/30 dark:to-slate-800/20 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+                <div className="bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900/30 dark:to-slate-800/20 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-zinc-600 dark:text-zinc-400">Your NFT will be listed at:</p>
@@ -243,19 +318,29 @@ export default function ListMarketplacePage() {
 
                 {/* List Button */}
                 <Button
-                  onClick={handleListNFT}
-                  disabled={isListing || updateNFT.isPending || !priceEth || Number(priceEth) <= 0}
+                  onClick={effectiveIsListed ? handleDelistNFT : handleListNFT}
+                  disabled={
+                    isActionPending ||
+                    nft.approvedAuction ||
+                    (!effectiveIsListed && (!priceEth || Number(priceEth) <= 0))
+                  }
                   className="w-full h-14 bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all text-lg"
                 >
-                  {isListing || updateNFT.isPending ? (
+                  {isActionPending ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Listing NFT...
+                      {effectiveIsListed ? "Delisting NFT..." : "Listing NFT..."}
                     </>
                   ) : (
-                    "List on Marketplace"
+                    effectiveIsListed ? "Delist from Marketplace" : "List on Marketplace"
                   )}
                 </Button>
+
+                {nft.approvedAuction && (
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    This NFT is approved for auction and cannot be managed on the marketplace.
+                  </p>
+                )}
               </div>
             </motion.div>
           )}
