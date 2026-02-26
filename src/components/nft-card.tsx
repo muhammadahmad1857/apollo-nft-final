@@ -139,7 +139,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
                 <MarketplaceListing token={nft} />
               </DialogContent>
             </Dialog> */}
-            {!nft.approvedMarket ? (
+            {!nft.approvedAuction ? (
             <Link
               href={`/dashboard/list-marketplace/${nft.tokenId}/`}
               className="w-full"
