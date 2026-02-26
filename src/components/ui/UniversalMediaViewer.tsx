@@ -511,6 +511,8 @@ export default function UniversalMediaViewer({
     fetchMedia();
   }, [tokenUri, gateway, uri]);
 
+  const src = resolveIPFS(resolveIpfs(mediaUri, gateway));
+
   // Detect file type
   useEffect(() => {
     if (providedFileType) {
@@ -526,8 +528,6 @@ export default function UniversalMediaViewer({
       .finally(() => setLoading(false));
   }, [mediaUri, providedFileType]);
 
-  const src = resolveIPFS(resolveIpfs(mediaUri, gateway));
-
   const isVideo = fileType.startsWith("video");
   const isAudio = fileType.startsWith("audio");
   const isImage = fileType.startsWith("image");
@@ -535,7 +535,6 @@ export default function UniversalMediaViewer({
   const isPdf = fileType === "pdf";
   const isDoc = fileType.startsWith("doc/");
 
-  // Load text content
   useEffect(() => {
     if (isTxt && src) {
       fetch(src)
@@ -671,9 +670,6 @@ export default function UniversalMediaViewer({
           src={src}
           className="w-full h-full object-contain"
           controls={false}
-          controlsList={showDownload ? undefined : "nodownload noplaybackrate noremoteplayback"}
-          disablePictureInPicture={!showDownload}
-          {...(!showDownload ? ({ disableRemotePlayback: true } as React.VideoHTMLAttributes<HTMLVideoElement>) : {})}
           {...blockProps}
         />
 
@@ -704,10 +700,8 @@ export default function UniversalMediaViewer({
                     src={src}
                     className="w-full max-h-[85vh] rounded-xl"
                     controls
+                    controlsList={showDownload ? undefined : "nodownload"}
                     autoPlay
-                    controlsList={showDownload ? undefined : "nodownload noplaybackrate noremoteplayback"}
-                    disablePictureInPicture={!showDownload}
-                    {...(!showDownload ? ({ disableRemotePlayback: true } as React.VideoHTMLAttributes<HTMLVideoElement>) : {})}
                     {...blockProps}
                   />
                 </div>
@@ -724,11 +718,10 @@ export default function UniversalMediaViewer({
     return (
       <div className={`w-full bg-black/20 backdrop-blur-lg rounded-xl p-6 ${className}`} style={style}>
         <audio
-          controls
           src={src}
           className="w-full max-w-lg mx-auto"
+          controls
           controlsList={showDownload ? undefined : "nodownload noplaybackrate noremoteplayback"}
-          {...(!showDownload ? ({ disableRemotePlayback: true } as React.AudioHTMLAttributes<HTMLAudioElement>) : {})}
           {...blockProps}
         />
       </div>
