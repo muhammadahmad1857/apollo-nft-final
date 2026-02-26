@@ -139,6 +139,7 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
                 <MarketplaceListing token={nft} />
               </DialogContent>
             </Dialog> */}
+            {!nft.approvedMarket ? (
             <Link
               href={`/dashboard/list-marketplace/${nft.tokenId}/`}
               className="w-full"
@@ -148,9 +149,15 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
                 size="sm"
                 className="flex items-center gap-2 w-full"
               >
-                <Edit /> Add to marketplace
+                <Edit /> List on marketplace
               </Button>
-            </Link>
+            </Link>):(
+               <p className="text-sm text-muted-foreground text-center">
+                This NFT is already approved for auction and cannot be
+                listed on marketplace.
+              </p>
+            )
+            }
             {!nft.approvedMarket ? (
               // <CreateAuctionButton
               //   tokenId={BigInt(nft.tokenId)}

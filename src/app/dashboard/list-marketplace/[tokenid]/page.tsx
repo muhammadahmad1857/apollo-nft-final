@@ -29,16 +29,16 @@ export default function ListMarketplacePage() {
 
   const { listNFT, isPending: listPending } = useListNFT();
   const { cancelListing, isPending: cancelPending } = useCancelListing();
-  // const { data: listing } = useListing(BigInt(safeTokenId)) as {
-  //   data?: readonly [string, bigint] | [string, bigint] | [string, string];
-  // };
+  const { data: listing } = useListing(BigInt(safeTokenId)) as {
+    data?: readonly [string, bigint] | [string, bigint] | [string, string];
+  };
 
   const updateNFT = useUpdateNFT();
   const [isListing, setIsListing] = useState(false);
   const [isDelisting, setIsDelisting] = useState(false);
 
-  // const isListedOnChain = Boolean(listing && listing[0] && listing[0] !== ZERO_ADDRESS);
-  const effectiveIsListed =  Boolean(nft?.isListed);
+  const isListedOnChain = Boolean(listing && listing[0] && listing[0] !== ZERO_ADDRESS);
+  const effectiveIsListed = isListedOnChain || Boolean(nft?.isListed);
   const isActionPending = isListing || isDelisting || listPending || cancelPending || updateNFT.isPending;
 
   // Fetch NFT data
