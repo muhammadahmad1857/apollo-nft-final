@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // "use client";
 
 // import Image from "next/image";
@@ -399,7 +398,6 @@
 //     </div>
 //   );
 // }
-
 "use client";
 
 import Image from "next/image";
@@ -410,8 +408,6 @@ import { Button } from "@/components/ui/button";
 import { getFileTypeByIPFS } from "@/actions/files";
 import { resolveIPFS } from "@/lib/ipfs";
 import Portal from "./Portal";
-import {Plyr} from "plyr-react";
-import "plyr-react/plyr.css"; // ← FIXED import path
 
 interface UniversalMediaViewerProps {
   tokenUri?: string;
@@ -550,7 +546,6 @@ export default function UniversalMediaViewer({
     }
   }, [isTxt, src]);
 
-  // Protection helpers
   const blockProps = {
     onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
     draggable: false,
@@ -657,25 +652,6 @@ export default function UniversalMediaViewer({
 
   // VIDEO
   if (isVideo) {
-    const plyrVideoConfig = {
-      controls: showDownload
-        ? true
-        : [
-            "play-large",
-            "play",
-            "progress",
-            "current-time",
-            "duration",
-            "mute",
-            "volume",
-            "captions",
-            "fullscreen",
-          ],
-      hideControls: true,
-      invertTime: false,
-      tooltips: { controls: true, seek: true },
-    } as any; // ← Type assertion to resolve mismatch
-
     return (
       <div
         className={`relative w-full h-64 bg-black/20 backdrop-blur-lg rounded-xl overflow-hidden ${className}`}
@@ -695,6 +671,9 @@ export default function UniversalMediaViewer({
           src={src}
           className="w-full h-full object-contain"
           controls={false}
+          controlsList={showDownload ? undefined : "nodownload noplaybackrate noremoteplayback"}
+          disablePictureInPicture={!showDownload}
+          {...(!showDownload ? ({ disableRemotePlayback: true } as React.VideoHTMLAttributes<HTMLVideoElement>) : {})}
           {...blockProps}
         />
 
@@ -721,14 +700,15 @@ export default function UniversalMediaViewer({
                     <X size={28} />
                   </Button>
 
-                  <Plyr
-                    source={{
-                      type: "video",
-                      sources: [{ src, type: "video/mp4" }],
-                    }}
-                    options={plyrVideoConfig}
+                  <video
+                    src={src}
+                    className="w-full max-h-[85vh] rounded-xl"
+                    controls
                     autoPlay
-                    className="w-full max-h-[85vh]"
+                    controlsList={showDownload ? undefined : "nodownload noplaybackrate noremoteplayback"}
+                    disablePictureInPicture={!showDownload}
+                    {...(!showDownload ? ({ disableRemotePlayback: true } as React.VideoHTMLAttributes<HTMLVideoElement>) : {})}
+                    {...blockProps}
                   />
                 </div>
               </motion.div>
@@ -741,41 +721,23 @@ export default function UniversalMediaViewer({
 
   // AUDIO
   if (isAudio) {
-    const plyrAudioConfig = {
-      controls: showDownload
-        ? true
-        : ["play", "progress", "current-time", "duration", "mute", "volume"],
-      hideControls: true,
-    } as any; // ← Type assertion
-
     return (
       <div className={`w-full bg-black/20 backdrop-blur-lg rounded-xl p-6 ${className}`} style={style}>
-        {showDownload ? (
-          <audio
-            controls
-            src={src}
-            className="w-full max-w-lg mx-auto"
-            {...blockProps}
-          />
-        ) : (
-          <Plyr
-            source={{
-              type: "audio",
-              sources: [{ src, type: "audio/mpeg" }],
-            }}
-            options={plyrAudioConfig}
-            className="w-full max-w-lg mx-auto"
-          />
-        )}
+        <audio
+          controls
+          src={src}
+          className="w-full max-w-lg mx-auto"
+          controlsList={showDownload ? undefined : "nodownload noplaybackrate noremoteplayback"}
+          {...(!showDownload ? ({ disableRemotePlayback: true } as React.AudioHTMLAttributes<HTMLAudioElement>) : {})}
+          {...blockProps}
+        />
       </div>
     );
   }
 
   // PDF
   if (isPdf) {
-    const pdfSrc = showDownload
-      ? src
-      : `${src}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`;
+    const pdfSrc = showDownload ? src : `${src}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`;
 
     return (
       <>
