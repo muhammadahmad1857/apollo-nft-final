@@ -267,7 +267,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
                   <UniversalMediaViewer
                     uri={selectedTrack.media}
                     fileType={selectedTrack.fileType}
-                    showDownload={false}
+                    showDownload={true}
 
                     className="w-full"
                   />
