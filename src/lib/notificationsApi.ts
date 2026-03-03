@@ -10,7 +10,7 @@ import type {
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_NOTIFICATIONS_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:4000"
+  "https://api.apollonft.io"
 ).replace(/\/$/, "");
 
 function normalizeWallet(wallet: string): string {
