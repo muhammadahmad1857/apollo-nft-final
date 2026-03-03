@@ -94,6 +94,8 @@ console.log("data",data)
             mintPrice={nft.mintPrice}
             ownerAddress={nft.owner.walletAddress}
             media={nft.mediaUrl}
+            trailer={nft.trailer}
+            trailerFileType={nft.trailerFileType}
             auctionApproved={nft.approvedAuction}
             fileType={nft.fileType}
             likes={nft?.likes || []}

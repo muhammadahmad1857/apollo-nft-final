@@ -29,6 +29,8 @@ export default function BatchMintPage() {
     coverImageUrl: undefined,
     musicTrackUrl: "",
     fileType: undefined,
+    trailerUrl: undefined,
+    trailerFileType: undefined,
     royaltyBps: 500,
   });
   const [quantity, setQuantity] = useState<number>(1);
@@ -55,6 +57,8 @@ export default function BatchMintPage() {
       coverImageUrl: undefined,
       musicTrackUrl: "",
       fileType: undefined,
+      trailerUrl: undefined,
+      trailerFileType: undefined,
       royaltyBps: 500,
     });
     setQuantity(1);
@@ -119,6 +123,8 @@ export default function BatchMintPage() {
               cover: formValues.coverImageUrl,
               media: formValues.musicTrackUrl,
               fileType: formValues.fileType,
+              trailer: formValues.trailerUrl,
+              trailerFileType: formValues.trailerFileType,
             },
           }),
         },

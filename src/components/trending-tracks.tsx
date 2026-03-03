@@ -9,6 +9,7 @@ import { getAllNFTs } from '@/actions/nft'
 import UniversalMediaViewer from '@/components/ui/UniversalMediaViewer'
 import Portal from '@/components/ui/Portal'
 import { UniversalMediaIcon } from './ui/UniversalMediaIcon'
+import { useAccount } from 'wagmi'
 
 interface TrackData {
   id: number
@@ -17,6 +18,9 @@ interface TrackData {
   price: number
   image: string
   media: string
+  trailer?: string | null
+  trailerFileType?: string | null
+  ownerAddress?: string
   tokenId:number
   fileType:string
 }
@@ -69,6 +73,7 @@ const itemVariants = {
 }
 
 export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
+  const { address } = useAccount()
   const [playingId, setPlayingId] = useState<number | null>(null)
   const [selectedTrack, setSelectedTrack] = useState<TrackData | null>(null)
   const [tracks, setTracks] = useState<TrackData[]>([])
@@ -89,6 +94,9 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
           price: nft.mintPrice,
           image: nft.imageUrl || '',
           media:nft.mediaUrl || '',
+          trailer: nft.trailer || null,
+          trailerFileType: nft.trailerFileType || null,
+          ownerAddress: nft.owner?.walletAddress,
           tokenId:nft.tokenId,
           fileType:nft.fileType,
         }))
@@ -141,6 +149,14 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
             </>
           ) : (
             tracks.map((track) => (
+              (() => {
+                const isOwner = !!address && !!track.ownerAddress && address.toLowerCase() === track.ownerAddress.toLowerCase()
+                const hasTrailer = !!track.trailer && track.trailer.trim() !== ""
+                const shouldShowTrailer = !isOwner && hasTrailer
+                const previewMedia = shouldShowTrailer ? track.trailer || "" : track.media
+                const previewType = shouldShowTrailer ? track.trailerFileType || track.fileType : track.fileType
+
+                return (
               <motion.div
                 key={track.id}
                 variants={itemVariants}
@@ -153,7 +169,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
                     alt={track.title}
                     layout='fill'
                     className="object-contain group-hover:scale-105 transition-transform duration-500"
-                  />:<UniversalMediaIcon fileType={track.fileType} uri={track.media}/>}
+                  />:<UniversalMediaIcon fileType={previewType} uri={previewMedia}/>}
                   <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-all duration-300" />
 
                   {/* Play Button Overlay */}
@@ -203,6 +219,8 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
                   </div>
                 </div>
               </motion.div>
+                )
+              })()
             ))
           )}
         </motion.div>
@@ -265,8 +283,16 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
                 {/* Media Viewer */}
                 <div className="bg-background rounded-2xl overflow-hidden border border-border">
                   <UniversalMediaViewer
-                    uri={selectedTrack.media}
-                    fileType={selectedTrack.fileType}
+                    uri={(() => {
+                      const isOwner = !!address && !!selectedTrack.ownerAddress && address.toLowerCase() === selectedTrack.ownerAddress.toLowerCase()
+                      const hasTrailer = !!selectedTrack.trailer && selectedTrack.trailer.trim() !== ""
+                      return !isOwner && hasTrailer ? selectedTrack.trailer || "" : selectedTrack.media
+                    })()}
+                    fileType={(() => {
+                      const isOwner = !!address && !!selectedTrack.ownerAddress && address.toLowerCase() === selectedTrack.ownerAddress.toLowerCase()
+                      const hasTrailer = !!selectedTrack.trailer && selectedTrack.trailer.trim() !== ""
+                      return !isOwner && hasTrailer ? selectedTrack.trailerFileType || selectedTrack.fileType : selectedTrack.fileType
+                    })()}
                     showDownload={false}
 
                     className="w-full"

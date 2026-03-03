@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 import { Clock, Heart } from "lucide-react";
+import { useAccount } from "wagmi";
 
 interface NFT {
   id: number;
@@ -17,6 +18,13 @@ interface NFT {
   mintPrice: number | null;
   isListed: boolean;
   fileType: string | null;
+  trailer: string | null;
+  trailerFileType: string | null;
+  owner?: {
+    walletAddress: string;
+    name: string;
+    avatarUrl: string | null;
+  } | null;
   likes: { id: number }[];
   auction: {
     id: number;
@@ -32,6 +40,8 @@ interface ArtistNFTGridProps {
 }
 
 export function ArtistNFTGrid({ nfts }: ArtistNFTGridProps) {
+  const { address } = useAccount();
+
   if (nfts.length === 0) {
     return (
       <div className="text-center py-16">
@@ -54,6 +64,11 @@ export function ArtistNFTGrid({ nfts }: ArtistNFTGridProps) {
         const price = isInAuction && nft.auction
           ? (nft.auction.highestBid ? nft.auction.highestBid : nft.auction.minBid)
           : nft.mintPrice;
+        const isOwner = !!address && !!nft.owner?.walletAddress && address.toLowerCase() === nft.owner.walletAddress.toLowerCase();
+        const hasTrailer = !!nft.trailer && nft.trailer.trim() !== "";
+        const shouldShowTrailer = !isOwner && hasTrailer;
+        const displayUrl = shouldShowTrailer ? nft.trailer : nft.mediaUrl || nft.imageUrl || "/placeholder.svg";
+        const displayType = shouldShowTrailer ? nft.trailerFileType || nft.fileType || "image" : nft.fileType || "image";
 
         return (
           <Link key={nft.id} href={linkHref}>
@@ -62,12 +77,12 @@ export function ArtistNFTGrid({ nfts }: ArtistNFTGridProps) {
                 {/* Media */}
                 <div className="relative aspect-square overflow-hidden bg-muted">
                   <UniversalMediaViewer
-                    uri={nft.mediaUrl || nft.imageUrl || "/placeholder.svg"}
-                    fileType={nft.fileType || "image"}
+                    uri={displayUrl}
+                    fileType={displayType}
                     showDownload={false}
                     className="object-cover w-full h-full group-hover:scale-[1.04] transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300" />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/40 via-black/10 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300" />
                   
                   {/* Status Badge */}
                   <div className="absolute top-3 right-3">

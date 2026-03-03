@@ -110,6 +110,8 @@ export async function GET() {
             imageUrl: meta.cover || "",
             mediaUrl:meta.media || "",
             fileType:meta.fileType || "",
+            trailer: meta.trailer || null,
+            trailerFileType: meta.trailerFileType || null,
           },
 
         });

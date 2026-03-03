@@ -22,6 +22,9 @@ export function AuctionDetails({
   const ended = new Date() >= new Date(auction.endTime);
   const highestBid = auction.highestBid || auction.minBid;
   const { address } = useAccount();
+  const isOwner = auction.seller.walletAddress.toLowerCase() === address?.toLowerCase();
+  const hasTrailer = !!auction.nft.trailer && auction.nft.trailer.trim() !== "";
+  const shouldShowTrailer = !isOwner && hasTrailer;
   // Countdown timer state
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
@@ -188,12 +191,12 @@ transition-all duration-300"
             <div className="mt-6">
               <UniversalMediaViewer
                 tokenUri={auction.nft.tokenUri}
-                uri={auction.nft.mediaUrl}
-                fileType={auction.nft.fileType}
+                uri={shouldShowTrailer ? auction.nft.trailer || "" : auction.nft.mediaUrl}
+                fileType={shouldShowTrailer ? auction.nft.trailerFileType || auction.nft.fileType : auction.nft.fileType}
                 gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
                 className="w-full"
                 style={{ maxHeight: 384 }}
-                showDownload={auction.seller.walletAddress.toLowerCase() === address?.toLowerCase()}
+                showDownload={isOwner}
               />
             </div>
           )}

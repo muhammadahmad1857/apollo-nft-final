@@ -342,11 +342,6 @@ export default function FavoritesPage() {
 
             // Check if current user owns this NFT
             const isOwned = user?.id === nft.ownerId;
-            const hasAuction = nft.auction && !nft.auction.settled;
-            const isAuctionActive =
-              hasAuction &&
-              new Date(nft.auction!.startTime) <= new Date() &&
-              new Date(nft.auction!.endTime) >= new Date();
 
             return (
               <div key={nft.id} className="relative">
@@ -363,6 +358,9 @@ export default function FavoritesPage() {
                   name={nft.creator?.name || "Unknown"}
                   cover={resolveIPFS(nft.imageUrl)}
                   media={nft.mediaUrl}
+                  trailer={nft.trailer}
+                  trailerFileType={nft.trailerFileType}
+                  forceOriginalMedia={true}
                   minted={true}
                   tokenId={nft.tokenId}
                   mintPrice={nft.mintPrice}

@@ -43,6 +43,9 @@ export interface NFTCardProps {
   auctionApproved:boolean;
   likes:NFTLikeModel[]
   fileType?: string;
+  trailer?: string | null;
+  trailerFileType?: string | null;
+  forceOriginalMedia?: boolean;
   userId?:number
   address:string
   userBlocked?: boolean
@@ -75,6 +78,9 @@ const NFTCard = ({
   media,
   auctionApproved,
   fileType,
+  trailer,
+  trailerFileType,
+  forceOriginalMedia = false,
   userId,
   address,
   userBlocked = false,
@@ -90,6 +96,10 @@ const NFTCard = ({
  
   const now = new Date();
   const isOwner = !!address && address === ownerAddress;
+  const hasTrailer = !!trailer && trailer.trim() !== "";
+  const shouldShowTrailer = !forceOriginalMedia && !isOwner && hasTrailer;
+  const displayMedia = shouldShowTrailer ? trailer : media;
+  const displayFileType = shouldShowTrailer ? trailerFileType || fileType : fileType;
   const isAuctionActive =
     auction &&
     !auction.settled &&
@@ -171,11 +181,11 @@ const NFTCard = ({
 
         {/* Main Media Preview - Large */}
         <div className="relative w-full">
-          {media || token ? (
+          {displayMedia || token ? (
             <UniversalMediaViewer
               tokenUri={token}
-              uri={media}
-              fileType={fileType}
+              uri={displayMedia}
+              fileType={displayFileType}
               gateway={process.env.NEXT_PUBLIC_GATEWAY_URL}
               className="w-full"
               showDownload={isOwner}
@@ -202,8 +212,8 @@ const NFTCard = ({
                 <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0">
                   <UniversalMediaIcon
                     tokenUri={token}
-                    uri={media}
-                    fileType={fileType}
+                    uri={displayMedia}
+                    fileType={displayFileType}
                     className="w-full h-full object-cover"
                   />
                 </div>

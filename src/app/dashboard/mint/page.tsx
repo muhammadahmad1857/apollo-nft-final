@@ -26,6 +26,8 @@ export default function MintPage() {
     coverImageUrl: undefined,
     musicTrackUrl: "",
     fileType: undefined,
+    trailerUrl: undefined,
+    trailerFileType: undefined,
     royaltyBps: Number(getRoyalty("SINGLE")) || 500,
   });
 
@@ -48,6 +50,8 @@ export default function MintPage() {
       coverImageUrl: undefined,
       musicTrackUrl: "",
       fileType: undefined,
+      trailerUrl: undefined,
+      trailerFileType: undefined,
       royaltyBps: 500,
     });
     removeRoyalty("SINGLE");
@@ -77,6 +81,8 @@ export default function MintPage() {
         cover: formValues.coverImageUrl,
         media: formValues.musicTrackUrl,
         fileType: formValues.fileType,
+        trailer: formValues.trailerUrl,
+        trailerFileType: formValues.trailerFileType,
       };
 
       // Upload metadata JSON to Pinata

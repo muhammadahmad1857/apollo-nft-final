@@ -79,6 +79,8 @@ model NFT {
   moderatedById Int?
   updatedAt   DateTime  @updatedAt
   fileType   String @default("")
+  trailer    String?
+  trailerFileType String?
   creator     User      @relation("CreatorNFTs", fields: [creatorId], references: [id])
   owner       User      @relation("OwnerNFTs", fields: [ownerId], references: [id])
   likes       NFTLike[]

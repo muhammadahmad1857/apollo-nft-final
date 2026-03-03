@@ -25,6 +25,8 @@ export interface MetadataContent {
   description?: string;
   cover?: string;
   media?: string;
+  trailer?: string;
+  trailerFileType?: string;
 }
 
 export interface MetadataFormValues {
@@ -40,6 +42,8 @@ export interface PinataJSON{
   description:string,
   cover?:string,
   media:string,
+  trailer?: string,
+  trailerFileType?: string,
   title:string
 }
 

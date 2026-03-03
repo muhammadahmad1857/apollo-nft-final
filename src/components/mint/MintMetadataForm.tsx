@@ -53,6 +53,8 @@ export interface MintFormValues {
   coverImageUrl?: string;
   musicTrackUrl: string;
   fileType?: string;
+  trailerUrl?: string;
+  trailerFileType?: string;
   royaltyBps: number;
 }
 
@@ -78,8 +80,12 @@ export function MintMetadataForm({
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploadingTrailer, setIsUploadingTrailer] = useState(false);
+  const [trailerUploadProgress, setTrailerUploadProgress] = useState(0);
+  const [isTrailerDragging, setIsTrailerDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const trailerFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = useCallback(
@@ -97,7 +103,7 @@ export function MintMetadataForm({
 
   // Upload cover image to Pinata
   const uploadCoverImage = useCallback(
-    async (file: File, currentFormValues: MintFormValues) => {
+    async (file: File) => {
       try {
         setIsUploadingCover(true);
 
@@ -169,9 +175,9 @@ export function MintMetadataForm({
       };
       reader.readAsDataURL(file);
 
-      uploadCoverImage(file, values);
+      uploadCoverImage(file);
     },
-    [uploadCoverImage, values]
+    [uploadCoverImage]
   );
 
   const handleCoverDrop = useCallback(
@@ -192,7 +198,7 @@ export function MintMetadataForm({
 
   // Upload file to Pinata
   const uploadToPinata = useCallback(
-    async (file: File, currentFormValues: MintFormValues) => {
+    async (file: File) => {
       try {
         setIsUploadingFile(true);
         setUploadProgress(0);
@@ -286,9 +292,9 @@ export function MintMetadataForm({
         return;
       }
 
-      uploadToPinata(file, values);
+      uploadToPinata(file);
     },
-    [uploadToPinata, values]
+    [uploadToPinata]
   );
 
   const handleDrop = useCallback(
@@ -322,6 +328,132 @@ export function MintMetadataForm({
       }
     },
     [handleFile]
+  );
+
+  const uploadTrailerToPinata = useCallback(
+    async (file: File) => {
+      try {
+        setIsUploadingTrailer(true);
+        setTrailerUploadProgress(0);
+
+        const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
+        if (!jwtRes.ok) {
+          throw new Error("Failed to get upload token");
+        }
+        const { JWT } = await jwtRes.json();
+        setTrailerUploadProgress(33);
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("network", "public");
+        setTrailerUploadProgress(50);
+
+        const uploadRes = await fetch(
+          "https://api.pinata.cloud/pinning/pinFileToIPFS",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${JWT}`,
+            },
+            body: formData,
+          }
+        );
+
+        if (!uploadRes.ok) {
+          const error = await uploadRes.text();
+          throw new Error(error || "Upload failed");
+        }
+
+        setTrailerUploadProgress(77);
+        const json = await uploadRes.json();
+        const ipfsHash = json.IpfsHash;
+        const ipfsUrl = `ipfs://${ipfsHash}`;
+        const detectedFileType = getFileType(file);
+
+        setTrailerUploadProgress(100);
+
+        onChange((prev) => ({
+          ...prev,
+          trailerUrl: ipfsUrl,
+          trailerFileType: detectedFileType,
+        }));
+
+        toast.success("✓ Trailer uploaded successfully!", {
+          description: `Trailer type: ${detectedFileType}`,
+        });
+      } catch (error) {
+        console.error("Trailer upload error:", error);
+        toast.error("Failed to upload trailer", {
+          description: error instanceof Error ? error.message : "Please try again",
+        });
+      } finally {
+        setIsUploadingTrailer(false);
+        setTrailerUploadProgress(0);
+      }
+    },
+    [onChange]
+  );
+
+  const handleTrailerFile = useCallback(
+    (file: File) => {
+      const fileExtension = file.name
+        .toLowerCase()
+        .slice(file.name.lastIndexOf("."));
+      const acceptedTypes = [".md", ".pdf", ".doc", ".docx", ".txt"];
+
+      const isMedia =
+        file.type.startsWith("video/") ||
+        file.type.startsWith("audio/") ||
+        file.type.startsWith("image/");
+
+      if (!isMedia && !acceptedTypes.includes(fileExtension)) {
+        toast.error(
+          "Please upload audio, video, image, markdown, pdf, word, or text files only (.md, .pdf, .doc, .docx, .txt, or any video/*, audio/*, image/*)"
+        );
+        return;
+      }
+
+      if (file.size > 100 * 1024 * 1024) {
+        toast.error("File size must be less than 100MB");
+        return;
+      }
+
+      uploadTrailerToPinata(file);
+    },
+    [uploadTrailerToPinata]
+  );
+
+  const handleTrailerDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setIsTrailerDragging(false);
+
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        handleTrailerFile(file);
+      }
+    },
+    [handleTrailerFile]
+  );
+
+  const handleTrailerDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsTrailerDragging(true);
+  }, []);
+
+  const handleTrailerDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsTrailerDragging(false);
+  }, []);
+
+  const handleTrailerFileInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        handleTrailerFile(file);
+      }
+    },
+    [handleTrailerFile]
   );
 
   return (
@@ -395,7 +527,7 @@ export function MintMetadataForm({
             Tell the story behind your creation
           </p>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            {values.description.length}/500
+            {values.description.length}/5000
           </p>
         </div>
       </div>
@@ -612,6 +744,107 @@ export function MintMetadataForm({
                   <Upload className="mx-auto h-8 w-8 text-zinc-500 dark:text-zinc-400 mb-2" />
                   <p className="text-sm font-semibold text-white">
                     Drag & drop your file
+                  </p>
+                  <p className="text-xs text-zinc-400 mt-1">or click to browse</p>
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Trailer Upload (Optional) */}
+      <div className="space-y-2">
+        <Label className="text-sm font-semibold">
+          Trailer <span className="text-zinc-500">(Optional)</span>
+        </Label>
+
+        <AnimatePresence mode="wait">
+          {values.trailerUrl && values.trailerUrl.trim() !== "" ? (
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              className="rounded-lg border border-zinc-400/30 bg-zinc-500/5 backdrop-blur-lg p-4"
+            >
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="h-5 w-5 text-white shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-white text-sm">
+                      Trailer uploaded
+                    </p>
+                    {values.trailerFileType && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-500/20 text-white border border-zinc-500/30">
+                        {values.trailerFileType}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-zinc-400 font-mono break-all mt-1">
+                    {values.trailerUrl}
+                  </p>
+                  <button
+                    onClick={() => {
+                      handleChange("trailerUrl", "");
+                      handleChange("trailerFileType", undefined);
+                    }}
+                    className="mt-2 text-xs text-white hover:text-gray-300 underline"
+                  >
+                    Change trailer
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onDrop={handleTrailerDrop}
+              onDragOver={handleTrailerDragOver}
+              onDragLeave={handleTrailerDragLeave}
+              onClick={() => trailerFileInputRef.current?.click()}
+              className={`
+                relative cursor-pointer rounded-lg border-2 border-dashed p-8 backdrop-blur-lg text-center transition-all duration-300 bg-zinc-950/20
+                ${
+                  isTrailerDragging
+                    ? "border-cyan-500 bg-cyan-500/10 shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                    : "border-zinc-400/30 dark:border-zinc-600/30 hover:border-cyan-500/50 hover:bg-cyan-500/5"
+                }
+                ${isUploadingTrailer ? "pointer-events-none opacity-50" : ""}
+              `}
+            >
+              <input
+                ref={trailerFileInputRef}
+                type="file"
+                accept="audio/*,video/*,image/*,.md,.pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
+                onChange={handleTrailerFileInput}
+                className="hidden"
+              />
+
+              {isUploadingTrailer ? (
+                <div className="space-y-3">
+                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
+                  <div>
+                    <p className="text-xs font-bold text-white mb-2">
+                      Uploading trailer...
+                    </p>
+                    <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                      <motion.div
+                        className="h-full bg-linear-to-r from-white to-gray-300"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${trailerUploadProgress}%` }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </div>
+                    <p className="text-xs text-zinc-500 mt-1">{trailerUploadProgress}%</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <Upload className="mx-auto h-8 w-8 text-zinc-500 dark:text-zinc-400 mb-2" />
+                  <p className="text-sm font-semibold text-white">
+                    Drag & drop trailer file
                   </p>
                   <p className="text-xs text-zinc-400 mt-1">or click to browse</p>
                 </>
