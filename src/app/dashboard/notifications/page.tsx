@@ -26,7 +26,7 @@ export default function DashboardNotificationsPage() {
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
 
-  const wallet = useMemo(() => address?.toLowerCase() || "", [address]);
+  const wallet = useMemo(() => address||"", [address]);
 
   const stream = useNotificationsStream({
     wallet,
