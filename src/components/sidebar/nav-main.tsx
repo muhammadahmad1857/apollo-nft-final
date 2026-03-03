@@ -10,6 +10,7 @@ import {
 import {
   SidebarGroup,
   SidebarGroupLabel,
+  SidebarMenuAction,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -26,6 +27,7 @@ export function NavMain({
     url: string
     icon?: LucideIcon
     isActive?: boolean
+      badgeCount?: number
     items?: {
       title: string
       url: string
@@ -47,6 +49,14 @@ export function NavMain({
                     <span>{item.title}</span>
                   </a>
                 </SidebarMenuButton>
+                {typeof item.badgeCount === "number" && item.badgeCount > 0 && (
+                  <SidebarMenuAction
+                    showOnHover={false}
+                    className="text-[10px] rounded-full min-w-5 h-5 px-1.5 bg-zinc-800 text-zinc-100 border border-zinc-700"
+                  >
+                    {item.badgeCount > 99 ? "99+" : item.badgeCount}
+                  </SidebarMenuAction>
+                )}
               </SidebarMenuItem>
             )
           }

@@ -3,10 +3,10 @@
 import * as React from "react"
 import {
   AudioWaveform,
+  Bell,
   Bot,
   ChartAreaIcon,
   Command,
-  Files,
   GalleryVerticalEnd,
   Heart,
   LayoutDashboard,
@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/sidebar"
 import Logo from "../Logo"
 import { useUser } from "@/hooks/useUser"
+import { useUnreadNotificationsCount } from "@/hooks/useNotifications"
 import { toast } from "sonner"
 import { useAccount } from "wagmi"
 
@@ -136,6 +137,11 @@ const data = {
       icon: ListMusic,
     },
     {
+      title: "Notifications",
+      url: "/dashboard/notifications",
+      icon: Bell,
+    },
+    {
       title: "User Settings",
       url: "/dashboard/user",
       icon: User,
@@ -155,7 +161,26 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const {address} = useAccount()
   const { data: user, isLoading, error } = useUser(address||"");
+  const normalizedWallet = address?.toLowerCase() || "";
+  const { data: unreadCountData } = useUnreadNotificationsCount({
+    wallet: normalizedWallet,
+  });
+  const unreadCount = unreadCountData?.unread ?? 0;
   const [navUser, setNavUser] = React.useState<{ name: string; avatarUrl: string; address: string } | null>(null);
+
+  const navItems = React.useMemo(
+    () =>
+      data.navMain.map((item) => {
+        if (item.url !== "/dashboard/notifications") {
+          return item;
+        }
+        return {
+          ...item,
+          badgeCount: unreadCount,
+        };
+      }),
+    [unreadCount]
+  );
 
   React.useEffect(() => {
     console.log("User data:", user, isLoading, error);
@@ -187,11 +212,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <Logo show={state === "expanded"} width={150} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navItems} />
         {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser
+          unreadCount={unreadCount}
           user={
             navUser
               ? { name: navUser.name, address: navUser.address, avatar: navUser.avatarUrl }
