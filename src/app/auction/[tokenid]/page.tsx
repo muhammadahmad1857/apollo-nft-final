@@ -23,6 +23,7 @@ import {
 import { useAccount } from "wagmi";
 import { useUser } from "@/hooks/useUser";
 import Loader from "@/components/loader";
+import { NftModerationStatus } from "@/generated/prisma/enums";
 
 export default function AuctionPage() {
   const params = useParams();
@@ -75,7 +76,6 @@ export default function AuctionPage() {
     async function fetchData() {
       try {
         const auctionDB = await getAuctionByNFT(nftId);
-        if (!auctionDB?.nft?.tokenId) return;
         if (!auctionDB || !auctionDB.nft?.tokenId) {
           router.push("/auction");
           return;
@@ -98,6 +98,11 @@ export default function AuctionPage() {
   ------------------------------ */
   const handlePlaceBid = async (bidEth: string) => {
     if (!auction || tokenId === undefined || !user?.id) return;
+
+    if (user.isBlocked) {
+      toast.error("Your account is blocked. Contact us at hello@blaqclouds.io if this is a mistake.");
+      return;
+    }
 
     try {
       await placeBid(
@@ -144,8 +149,18 @@ export default function AuctionPage() {
   return (
     <div className="max-w-5xl mx-auto py-10 space-y-8">
       <AuctionDetails auction={auction} onSettle={handleSettle} />
+      {auction.nft.moderationStatus === NftModerationStatus.FLAGGED && (
+        <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
+          This NFT is flagged by moderation. Please review carefully before placing bids.
+        </p>
+      )}
+      {user?.isBlocked && (
+        <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          Your account is blocked. You cannot bid right now. Contact us at hello@blaqclouds.io if this is a mistake.
+        </p>
+      )}
       <AuctionStatus auction={auction} />
-     { new Date() < new Date(auction.endTime)&&<BidInput isDisabled={(auction.seller.walletAddress === address)||auction.settled || new Date() >= new Date(auction.endTime)} onPlaceBid={handlePlaceBid} minBid={auction.highestBid || auction.minBid} />}
+     { new Date() < new Date(auction.endTime)&&<BidInput isDisabled={(auction.seller.walletAddress === address)||auction.settled || new Date() >= new Date(auction.endTime) || !!user?.isBlocked} onPlaceBid={handlePlaceBid} minBid={auction.highestBid || auction.minBid} />}
       <BidHistory bids={bids} />
     </div>
   );

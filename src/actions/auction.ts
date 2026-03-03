@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/prisma";
+import { NftModerationStatus } from "@/generated/prisma/enums";
 import type {
   AuctionModel as PrismaAuction,
   AuctionCreateInput,
@@ -10,12 +11,56 @@ import type {
   UserModel,
 } from "@/generated/prisma/models";
 
+const SUPPORT_EMAIL = "hello@blaqclouds.io";
+
+function isTradeBlockedByModeration(status: NftModerationStatus): boolean {
+  return (
+    status === NftModerationStatus.DELISTED ||
+    status === NftModerationStatus.HIDDEN
+  );
+}
+
+async function ensureUserNotBlockedById(userId: number): Promise<void> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { isBlocked: true },
+  });
+
+  if (user?.isBlocked) {
+    throw new Error(
+      `Your account is blocked. Contact us at ${SUPPORT_EMAIL} if this is a mistake.`,
+    );
+  }
+}
+
 /* --------------------
    CREATE
 -------------------- */
 export async function createAuction(
   data: AuctionCreateInput
 ): Promise<PrismaAuction> {
+  const sellerId = data.seller.connect?.id;
+  const nftId = data.nft.connect?.id;
+
+  if (!sellerId) throw new Error("Seller ID is required");
+  if (!nftId) throw new Error("NFT ID is required");
+
+  await ensureUserNotBlockedById(sellerId);
+
+  const nft = await db.nFT.findUnique({
+    where: { id: nftId },
+    select: { ownerId: true, moderationStatus: true },
+  });
+  if (!nft) throw new Error("NFT not found");
+
+  if (nft.ownerId !== sellerId) {
+    throw new Error("Only owner can create auction for this NFT");
+  }
+
+  if (isTradeBlockedByModeration(nft.moderationStatus)) {
+    throw new Error("This NFT is moderated and cannot be auctioned.");
+  }
+
   return db.auction.create({ data });
 }
 
@@ -37,8 +82,15 @@ export async function getAuctionByNFT(nftId: number): Promise<
     })
   | null
 > {
-  return db.auction.findUnique({
-    where: { nftId },
+  return db.auction.findFirst({
+    where: {
+      nftId,
+      nft: {
+        moderationStatus: {
+          not: NftModerationStatus.HIDDEN,
+        },
+      },
+    },
     include: { nft: true, seller: true, highestBidder: true, bids: true },
   });
 }
@@ -71,6 +123,9 @@ export async function getActiveAuctions(filters: {
       startTime: { lte: now },
       endTime: { gt: now },
       nft: {
+        moderationStatus: {
+          in: [NftModerationStatus.ACTIVE, NftModerationStatus.FLAGGED],
+        },
         title: filters.search
           ? { contains: filters.search, mode: "insensitive" }
           : undefined,
@@ -110,9 +165,17 @@ export async function updateHighestBid(
   bidderId: number,
   bidAmount: number
 ): Promise<PrismaAuction> {
-  const auction = await db.auction.findUnique({ where: { id: auctionId } });
+  await ensureUserNotBlockedById(bidderId);
+
+  const auction = await db.auction.findUnique({
+    where: { id: auctionId },
+    include: { nft: { select: { moderationStatus: true } } },
+  });
   console.log("auction1",auction)
   if (!auction) throw new Error("Auction not found");
+  if (isTradeBlockedByModeration(auction.nft.moderationStatus)) {
+    throw new Error("This NFT is moderated and cannot accept bids.");
+  }
   console.log("auction",auction)
   if (!auction.highestBid || bidAmount > auction.highestBid) {
     return db.auction.update({
@@ -128,6 +191,20 @@ export async function updateHighestBid(
  * Settle auction in DB after contract call
  */
 export async function settleAuction(auctionId: number): Promise<PrismaAuction> {
+  const auction = await db.auction.findUnique({
+    where: { id: auctionId },
+    include: { nft: { select: { moderationStatus: true } }, seller: { select: { isBlocked: true } } },
+  });
+  if (!auction) throw new Error("Auction not found");
+  if (auction.seller.isBlocked) {
+    throw new Error(
+      `Your account is blocked. Contact us at ${SUPPORT_EMAIL} if this is a mistake.`,
+    );
+  }
+  if (isTradeBlockedByModeration(auction.nft.moderationStatus)) {
+    throw new Error("This NFT is moderated and cannot be settled.");
+  }
+
   return db.auction.update({
     where: { id: auctionId },
     data: { settled: true },

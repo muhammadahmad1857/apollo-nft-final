@@ -375,6 +375,8 @@ export default function FavoritesPage() {
                   fileType={nft.fileType}
                   userId={user?.id}
                   address={address || ""}
+                  userBlocked={!!user?.isBlocked}
+                  moderationStatus={nft.moderationStatus}
                   onCardClick={() => playSingle(nft)}
                   likes={likes}
                   auction={

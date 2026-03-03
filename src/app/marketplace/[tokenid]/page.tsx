@@ -1,15 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import { ExternalLink } from "lucide-react";
-import { nftABIArray, nftAddress } from "@/lib/wagmi/contracts";
+import { nftAddress } from "@/lib/wagmi/contracts";
 import Link from "next/link";
 import NFTInteractiveContent from "@/components/marketplace/nftPage";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { NotFound } from "@/components/notFound";
-import { UniversalMediaIcon } from "@/components/ui/UniversalMediaIcon";
-import { getNFTByTokenId } from "@/actions/nft";
+import { getVisibleNFTByTokenId } from "@/actions/nft";
 import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 
 // Force dynamic rendering + light ISR
@@ -39,14 +36,10 @@ export default async function NFTDetailPage({
 
   let owner: `0x${string}` | null = null;
 
-  const dbNft = await getNFTByTokenId(tokenId);
+  const dbNft = await getVisibleNFTByTokenId(tokenId);
 
   if (!dbNft) {
-    return (
-      <div className="flex flex-col items-center justify-center">
-        <NotFound title="No NFT FOUND" link="/dashboard" />
-      </div>
-    );
+    notFound();
   }
 
   // Get owner address from DB
@@ -158,6 +151,7 @@ console.log("tokenUri", dbNft);
               fileType={dbNft.fileType}
               nftId={dbNft.id}
               imageUrl={dbNft.imageUrl}
+              moderationStatus={dbNft.moderationStatus}
             />
 
             {/* Optional extra info */}

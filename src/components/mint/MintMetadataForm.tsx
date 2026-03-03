@@ -387,7 +387,7 @@ export function MintMetadataForm({
           placeholder="Describe your creation, story, and inspiration..."
           value={values.description}
           onChange={(e) => handleChange("description", e.target.value)}
-          maxLength={500}
+          maxLength={5000}
           className="bg-zinc-950/40 backdrop-blur border-zinc-700/50 dark:border-zinc-600/50 focus:border-white/50 focus:ring-white/20 text-white placeholder-zinc-500 resize-none min-h-24"
         />
         <div className="flex justify-between">

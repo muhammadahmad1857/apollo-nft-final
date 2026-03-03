@@ -8,6 +8,7 @@ import { useBuyNFT } from "@/hooks/useMarketplace";
 import ShareModal from "./ShareModel";
 import LikeButton from "./nftLikes";
 import { parseEther } from "viem";
+import { NftModerationStatus } from "@/generated/prisma/enums";
 import { transferOwnership } from "@/actions/nft";
 import {
   Dialog,
@@ -32,6 +33,7 @@ interface NFTInteractiveContentProps {
   fileType?: string;
   nftId:number
   imageUrl?: string ;
+  moderationStatus: NftModerationStatus;
 }
 
 export default function NFTInteractiveContent({
@@ -44,7 +46,8 @@ export default function NFTInteractiveContent({
   tokenUri,
   fileType,
   nftId,
-  imageUrl
+  imageUrl,
+  moderationStatus,
 }: NFTInteractiveContentProps) {
   const { address } = useAccount();
   const { data: user } = useUser(address);
@@ -53,6 +56,8 @@ export default function NFTInteractiveContent({
   const [showShareModal, setShowShareModal] = useState(false);
   const [showBuyConfirm, setShowBuyConfirm] = useState(false);
   const [isProcessingBuy, setIsProcessingBuy] = useState(false);
+  const isUserBlocked = !!user?.isBlocked;
+  const isFlagged = moderationStatus === NftModerationStatus.FLAGGED;
 console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPrice, ownerAddress, tokenUri });
   // Load initial like state and count
   // useEffect(() => {
@@ -102,6 +107,10 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
   // };
 
   const handleBuy = async () => {
+    if (isUserBlocked) {
+      toast.error("Your account is blocked. Contact us at hello@blaqclouds.io if this is a mistake.");
+      return;
+    }
     if (!mintPrice) return toast.error("Mint price not available");
 
     try {
@@ -111,9 +120,9 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
         await transferOwnership(tokenId, user.id);
       }
       toast.success("NFT purchased successfully!");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("error in buying", err);
-      toast.error(err?.message || "Failed to purchase NFT.");
+      toast.error(err instanceof Error ? err.message : "Failed to purchase NFT.");
     }
   };
 
@@ -121,6 +130,16 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
     <>
       {/* Media Controls */}
       <div className="mt-8 flex flex-wrap gap-4 justify-center sm:justify-start">
+        {isUserBlocked && (
+          <p className="w-full rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            Your account is blocked. Contact us at hello@blaqclouds.io if this is a mistake.
+          </p>
+        )}
+        {isFlagged && (
+          <p className="w-full rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
+            This NFT is flagged by moderation. Please review carefully before interacting.
+          </p>
+        )}
          {imageUrl ? (
                         <Image
                           src={imageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)}
@@ -165,10 +184,12 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
             <button
               onClick={() => setShowBuyConfirm(true)}
               className="px-6 py-3 rounded-lg font-medium bg-cyan-600 text-white hover:bg-cyan-700 transition-colors disabled:bg-cyan-700/60 disabled:pointer-events-none"
-              disabled={isPending || address === ownerAddress}
+              disabled={isPending || address === ownerAddress || isUserBlocked}
             >
               {address === ownerAddress
                 ? "My NFT"
+                : isUserBlocked
+                ? "Blocked"
                 : isPending
                 ? "Buying..."
                 : "Buy"
@@ -236,7 +257,7 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
                   setIsProcessingBuy(false);
                 }
               }}
-              disabled={isProcessingBuy}
+              disabled={isProcessingBuy || isUserBlocked}
             >
               {isProcessingBuy ? "Processing..." : "Confirm & Pay"}
             </Button>

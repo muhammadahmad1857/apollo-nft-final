@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { UniversalMediaIcon } from "../ui/UniversalMediaIcon";
 import { NFTLikeModel } from "@/generated/prisma/models";
 import { AddToPlaylistModal } from "@/components/playlist/AddToPlaylistModal";
+import { NftModerationStatus } from "@/generated/prisma/enums";
 
 export interface NFTCardProps {
   title: string;
@@ -44,6 +45,8 @@ export interface NFTCardProps {
   fileType?: string;
   userId?:number
   address:string
+  userBlocked?: boolean
+  moderationStatus: NftModerationStatus
   onCardClick?: () => void;
   auction: {
     id: number;
@@ -74,6 +77,8 @@ const NFTCard = ({
   fileType,
   userId,
   address,
+  userBlocked = false,
+  moderationStatus,
   onCardClick
 }: NFTCardProps) => {
   const { buyNFT, isPending } = useBuyNFT();
@@ -90,11 +95,16 @@ const NFTCard = ({
     !auction.settled &&
     new Date(auction.startTime) <= now &&
     new Date(auction.endTime) >= now;
+  const isFlagged = moderationStatus === NftModerationStatus.FLAGGED;
 
   console.log("nft.media", cover);
   console.log("NFT title received:", auction);
 
   const handleBuy = async () => {
+    if (userBlocked) {
+      toast.error("Your account is blocked. Contact us at hello@blaqclouds.io if this is a mistake.");
+      return;
+    }
     if (!mintPrice) return toast.error("Mint price not available");
 
     try {
@@ -151,6 +161,11 @@ const NFTCard = ({
         {isAuctionActive && (
           <div className="absolute top-3 left-3 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold z-10">
             Auction Live
+          </div>
+        )}
+        {isFlagged && (
+          <div className="absolute top-3 right-3 bg-amber-600 text-white px-2 py-1 rounded-full text-xs font-semibold z-10">
+            Flagged
           </div>
         )}
 
@@ -279,9 +294,9 @@ const NFTCard = ({
                   setShowBuyConfirm(true);
                 }}
                 className="sm:ml-auto px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors disabled:pointer-events-none"
-                disabled={isPending || !address || address === ownerAddress}
+                disabled={isPending || !address || address === ownerAddress || userBlocked}
               >
-                {address === ownerAddress ? "My NFT" : isPending ? "Buying..." : "Buy"}
+                {address === ownerAddress ? "My NFT" : userBlocked ? "Blocked" : isPending ? "Buying..." : "Buy"}
               </button>
             ) : null}
 
@@ -335,7 +350,7 @@ const NFTCard = ({
                 e.stopPropagation();
                 setShowBuyConfirm(false);
               }}
-              disabled={isProcessingBuy}
+              disabled={isProcessingBuy || userBlocked}
             >
               Cancel
             </Button>

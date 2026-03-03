@@ -97,6 +97,7 @@ console.log("data",data)
             auctionApproved={nft.approvedAuction}
             fileType={nft.fileType}
             likes={nft?.likes || []}
+                 moderationStatus={nft.moderationStatus}
              auction={nft.auction ? {
       id: nft.auction.id,
       startTime: nft.auction.startTime.toISOString(),
@@ -109,6 +110,7 @@ console.log("data",data)
     nftId={nft.id}
     userId={user?.id || undefined}
     address={address || ""}
+    userBlocked={!!user?.isBlocked}
           />
         ))}
       </div>

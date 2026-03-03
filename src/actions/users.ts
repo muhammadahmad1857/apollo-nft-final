@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/prisma";
+import { NftModerationStatus } from "@/generated/prisma/enums";
 import {
   UserCreateInput,
   UserUpdateInput,
@@ -226,6 +227,9 @@ export async function getArtistProfileData(walletAddress: string) {
     include: {
       nftsOwned: {
         where: {
+          moderationStatus: {
+            not: NftModerationStatus.HIDDEN,
+          },
           OR: [
             { isListed: true },
             { auction: { isNot: null } },

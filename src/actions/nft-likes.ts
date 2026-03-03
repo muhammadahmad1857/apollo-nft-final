@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/prisma";
+import { NftModerationStatus } from "@/generated/prisma/enums";
 import type { NFTLikeModel as PrismaNFTLike, NFTLikeCreateInput } from "@/generated/prisma/models";
 
 /* --------------------
@@ -79,7 +80,14 @@ export async function toggleNFTLike(nftId: number, userId: number) {
 -------------------- */
 export async function getLikedNFTsWithDetails(userId: number) {
   return db.nFTLike.findMany({
-    where: { userId },
+    where: {
+      userId,
+      nft: {
+        moderationStatus: {
+          not: NftModerationStatus.HIDDEN,
+        },
+      },
+    },
     include: {
       nft: {
         include: {
