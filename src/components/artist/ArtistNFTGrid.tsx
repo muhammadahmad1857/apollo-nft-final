@@ -77,7 +77,7 @@ export function ArtistNFTGrid({ nfts }: ArtistNFTGridProps) {
                 {/* Media */}
                 <div className="relative aspect-square overflow-hidden bg-muted">
                   <UniversalMediaViewer
-                    uri={displayUrl}
+                    uri={displayUrl ?? undefined}
                     fileType={displayType}
                     showDownload={false}
                     className="object-cover w-full h-full group-hover:scale-[1.04] transition-transform duration-500"
