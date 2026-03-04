@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import NFTCard from "./nftCard";
 import SkeletonCards from "./SekeletonCards";
 import { Button } from "../ui/button";
-import { marketplaceApi } from "@/lib/marketplaceApi";
+import { marketplaceApi, subscribeMarketplaceStream } from "@/lib/marketplaceApi";
 import type { AuctionModel, NFTLikeModel, NFTModel as PrismaNFT, UserModel } from "@/generated/prisma/models";
 import { useAccount } from "wagmi";
 import { useUser } from "@/hooks/useUser";
@@ -22,7 +22,7 @@ export default function PublicMintsGrid() {
   const [error, setError] = useState<string | null>(null);
   const {address} = useAccount();
   const {data:user} = useUser(address);
-  const loadMints = async () => {
+  const loadMints = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -38,11 +38,28 @@ console.log("data",data)
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadMints();
-  }, []);
+  }, [loadMints]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeMarketplaceStream((evt) => {
+      if (
+        evt.type.startsWith("marketplace.nft.") ||
+        evt.type.startsWith("marketplace.auction.") ||
+        evt.type.startsWith("marketplace.bid.") ||
+        evt.type.startsWith("marketplace.like.")
+      ) {
+        void loadMints();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [loadMints]);
 
   if (loading) {
     return (
