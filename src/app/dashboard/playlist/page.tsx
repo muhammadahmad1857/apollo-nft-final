@@ -6,6 +6,7 @@ import { useAccount } from "wagmi";
 import { Music4, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useUser } from "@/hooks/useUser";
 
 type PlaylistSummary = {
   id: number;
@@ -16,6 +17,8 @@ type PlaylistSummary = {
 
 export default function PlaylistIndexPage() {
   const { address } = useAccount();
+  const { data: user } = useUser(address || "");
+  const isUserBlocked = !!user?.isBlocked;
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [playlists, setPlaylists] = useState<PlaylistSummary[]>([]);
   const [name, setName] = useState("");
@@ -62,6 +65,16 @@ export default function PlaylistIndexPage() {
         <p className="text-sm text-zinc-400">Favorites + custom playlists</p>
       </div>
 
+      {isUserBlocked ? (
+        <div className="mx-auto w-full max-w-2xl rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-center">
+          <h2 className="text-2xl font-bold text-destructive">Your account is blocked</h2>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Playlist content is unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io.
+          </p>
+        </div>
+      ) : (
+      <>
+
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
         <h2 className="mb-3 text-lg font-semibold">Create Playlist</h2>
         <div className="flex gap-2">
@@ -104,6 +117,8 @@ export default function PlaylistIndexPage() {
           ))
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

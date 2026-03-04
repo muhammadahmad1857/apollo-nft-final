@@ -17,6 +17,13 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
 
   const canAccessWhenBlocked =
+    pathname === '/dashboard' ||
+    pathname.startsWith('/dashboard/') && (
+      pathname === '/dashboard/favorites' ||
+      pathname.startsWith('/dashboard/favorites/') ||
+      pathname === '/dashboard/playlist' ||
+      pathname.startsWith('/dashboard/playlist/')
+    ) ||
     pathname === '/dashboard/edit-profile' ||
     pathname.startsWith('/dashboard/edit-profile/') ||
     pathname === '/dashboard/notifications' ||
