@@ -171,7 +171,6 @@ const data: SidebarData = {
       url: "/dashboard/notifications",
       icon: Bell,
     },
-    
     {
       title: "User Settings",
       url: "/dashboard/user",
