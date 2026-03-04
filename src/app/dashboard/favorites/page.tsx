@@ -28,6 +28,11 @@ type FilterAuction = "all" | "active" | "settled";
 type FilterMediaMode = "audio" | "video" | "all";
 type ViewMode = "grid" | "list";
 
+function toIsoDateString(value: Date | string): string {
+  const parsed = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(parsed.getTime()) ? String(value) : parsed.toISOString();
+}
+
 export default function FavoritesPage() {
   const { address } = useAccount();
   const { data: user } = useUser(address || "");
@@ -388,8 +393,8 @@ export default function FavoritesPage() {
                     nft.auction
                       ? {
                           id: nft.auction.id,
-                          startTime: nft.auction.startTime.toISOString(),
-                          endTime: nft.auction.endTime.toISOString(),
+                          startTime: toIsoDateString(nft.auction.startTime),
+                          endTime: toIsoDateString(nft.auction.endTime),
                           settled: nft.auction.settled,
                           highestBid: nft.auction.highestBid || 0,
                           minBid: nft.auction.minBid,

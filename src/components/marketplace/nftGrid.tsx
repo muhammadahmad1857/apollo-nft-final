@@ -11,6 +11,11 @@ import { useUser } from "@/hooks/useUser";
 
 const PAGE_SIZE = 12;
 
+function toIsoDateString(value: Date | string): string {
+  const parsed = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(parsed.getTime()) ? String(value) : parsed.toISOString();
+}
+
 export default function PublicMintsGrid() {
   const [mints, setMints] = useState<(PrismaNFT & { owner: UserModel,auction:AuctionModel|null,likes:NFTLikeModel[] })[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,8 +107,8 @@ console.log("data",data)
                  moderationStatus={nft.moderationStatus}
              auction={nft.auction ? {
       id: nft.auction.id,
-      startTime: nft.auction.startTime.toISOString(),
-      endTime: nft.auction.endTime.toISOString(),
+                startTime: toIsoDateString(nft.auction.startTime),
+                endTime: toIsoDateString(nft.auction.endTime),
       settled: nft.auction.settled,
       highestBid: nft.auction.highestBid || undefined,
       minBid: nft.auction.minBid,
