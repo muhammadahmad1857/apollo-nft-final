@@ -171,11 +171,7 @@ const data: SidebarData = {
       url: "/dashboard/notifications",
       icon: Bell,
     },
-     {
-      title: "Admin Dashboard",
-      url: "https://admin.apollonft.io",
-      icon: Command,
-    },
+    
     {
       title: "User Settings",
       url: "/dashboard/user",

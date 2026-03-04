@@ -19,6 +19,7 @@ export default function Page() {
   const router = useRouter();
   const {address} = useAccount()
   const { data: user, } = useUser(address||""); // gets current logged-in wallet
+  const isUserBlocked = !!user?.isBlocked;
   const [nfts, setNFTs] = React.useState<(NFTModel & { likes?: NFTLikeModel[],auction?: AuctionModel|null, owner?: UserModel })[]>([]);
   const [search, setSearch] = React.useState("");
   const [filterMinted, setFilterMinted] = React.useState(false);
@@ -107,7 +108,14 @@ export default function Page() {
           className="bg-zinc-950!"
         />
 
-        {loading ? (
+        {isUserBlocked ? (
+          <div className="mx-auto w-full max-w-2xl rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-center">
+            <h2 className="text-2xl font-bold text-destructive">Your account is blocked</h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              NFT cards are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io.
+            </p>
+          </div>
+        ) : loading ? (
           <Loader text="Loading NFT's..." facts={dashboardFacts}/>
         ) : filteredNFTs.length === 0 ? (
 <div className="text-center py-5 text-white space-y-2">

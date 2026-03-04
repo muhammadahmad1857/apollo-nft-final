@@ -30,6 +30,7 @@ type ViewMode = "grid" | "list";
 export default function FavoritesPage() {
   const { address } = useAccount();
   const { data: user } = useUser(address || "");
+  const isUserBlocked = !!user?.isBlocked;
   const { playAll, playSingle } = useAudioPlayer();
   
   const { data: likedNFTsData, isLoading, isError } = useLikedNFTs(user?.id || null);
@@ -304,8 +305,18 @@ export default function FavoritesPage() {
         </div>
       )}
 
+      {/* Blocked State (NFT cards/list area only) */}
+      {!isLoading && isUserBlocked && (
+        <div className="mx-auto w-full max-w-2xl rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-center">
+          <h2 className="text-2xl font-bold text-destructive">Your account is blocked</h2>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Favorites NFT cards are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io.
+          </p>
+        </div>
+      )}
+
       {/* Empty State */}
-      {!isLoading && filteredAndSortedNFTs.length === 0 && (
+      {!isLoading && !isUserBlocked && filteredAndSortedNFTs.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 gap-4">
           <Heart className="w-16 h-16 text-red-400" />
           <h2 className="text-xl font-semibold">No Favorites Yet</h2>
@@ -318,7 +329,7 @@ export default function FavoritesPage() {
       )}
 
       {/* List View */}
-      {!isLoading && filteredAndSortedNFTs.length > 0 && viewMode === "list" && user && (
+      {!isLoading && !isUserBlocked && filteredAndSortedNFTs.length > 0 && viewMode === "list" && user && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-white/60">
@@ -333,7 +344,7 @@ export default function FavoritesPage() {
       )}
 
       {/* NFT Grid View */}
-      {!isLoading && filteredAndSortedNFTs.length > 0 && viewMode === "grid" && (
+      {!isLoading && !isUserBlocked && filteredAndSortedNFTs.length > 0 && viewMode === "grid" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredAndSortedNFTs.map((like) => {
             const nft = like.nft;

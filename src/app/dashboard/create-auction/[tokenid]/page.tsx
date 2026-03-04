@@ -41,6 +41,7 @@ export default function CreateAuctionPage() {
   const tokenId = Number(params.tokenid);
   const { address } = useAccount();
   const { data: user } = useUser(address || "");
+  const isUserBlocked = !!user?.isBlocked;
 
   const [currentStep, setCurrentStep] = useState(1);
   const [nft, setNft] = useState<NFTModel | null>(null);
@@ -223,6 +224,14 @@ export default function CreateAuctionPage() {
         </div>
 
         {/* Step Content */}
+        {isUserBlocked ? (
+          <div className="mx-auto w-full max-w-2xl rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-center">
+            <h2 className="text-2xl font-bold text-destructive">Your account is blocked</h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Auction creation actions are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io.
+            </p>
+          </div>
+        ) : (
         <AnimatePresence mode="wait">
           {currentStep === 1 && (
             <motion.div
@@ -378,7 +387,7 @@ export default function CreateAuctionPage() {
                 <Button
                   onClick={handleCreateAuction}
                   disabled={isTxPending || isReceiptLoading || !minBid || !duration}
-                  className="w-full h-14 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 hover:from-orange-600 hover:via-pink-600 hover:to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all text-lg"
+                  className="w-full h-14 bg-linear-to-r from-orange-500 via-pink-500 to-purple-500 hover:from-orange-600 hover:via-pink-600 hover:to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all text-lg"
                 >
                   {isTxPending || isReceiptLoading ? (
                     <>
@@ -393,6 +402,7 @@ export default function CreateAuctionPage() {
             </motion.div>
           )}
         </AnimatePresence>
+        )}
       </div>
     </div>
   );

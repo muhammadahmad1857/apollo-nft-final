@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import { PlaylistView } from "@/components/playlist/PlaylistView";
 import { Button } from "@/components/ui/button";
+import { useUser } from "@/hooks/useUser";
 
 type PlaylistItem = {
   id: number;
@@ -27,6 +28,8 @@ type Playlist = {
 export default function PlaylistDetailPage() {
   const params = useParams<{ id: string }>();
   const { address } = useAccount();
+  const { data: user } = useUser(address || "");
+  const isUserBlocked = !!user?.isBlocked;
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [mode, setMode] = useState<"audio" | "video" | "all">("all");
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -71,7 +74,16 @@ export default function PlaylistDetailPage() {
         <Button variant={view === "list" ? "default" : "outline"} onClick={() => setView("list")}>List</Button>
       </div>
 
-      <PlaylistView items={items} mode={mode} view={view} />
+      {isUserBlocked ? (
+        <div className="mx-auto w-full max-w-2xl rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-center">
+          <h2 className="text-2xl font-bold text-destructive">Your account is blocked</h2>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Playlist NFT items are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io.
+          </p>
+        </div>
+      ) : (
+        <PlaylistView items={items} mode={mode} view={view} />
+      )}
     </div>
   );
 }

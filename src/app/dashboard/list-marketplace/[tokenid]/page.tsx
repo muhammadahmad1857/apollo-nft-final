@@ -8,20 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { useListNFT, useCancelListing, useListing } from "@/hooks/useMarketplace";
+import { useListNFT, useCancelListing } from "@/hooks/useMarketplace";
 import { ApproveMarketButton } from "@/components/marketplace/marketplaceApproveButton";
 import { getNFTByTokenId } from "@/actions/nft";
 import { useUpdateNFT } from "@/hooks/useNft";
 import { NFTModel } from "@/generated/prisma/models";
 import Link from "next/link"; 
-
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+import { useAccount } from "wagmi";
+import { useUser } from "@/hooks/useUser";
 
 export default function ListMarketplacePage() {
   const params = useParams();
   const router = useRouter();
+  const { address } = useAccount();
+  const { data: user } = useUser(address || "");
+  const isUserBlocked = !!user?.isBlocked;
   const tokenId = Number(params.tokenid);
-  const safeTokenId = Number.isFinite(tokenId) && tokenId > 0 ? tokenId : 0;
 
   const [currentStep, setCurrentStep] = useState(1);
   const [nft, setNft] = useState<NFTModel | null>(null);
@@ -29,9 +31,6 @@ export default function ListMarketplacePage() {
 
   const { listNFT, isPending: listPending } = useListNFT();
   const { cancelListing, isPending: cancelPending } = useCancelListing();
-  const { data: listing } = useListing(BigInt(safeTokenId)) as {
-    data?: readonly [string, bigint] | [string, bigint] | [string, string];
-  };
 
   const updateNFT = useUpdateNFT();
   const [isListing, setIsListing] = useState(false);
@@ -232,6 +231,14 @@ export default function ListMarketplacePage() {
         </div>
 
         {/* Step Content */}
+        {isUserBlocked ? (
+          <div className="mx-auto w-full max-w-2xl rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-center">
+            <h2 className="text-2xl font-bold text-destructive">Your account is blocked</h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Marketplace listing actions are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io.
+            </p>
+          </div>
+        ) : (
         <AnimatePresence mode="wait">
           {currentStep === 1 && (
             <motion.div
@@ -345,6 +352,7 @@ export default function ListMarketplacePage() {
             </motion.div>
           )}
         </AnimatePresence>
+        )}
       </div>
     </div>
   );
