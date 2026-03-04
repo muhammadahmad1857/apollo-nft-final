@@ -37,7 +37,7 @@ export function BlockedUserNotice({
   return (
     <div
       className={cn(
-        "mx-auto w-full max-w-2xl rounded-2xl border border-destructive/40 bg-destructive/10 p-8 text-center shadow-sm transition-all",
+        "mx-auto w-full max-w-2xl backdrop-blur-lg rounded-2xl border border-destructive/40 bg-destructive/10 p-8 text-center shadow-sm transition-all",
         className
       )}
     >

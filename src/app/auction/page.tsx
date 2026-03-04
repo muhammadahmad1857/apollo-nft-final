@@ -6,8 +6,13 @@ import { getActiveAuctions } from "@/actions/auction";
 import AuctionFilters from "@/components/auction/AuctionFilters";
 import AuctionGrid from "@/components/auction/AuctionGrid";
 import { AuctionModel,  NFTModel, UserModel } from "@/generated/prisma/models";
+import { useAccount } from "wagmi";
+import { useUser } from "@/hooks/useUser";
+import { BlockedUserNotice } from "@/components/blocked-user-notice";
 
 export default function AuctionsPage() {
+  const { address } = useAccount();
+  const { data: user } = useUser(address || "");
   const searchParams = useSearchParams();
   const [auctions, setAuctions] = useState<(AuctionModel & {
       seller: UserModel;
@@ -34,6 +39,12 @@ export default function AuctionsPage() {
 
   return (
     <div className="w-screen max-w-5xl mx-auto pt-28 pb-20 space-y-6">
+      {user?.isBlocked && (
+        <BlockedUserNotice
+          compact
+          message="Your account is temporarily blocked. Auction actions may be unavailable. Contact us at hello@blaqclouds.io if this is a mistake."
+        />
+      )}
       <div>
         <h1 className="text-3xl font-bold">Live Auctions</h1>
         <p className="text-muted-foreground">Browse all active NFT auctions</p>

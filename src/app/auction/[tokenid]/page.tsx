@@ -149,17 +149,17 @@ export default function AuctionPage() {
 
   return (
     <div className="max-w-5xl mx-auto py-10 space-y-8">
+      {user?.isBlocked && (
+        <BlockedUserNotice
+          compact
+          message="Your account is temporarily blocked. Auction actions may be unavailable. Contact us at hello@blaqclouds.io if this is a mistake."
+        />
+      )}
       <AuctionDetails auction={auction} onSettle={handleSettle} />
       {auction.nft.moderationStatus === NftModerationStatus.FLAGGED && (
         <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
           This NFT is flagged by moderation. Please review carefully before placing bids.
         </p>
-      )}
-      {user?.isBlocked && (
-        <BlockedUserNotice
-          compact
-          message="Your account is temporarily blocked. You cannot bid right now. Contact us at hello@blaqclouds.io if this is a mistake."
-        />
       )}
       <AuctionStatus auction={auction} />
      { new Date() < new Date(auction.endTime)&&<BidInput isDisabled={(auction.seller.walletAddress === address)||auction.settled || new Date() >= new Date(auction.endTime) || !!user?.isBlocked} onPlaceBid={handlePlaceBid} minBid={auction.highestBid || auction.minBid} />}

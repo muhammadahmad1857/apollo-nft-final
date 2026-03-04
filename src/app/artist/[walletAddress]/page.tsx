@@ -5,6 +5,7 @@ import { ArtistProfileHeader, ArtistProfileHeaderSkeleton } from "@/components/a
 import { ArtistNFTGrid, ArtistNFTGridSkeleton } from "@/components/artist/ArtistNFTGrid";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import { BlockedUserTopBanner } from "@/components/blocked-user-top-banner";
 
 interface ArtistPageProps {
   params: {
@@ -29,6 +30,8 @@ console.log("Fetched profile data:", profileData);
           <Header/>
       <div className="max-w-7xl mx-auto px-4 pt-24 pb-12 sm:px-6 lg:px-8">
         <div className="space-y-8">
+          <BlockedUserTopBanner message="Your account is temporarily blocked. Artist page actions may be unavailable. Contact us at hello@blaqclouds.io if this is a mistake." />
+
           {/* Header */}
           <Suspense fallback={<ArtistProfileHeaderSkeleton />}>
             <ArtistProfileHeader user={profileData.user} stats={profileData.stats} />

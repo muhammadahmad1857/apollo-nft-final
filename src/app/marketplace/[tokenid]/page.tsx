@@ -8,6 +8,7 @@ import Footer from "@/components/footer";
 import { NotFound } from "@/components/notFound";
 import { getVisibleNFTByTokenId } from "@/actions/nft";
 import NFTDetailMedia from "@/components/marketplace/NFTDetailMedia";
+import { BlockedUserTopBanner } from "@/components/blocked-user-top-banner";
 
 // Force dynamic rendering + light ISR
 export const dynamic = "force-dynamic";
@@ -91,6 +92,11 @@ console.log("tokenUri", dbNft);
         >
           ← Back to gallery
         </Link>
+
+        <BlockedUserTopBanner
+          className="mb-6"
+          message="Your account is temporarily blocked. Marketplace actions may be unavailable. Contact us at hello@blaqclouds.io if this is a mistake."
+        />
 
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left - Media / Cover */}
