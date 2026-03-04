@@ -112,7 +112,8 @@ export function NavMain({
             </Collapsible>
           )
         })}
-             {<SidebarMenuItem >
+             { userRole === "ADMIN" || userRole === "SUPER_ADMIN" &&(
+              <SidebarMenuItem >
                 <SidebarMenuButton tooltip={"Admin Dashboard"} asChild>
                   <a
                     href={"https://admin.apollonft.io"}
@@ -126,7 +127,8 @@ export function NavMain({
                   </a>
                 </SidebarMenuButton>
                 
-              </SidebarMenuItem>}
+              </SidebarMenuItem>
+              ) }
       </SidebarMenu>
     </SidebarGroup>
   )
