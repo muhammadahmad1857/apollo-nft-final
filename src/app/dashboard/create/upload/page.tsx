@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { createFile } from "@/actions/files";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 
 export default function UploadPage() {
   const { address, isConnected } = useAccount();
@@ -50,7 +50,7 @@ export default function UploadPage() {
     //   if (error) {
     //     throw error;
     //   }
-    const data = await createFile({
+    const data = await marketplaceApi.files.create({
         
           ipfsUrl: ipfsUrl,
           type: fileType,

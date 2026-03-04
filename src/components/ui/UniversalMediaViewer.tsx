@@ -5,7 +5,6 @@
 // import { Play, X, FileText, File } from "lucide-react";
 // import { motion, AnimatePresence } from "framer-motion";
 // import { Button } from "@/components/ui/button";
-// import { getFileTypeByIPFS } from "@/actions/files";
 // import { resolveIPFS } from "@/lib/ipfs";
 // import Portal from "./Portal";
 // import { useAccount } from "wagmi";
@@ -405,7 +404,7 @@ import { useEffect, useState } from "react";
 import { Play, X, FileText, File } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { getFileTypeByIPFS } from "@/actions/files";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { resolveIPFS } from "@/lib/ipfs";
 import Portal from "./Portal";
 
@@ -443,7 +442,7 @@ export async function detectFileType(uri: string): Promise<string> {
     let name = "";
 
     try {
-      const result = await getFileTypeByIPFS(uri);
+      const result = await marketplaceApi.files.getTypeByIpfs(uri);
       type = result?.type?.toLowerCase().trim() || "";
       name = result?.name?.toLowerCase().trim() || "";
     } catch {}

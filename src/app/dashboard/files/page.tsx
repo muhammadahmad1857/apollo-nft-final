@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 
 import type { FileData } from "@/types";
-import { getFilesByWallet } from "@/actions/files"; // <-- our CRUD helper
+import { marketplaceApi } from "@/lib/marketplaceApi";
 
 export default function FilesPage() {
   const { address, isConnected } = useAccount();
@@ -39,8 +39,7 @@ export default function FilesPage() {
       setLoading(true);
 
       try {
-        // Fetch all files for this wallet (non-minted first, or all if you prefer)
-        const dbFiles = await getFilesByWallet(address);
+        const dbFiles = await marketplaceApi.files.getByWallet(address);
 
         // Map to FileData type if needed
         const mappedFiles: FileData[] = dbFiles.map((f) => ({

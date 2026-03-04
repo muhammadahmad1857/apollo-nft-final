@@ -4,12 +4,7 @@ import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-
-  getNFTLikesByNFT,
-  getNFTLikesByUser,
-  toggleNFTLike,
-} from "@/actions/nft-likes"; 
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { NFTLikeModel } from "@/generated/prisma/models";
 
 interface LikeButtonProps {
@@ -49,11 +44,11 @@ export default function LikeButton({
 if (likes) return; // If likes are already provided, skip fetching
     (async () => {
       try {
-        const likesFunc = await getNFTLikesByNFT(nftId);
+        const likesFunc = await marketplaceApi.likes.getByNft(nftId);
         if (mounted) setCount(likesFunc.length);
 
         if (userId) {
-          const userLikes = await getNFTLikesByUser(userId);
+          const userLikes = await marketplaceApi.likes.getByUser(userId);
           const hasLiked = userLikes.some((like) => like.nftId === nftId);
           if (mounted) setLiked(hasLiked);
         }
@@ -78,7 +73,7 @@ if (likes) return; // If likes are already provided, skip fetching
     setLoading(true);
 
     try {
-   const result = await toggleNFTLike(nftId, userId);
+    const result = await marketplaceApi.likes.toggle(nftId, userId);
 setLiked(result.liked);
 setCount(result.count);
 

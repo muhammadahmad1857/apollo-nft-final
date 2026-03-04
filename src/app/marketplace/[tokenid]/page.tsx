@@ -6,7 +6,7 @@ import NFTInteractiveContent from "@/components/marketplace/nftPage";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { NotFound } from "@/components/notFound";
-import { getVisibleNFTByTokenId } from "@/actions/nft";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import NFTDetailMedia from "@/components/marketplace/NFTDetailMedia";
 import { BlockedUserTopBanner } from "@/components/blocked-user-top-banner";
 
@@ -37,7 +37,7 @@ export default async function NFTDetailPage({
 
   let owner: `0x${string}` | null = null;
 
-  const dbNft = await getVisibleNFTByTokenId(tokenId);
+  const dbNft = await marketplaceApi.nfts.getVisibleByTokenId(tokenId);
 
   if (!dbNft) {
     notFound();

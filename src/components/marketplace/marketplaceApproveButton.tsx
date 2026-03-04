@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -10,7 +10,7 @@ import {
   marketplaceAddress,
   nftABIArray,
 } from "@/lib/wagmi/contracts";
-import { approveMarketNFT } from "@/actions/nft";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 
 interface ApproveMarketButtonProps {
     nftId: number;
@@ -27,7 +27,6 @@ export function ApproveMarketButton({
 }: ApproveMarketButtonProps) {
   const toastIdRef = useRef<string | number | null>(null);
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
-  const [onPageLoading,setOnPageLoading] = useState(false)
   const { writeContractAsync } = useWriteContract();
 
   const {
@@ -40,7 +39,6 @@ export function ApproveMarketButton({
   });
 
   const handleApproveMarket = async () => {
-    setOnPageLoading(true)
     try {
       const hash = await writeContractAsync({
         address: nftAddress,
@@ -66,7 +64,7 @@ export function ApproveMarketButton({
     if (!txHash) return;
 
     if (isSuccess && toastIdRef.current) {
-      approveMarketNFT(nftId).catch(() => {
+      marketplaceApi.nfts.approveMarket(nftId).catch(() => {
         // silently fail DB sync (chain is source of truth)
         
       });
@@ -76,8 +74,6 @@ export function ApproveMarketButton({
       });
 
       toastIdRef.current = null;
-      setTxHash(undefined);
-      setOnPageLoading(false)
       onSuccess?.();
     }
 
@@ -86,17 +82,16 @@ export function ApproveMarketButton({
         id: toastIdRef.current,
       });
       toastIdRef.current = null;
-      setTxHash(undefined);
     }
   }, [isSuccess, error, txHash, nftId, onSuccess]);
 
   return (
     <Button
       onClick={handleApproveMarket}
-      disabled={disabled || isConfirming || onPageLoading}
+      disabled={disabled || isConfirming}
       className="w-full bg-green-600 hover:bg-green-700"
     >
-      {isConfirming || onPageLoading ? "Approving..." : "Approve for Marketplace"}
+      {isConfirming ? "Approving..." : "Approve for Marketplace"}
     </Button>
   );
 }

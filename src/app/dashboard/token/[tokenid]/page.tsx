@@ -8,8 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useNFT, useAuction } from "@/hooks/useNft";
 import * as Tooltip from "@/components/ui/tooltip";
 import { useQuery } from '@tanstack/react-query';
-import { getNFTLikesByNFT } from "@/actions/nft-likes";
-import { getUserById } from "@/actions/users";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Loader from "@/components/loader";
@@ -39,12 +38,12 @@ export default function TokenDetailsPage() {
   // Likes and creator fetched with react-query for caching
   const { data: likes = [] } = useQuery({
     queryKey: ["nft-likes", token?.id],
-    queryFn: () => token?.id ? getNFTLikesByNFT(token.id) : [],
+    queryFn: () => token?.id ? marketplaceApi.likes.getByNft(token.id) : [],
     enabled: !!token?.id,
   });
   const { data: creator } = useQuery({
     queryKey: ["nft-creator", token?.creatorId],
-    queryFn: () => token?.creatorId ? getUserById(token.creatorId) : null,
+    queryFn: () => token?.creatorId ? marketplaceApi.users.getById(token.creatorId) : null,
     enabled: !!token?.creatorId,
   });
   const isOwner = creator?.walletAddress.toLowerCase() === useAccount().address?.toLowerCase();

@@ -1,13 +1,13 @@
 // hooks/useUser.ts
 import { useQuery } from "@tanstack/react-query";
-import {getUserByWallet} from "@/actions/users"
+import { marketplaceApi } from "@/lib/marketplaceApi";
 export const useUser = (address?: string) =>
   useQuery({
     queryKey: ["user", address],
     enabled: !!address,
     queryFn: async () => {
       if(!address) return null
-      const res = await getUserByWallet(address);
+      const res = await marketplaceApi.users.getByWallet(address);
       return res;
     },
   });

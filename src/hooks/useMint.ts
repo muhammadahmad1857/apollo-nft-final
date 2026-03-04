@@ -10,7 +10,6 @@
 // import type { BaseError } from "wagmi";
 // // import type { Abi } from "abitype";
 
-// import { getFilesByWallet, updateFile } from "@/actions/files";
 // import {
 //   nftABIArray as abi,
 //   nftAddress as contractAddress,
@@ -289,7 +288,7 @@ import {
 import { toast } from "sonner";
 import type { BaseError } from "wagmi";
 
-import { getFilesByWallet, updateFile } from "@/actions/files";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import {
   nftABIArray as abi,
   nftAddress as contractAddress,
@@ -342,13 +341,13 @@ export function useMintContract() {
       if (!address || !fileIpfsUrls.length) return;
 
       try {
-        const files = await getFilesByWallet(address, false);
+        const files = await marketplaceApi.files.getByWallet(address, false);
 
         for (const uri of fileIpfsUrls) {
           const file = files.find((f) => f.ipfsUrl === uri);
           if (!file?.id) continue;
 
-          await updateFile(file.id, { isMinted: true });
+          await marketplaceApi.files.update(file.id, { isMinted: true });
         }
       } catch (err) {
         console.error("Error updating mint status:", err);

@@ -6,6 +6,7 @@ import { WagmiProvider } from "wagmi";
 import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
+import { MarketplaceStreamBridge } from "@/components/marketplace-stream-bridge";
 const queryClient = new QueryClient();
 
 
@@ -29,6 +30,7 @@ const Provider = ({children}:{children:React.ReactNode}) => {
           enableSystem
           disableTransitionOnChange
         >
+        <MarketplaceStreamBridge />
         <Toaster richColors closeButton />
 
           {children}

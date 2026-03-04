@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { getLikedNFTsWithDetails } from "@/actions/nft-likes";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 
 export function useLikedNFTs(userId: number | null) {
   return useQuery({
     queryKey: ["likedNFTs", userId],
     queryFn: async () => {
       if (!userId) return [];
-      return getLikedNFTsWithDetails(userId);
+      return marketplaceApi.likes.getLikedNfts(userId);
     },
     enabled: !!userId,
     staleTime: 1000 * 60 * 5, // 5 minutes

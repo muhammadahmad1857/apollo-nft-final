@@ -8,7 +8,7 @@ import {
   useEnsAvatar,
   useBalance,
 } from 'wagmi'
-import { createUser, getUserByWallet } from '@/actions/users'
+import { marketplaceApi } from '@/lib/marketplaceApi'
 import { Loader2 } from 'lucide-react'
 import { formatUnits } from 'viem'
 
@@ -41,12 +41,12 @@ const formattedBalance =
       if (!address) return
 
       try {
-        const existingUser = await getUserByWallet(address)
+        const existingUser = await marketplaceApi.users.getByWallet(address)
         console.log('Existing user:', existingUser)
 
         if (existingUser) return
 
-        await createUser({
+        await marketplaceApi.users.create({
           walletAddress: address,
           name: ensName || address.slice(0, 6) + '...' + address.slice(-4),
           avatarUrl: ensAvatar || null,

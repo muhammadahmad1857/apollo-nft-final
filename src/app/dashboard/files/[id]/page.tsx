@@ -22,7 +22,7 @@ import {
   Download,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getFileById } from "@/actions/files"; // <-- Our generic CRUD helper
+import { marketplaceApi } from "@/lib/marketplaceApi";
 
 
 import type { FileModel as FileData } from "@/generated/prisma/models";
@@ -82,7 +82,7 @@ export default function FileDetailPage() {
 
         // const fileData = data[0];
         // Dummy data for development
-        const fileData: FileData | null = await getFileById(fileId);
+        const fileData: FileData | null = await marketplaceApi.files.getById(fileId);
         if(!fileData) return;
         // Security check - wallet ownership
         if (fileData.walletId.toLowerCase() !== address.toLowerCase()) {

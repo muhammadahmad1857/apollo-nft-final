@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getNFTById, updateNFT } from "@/actions/nft";
-import { getAuctionByNFT } from "@/actions/auction";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 
 export function useNFT(tokenid?: number) {
   return useQuery({
@@ -8,7 +7,7 @@ export function useNFT(tokenid?: number) {
     enabled: !!tokenid,
     queryFn: async () => {
       if (!tokenid) return null;
-      return await getNFTById(tokenid);
+      return await marketplaceApi.nfts.getById(tokenid);
     },
     staleTime: 1000 * 60 * 5, // 5 min
   });
@@ -20,7 +19,7 @@ export function useAuction(nftId?: number) {
     enabled: !!nftId,
     queryFn: async () => {
       if (!nftId) return null;
-      return await getAuctionByNFT(nftId);
+      return await marketplaceApi.auctions.getByNft(nftId);
     },
     staleTime: 1000 * 60 * 5,
   });
@@ -31,7 +30,7 @@ export function useUpdateNFT() {
   return useMutation({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      return await updateNFT(id, data);
+      return await marketplaceApi.nfts.update(id, data);
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["nft", variables.id] });

@@ -3,7 +3,6 @@
 // import { useState, useEffect, useRef } from "react";
 // import { Search, X } from "lucide-react";
 // import { useRouter } from "next/navigation";
-// import { searchUsers } from "@/actions/users";
 // import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 // import { Input } from "@/components/ui/input";
 // import { Skeleton } from "@/components/ui/skeleton";
@@ -150,7 +149,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, X, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { searchUsers } from "@/actions/users";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -178,7 +177,7 @@ export function SearchBar() {
       if (query.trim().length > 0) {
         setIsLoading(true);
         try {
-          const users = await searchUsers(query);
+          const users = await marketplaceApi.users.search(query);
           setResults(users);
           setIsOpen(true);
         } catch (error) {

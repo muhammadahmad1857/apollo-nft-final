@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { getActiveAuctions } from "@/actions/auction";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import AuctionFilters from "@/components/auction/AuctionFilters";
 import AuctionGrid from "@/components/auction/AuctionGrid";
 import { AuctionModel,  NFTModel, UserModel } from "@/generated/prisma/models";
@@ -24,7 +24,7 @@ export default function AuctionsPage() {
   useEffect(() => {
     const fetchAuctions = async () => {
       setLoading(true);
-      const data = await getActiveAuctions({
+      const data = await marketplaceApi.auctions.getActive({
         search: searchParams.get("q") || undefined,
         minPrice: searchParams.get("min") ? Number(searchParams.get("min")) : undefined,
         maxPrice: searchParams.get("max") ? Number(searchParams.get("max")) : undefined,

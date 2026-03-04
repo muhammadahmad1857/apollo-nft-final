@@ -21,7 +21,7 @@ import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { useUser } from "@/hooks/useUser";
 import { useCreateAuction } from "@/hooks/useAuction";
 import { ApproveAuctionButton } from "@/components/auction/ApproveButton";
-import { getNFTByTokenId } from "@/actions/nft";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { differenceInSeconds, format, startOfDay } from "date-fns";
 import { NFTModel } from "@/generated/prisma/models";
 import Link from "next/link";
@@ -68,7 +68,7 @@ export default function CreateAuctionPage() {
   useEffect(() => {
     const fetchNFT = async () => {
       try {
-        const data = await getNFTByTokenId(tokenId);
+        const data = await marketplaceApi.nfts.getByTokenId(tokenId);
         if (data) {
           setNft(data);
           setIsApproved(data.approvedAuction);

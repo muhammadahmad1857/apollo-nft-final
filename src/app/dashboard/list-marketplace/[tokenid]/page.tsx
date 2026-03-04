@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useListNFT, useCancelListing } from "@/hooks/useMarketplace";
 import { ApproveMarketButton } from "@/components/marketplace/marketplaceApproveButton";
-import { getNFTByTokenId } from "@/actions/nft";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { useUpdateNFT } from "@/hooks/useNft";
 import { NFTModel } from "@/generated/prisma/models";
 import Link from "next/link"; 
@@ -45,7 +45,7 @@ export default function ListMarketplacePage() {
   useEffect(() => {
     const fetchNFT = async () => {
       try {
-        const data = await getNFTByTokenId(tokenId);
+        const data = await marketplaceApi.nfts.getByTokenId(tokenId);
         if (data) {
           setNft(data);
           if (data.approvedMarket) {

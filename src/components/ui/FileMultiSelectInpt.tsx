@@ -4,7 +4,7 @@ import * as React from "react";
 import { useState, useEffect } from "react";
 
 import MultiSelect from "./MultiSelect";
-import { getFilesByWallet } from "@/actions/files";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { FileModel } from "@/generated/prisma/models";
 import { filterFilesByExtension } from "@/lib/filterFiles";
 
@@ -31,7 +31,7 @@ const FileMultiSelectInput = ({
     const fetchFiles = async () => {
       setIsLoading(true);
       try {
-        const allFiles = await getFilesByWallet(walletId);
+        const allFiles = await marketplaceApi.files.getByWallet(walletId);
         const filteredFiles = filterFilesByExtension(allFiles, fileExtensions);
        
         setFiles(filteredFiles);

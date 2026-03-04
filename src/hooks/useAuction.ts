@@ -10,14 +10,9 @@ import {
 import { parseEther } from "viem";
 import { toast } from "sonner";
 import { auctionABIArray, auctionAddress } from "@/lib/wagmi/contracts";
-import {
-  createAuction as createAuctionDB,
-  settleAuction as settleAuctionDB,
-} from "@/actions/auction";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { useRouter } from "next/navigation";
 import { BaseError } from "abitype";
-import { createBid } from "@/actions/bid";
-import { transferOwnership, updateNFT } from "@/actions/nft";
 
 /* ======================================================
    CREATE AUCTION
@@ -84,7 +79,7 @@ export function useCreateAuction() {
 
     (async () => {
       try {
-        await createAuctionDB({
+        await marketplaceApi.auctions.create({
           nft: { connect: { id: pendingData.nftId} },
           seller: { connect: { id: pendingData.sellerId } },
           minBid: Number(pendingData.minBidEth),
@@ -95,7 +90,7 @@ export function useCreateAuction() {
           settled: false,
 
         });
-await updateNFT(pendingData.nftId, { isListed: true, });
+await marketplaceApi.nfts.update(pendingData.nftId, { isListed: true, });
 
         toast.success("Auction created successfully 🎉", {
           id: toastIdRef.current ?? undefined,
@@ -179,8 +174,7 @@ export function usePlaceBid() {
 
     (async () => {
       try {
-        await createBid({
-          auction: { connect: { id: pendingData.auctionId } },
+        await marketplaceApi.bids.create(pendingData.auctionId, {
           bidder: { connect: { id: pendingData.bidderId } },
           amount: Number(pendingData.bidEth),
 
@@ -256,9 +250,9 @@ export function useSettleAuction() {
     (async () => {
       try {
         if (!tokenId) throw new Error("Something went wrong!!");
-        await settleAuctionDB(pendingAuctionId);
+        await marketplaceApi.auctions.settle(pendingAuctionId);
         if(!winnerId) return
-        await transferOwnership(tokenId, winnerId);
+        await marketplaceApi.nfts.transferOwnership(tokenId, winnerId);
         toast.success("Auction settled successfully ✅", {
           id: toastIdRef.current ?? undefined,
         });

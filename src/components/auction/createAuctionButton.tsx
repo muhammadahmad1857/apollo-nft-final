@@ -19,7 +19,7 @@ import { useCreateAuction } from "@/hooks/useAuction";
 import { ApproveAuctionButton } from "./ApproveButton";
 import { useUser } from "@/hooks/useUser";
 import { useSettleAuction } from "@/hooks/useAuction";
-import { getAuctionByNFT } from "@/actions/auction"; // your Prisma fetch
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { CalendarIcon } from "lucide-react";
 import { differenceInHours, differenceInSeconds, format, startOfDay } from "date-fns";
 
@@ -88,7 +88,7 @@ export function CreateAuctionButton({
   useEffect(() => {
     const fetchAuction = async () => {
       try {
-        const data = await getAuctionByNFT(nftId);
+        const data = await marketplaceApi.auctions.getByNft(nftId);
         if (data) setAuction(data);
 
         if (data) {

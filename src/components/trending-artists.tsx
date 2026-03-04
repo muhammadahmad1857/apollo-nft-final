@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { ArrowRight, User } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { getTrendingSellers } from '@/actions/users'
+import { marketplaceApi } from '@/lib/marketplaceApi'
 
 interface ArtistData {
   id: number
@@ -71,7 +71,7 @@ export default function TrendingArtists() {
   useEffect(() => {
     const fetchArtists = async () => {
       try {
-        const sellers = await getTrendingSellers(2)
+        const sellers = await marketplaceApi.users.getTrendingSellers(2)
         console.log("sellers",sellers)
         const mappedArtists: ArtistData[] = sellers.map((seller) => ({
           id: seller.id,

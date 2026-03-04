@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getArtistProfileData } from "@/actions/users";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { ArtistProfileHeader, ArtistProfileHeaderSkeleton } from "@/components/artist/ArtistProfileHeader";
 import { ArtistNFTGrid, ArtistNFTGridSkeleton } from "@/components/artist/ArtistNFTGrid";
 import Header from "@/components/header";
@@ -19,7 +19,7 @@ export default async function ArtistPage({ params }: ArtistPageProps) {
   // Decode the wallet address in case it's URL encoded
   const decodedAddress = decodeURIComponent(walletAddress);
 console.log("Decoded wallet address:", decodedAddress);
-  const profileData = await getArtistProfileData(decodedAddress);
+  const profileData = await marketplaceApi.users.getArtistProfile(decodedAddress);
 console.log("Fetched profile data:", profileData);
   if (!profileData) {
     notFound();
@@ -61,7 +61,7 @@ console.log("Fetched profile data:", profileData);
 export async function generateMetadata({ params }: ArtistPageProps) {
   const { walletAddress } = params;
   const decodedAddress = decodeURIComponent(walletAddress);
-  const profileData = await getArtistProfileData(decodedAddress);
+  const profileData = await marketplaceApi.users.getArtistProfile(decodedAddress);
 
   if (!profileData) {
     return {

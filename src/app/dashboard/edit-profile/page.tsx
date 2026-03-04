@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
 import { useAccount } from "wagmi";
-import { updateUserByWallet } from "@/actions/users";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,6 +18,11 @@ export default function EditProfilePage() {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  useState(() => {
+    if (user?.name) setName(user.name);
+    if (user?.avatarUrl) setAvatarUrl(user.avatarUrl);
+  });
 
   if (!user)
     return <div className="p-8">Connect your wallet to edit your profile.</div>;
@@ -86,7 +91,7 @@ export default function EditProfilePage() {
     setIsSaving(true);
 
     try {
-      await updateUserByWallet(address!, {
+      await marketplaceApi.users.updateByWallet(address!, {
         name,
         avatarUrl,
       });

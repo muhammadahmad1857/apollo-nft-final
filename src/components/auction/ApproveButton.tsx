@@ -6,7 +6,7 @@ import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { nftAddress, auctionAddress, nftABIArray } from "@/lib/wagmi/contracts";
-import { approveAuctionNFT } from "@/actions/nft";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 
 interface ApproveButtonProps {
   nftId: number;
@@ -48,7 +48,7 @@ export function ApproveAuctionButton({ nftId, disabled = false, onSuccess,tokenI
     }
 
     if (approveSuccess && toastIdRef.current) {
-      approveAuctionNFT(nftId).catch(() => {});
+      marketplaceApi.nfts.approveAuction(nftId).catch(() => {});
       toast.success("✅ Approved for auction", { id: toastIdRef.current });
       toastIdRef.current = null;
       if (onSuccess) onSuccess();

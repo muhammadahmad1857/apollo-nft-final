@@ -5,7 +5,7 @@ import { easeOut, motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getAllNFTs } from '@/actions/nft'
+import { marketplaceApi } from '@/lib/marketplaceApi'
 import UniversalMediaViewer from '@/components/ui/UniversalMediaViewer'
 import Portal from '@/components/ui/Portal'
 import { UniversalMediaIcon } from './ui/UniversalMediaIcon'
@@ -82,7 +82,7 @@ export default function TrendingTracks({isRecent}:{isRecent:boolean}) {
   useEffect(() => {
     const fetchTracks = async () => {
       try {
-        const nfts = await getAllNFTs(false)
+        const nfts = await marketplaceApi.nfts.getAll(false)
         // Get the 2 most recent listed NFTs
         const recentNFTs = nfts.slice(0, 2)
         console.log("recentNFTs",recentNFTs)

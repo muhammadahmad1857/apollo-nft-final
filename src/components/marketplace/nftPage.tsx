@@ -9,7 +9,7 @@ import ShareModal from "./ShareModel";
 import LikeButton from "./nftLikes";
 import { parseEther } from "viem";
 import { NftModerationStatus } from "@/generated/prisma/enums";
-import { transferOwnership } from "@/actions/nft";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import {
   Dialog,
   DialogContent,
@@ -118,7 +118,7 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
       
       await buyNFT(BigInt(tokenId), parseEther(String(mintPrice)));
       if (user?.id) {
-        await transferOwnership(tokenId, user.id);
+        await marketplaceApi.nfts.transferOwnership(tokenId, user.id);
       }
       toast.success("NFT purchased successfully!");
     } catch (err: unknown) {

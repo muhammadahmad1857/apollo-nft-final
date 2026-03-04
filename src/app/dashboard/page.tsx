@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NFTCard } from "@/components/nft-card";
 import { useUser } from "@/hooks/useUser"; // your wagmi-based hook
 import { truncateAddress } from "@/lib/truncate";
-import * as nftActions from "@/actions/nft"; // your server actions
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { useAccount } from "wagmi";
 import { AuctionModel, NFTLikeModel, NFTModel, UserModel } from "@/generated/prisma/models";
 import Loader from "@/components/loader";
@@ -43,7 +43,7 @@ export default function Page() {
     async function fetchNFTs() {
       setLoading(true);
       try {
-        const ownedNFTs = await nftActions.getNFTsByOwner(user!.id,true);
+        const ownedNFTs = await marketplaceApi.nfts.getByOwner(user!.id,true);
         setNFTs(ownedNFTs);
       } catch (err) {
         console.error(err);
@@ -53,7 +53,7 @@ export default function Page() {
     }
 
     fetchNFTs();
-  }, [address, user?.id]);
+  }, [address, user]);
 
   const filteredNFTs = nfts.filter((nft) => {
     if (filterMinted && !nft.isListed) return false;

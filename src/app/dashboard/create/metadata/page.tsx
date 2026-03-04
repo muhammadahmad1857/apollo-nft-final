@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { createFile } from "@/actions/files";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import Link from "next/link";
 
 export default function MetadataPage() {
@@ -96,7 +96,7 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
       const metadataIpfsUrl = `ipfs://${metadataJson.IpfsHash}`;
 
       // Save metadata to Supabase
-      const data = await createFile({
+      const data = await marketplaceApi.files.create({
             type: ".json",
             ipfsUrl: metadataIpfsUrl,
             isMinted: false,

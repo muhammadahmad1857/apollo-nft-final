@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import NFTCard from "./nftCard";
 import SkeletonCards from "./SekeletonCards";
 import { Button } from "../ui/button";
-import { getAllNFTs } from "@/actions/nft"; // server-side Prisma function
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import type { AuctionModel, NFTLikeModel, NFTModel as PrismaNFT, UserModel } from "@/generated/prisma/models";
 import { useAccount } from "wagmi";
 import { useUser } from "@/hooks/useUser";
@@ -22,7 +22,7 @@ export default function PublicMintsGrid() {
       setLoading(true);
       setError(null);
 
-      const data = await getAllNFTs(true); // server-side fetch via Prisma
+      const data = await marketplaceApi.nfts.getAll(true);
 
 setMints(data as (PrismaNFT & { owner: UserModel,auction:AuctionModel|null,likes:NFTLikeModel[] })[]);
 console.log("data",data)

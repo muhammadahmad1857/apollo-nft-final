@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 
-import { getAuctionHistory } from "@/actions/auction-history";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { AuctionHistory as AuctionHistoryType } from "@/types";
 import { useUser } from "@/hooks/useUser";
 
@@ -28,10 +28,11 @@ export default function AuctionHistoryPage() {
     if (!address) return;
 
     setLoading(true);
-    getAuctionHistory(address)
+    marketplaceApi.auctions.getHistoryByWallet(address)
       .then((data) => {
-        setAuctionHistory(data);
-        setFilteredAuctions(data); // default = all
+        const history = data as AuctionHistoryType[];
+        setAuctionHistory(history);
+        setFilteredAuctions(history); // default = all
       })
       .catch((err) => {
         console.error("Failed to fetch auction history:", err);

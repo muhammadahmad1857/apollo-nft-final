@@ -8,12 +8,11 @@ import {
   usePlaceBid,
   useSettleAuction,
 } from "@/hooks/useAuction";
-import { getAuctionByNFT } from "@/actions/auction";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { AuctionDetails } from "@/components/auction/AuctionDetails";
 import { BidHistory } from "@/components/auction/BidHistory";
 import { BidInput } from "@/components/auction/BidInput";
 import { AuctionStatus } from "@/components/auction/AuctionStatus";
-import { getBidsByAuctionWithUser } from "@/actions/bid";
 import {
   AuctionModel,
   BidModel,
@@ -76,15 +75,15 @@ export default function AuctionPage() {
 
     async function fetchData() {
       try {
-        const auctionDB = await getAuctionByNFT(nftId);
+        const auctionDB = await marketplaceApi.auctions.getByNft(nftId);
         if (!auctionDB || !auctionDB.nft?.tokenId) {
           router.push("/auction");
           return;
         }
-        const bidList = await getBidsByAuctionWithUser(auctionDB.id);
+        const bidList = await marketplaceApi.bids.getByAuction(auctionDB.id, true);
         console.log("bidlist",bidList)
         setAuction(auctionDB);
-        setBids(bidList);
+        setBids(bidList as (BidModel & { bidder: UserModel })[]);
       } catch (err) {
         console.error(err);
         toast.error("Failed to load auction");
@@ -115,9 +114,9 @@ export default function AuctionPage() {
 
       toast.info("Bid transaction sent");
 
-      const bidList = await getBidsByAuctionWithUser(auction.id);
+      const bidList = await marketplaceApi.bids.getByAuction(auction.id, true);
       console.log("bidlist",bidList)
-      setBids(bidList);
+      setBids(bidList as (BidModel & { bidder: UserModel })[]);
       router.refresh()
 
     } catch (err: any) {
@@ -131,7 +130,7 @@ export default function AuctionPage() {
     try {
       await settleAuction(BigInt(tokenId), auction.id,auction.highestBidderId);
 
-      const updatedAuction = await getAuctionByNFT(nftId);
+      const updatedAuction = await marketplaceApi.auctions.getByNft(nftId);
       setAuction(updatedAuction);
 
       toast.success("Auction settled");

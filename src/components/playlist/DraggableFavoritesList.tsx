@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { reorderFavorites } from "@/actions/nft-likes";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { isPlayableNFT } from "@/lib/media";
 
@@ -41,7 +41,7 @@ export function DraggableFavoritesList({ likedNFTs, userId }: { likedNFTs: Liked
   const persistOrder = async () => {
     setSaving(true);
     try {
-      await reorderFavorites(
+      await marketplaceApi.likes.reorderFavorites(
         userId,
         items.map((item, index) => ({ nftId: item.nftId, position: index }))
       );

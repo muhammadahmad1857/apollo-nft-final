@@ -10,7 +10,7 @@ import ShareModal from "./ShareModel";
 import { useBuyNFT } from "@/hooks/useMarketplace";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { transferOwnership } from "@/actions/nft";
+import { marketplaceApi } from "@/lib/marketplaceApi";
 import { parseEther } from "viem";
 import {
   Dialog,
@@ -121,7 +121,7 @@ const NFTCard = ({
       await buyNFT(BigInt(tokenId), parseEther(String(mintPrice))); // use real price
       console.log("User ID", userId);
       if (userId) {
-        await transferOwnership(tokenId, userId); // update DB
+        await marketplaceApi.nfts.transferOwnership(tokenId, userId);
       }
       else{
         toast.error("User not found. Please connect wallet and try again.");
