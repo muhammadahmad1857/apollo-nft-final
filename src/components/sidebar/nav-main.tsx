@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronRight, type LucideIcon } from "lucide-react"
+import { ArrowUpRight, ChevronRight, Command, type LucideIcon } from "lucide-react"
 
 import {
   Collapsible,
@@ -21,18 +21,23 @@ import {
 
 export function NavMain({
   items,
+  userRole
 }: {
   items: {
     title: string
     url: string
     icon?: LucideIcon
     isActive?: boolean
-      badgeCount?: number
+    badgeCount?: number
+    openExternally?: boolean
     items?: {
       title: string
       url: string
+      openExternally?: boolean
     }[]
-  }[]
+  }[],
+    userRole:"ADMIN" | "USER" | "SUPER_ADMIN"
+
 }) {
   return (
     <SidebarGroup>
@@ -44,9 +49,15 @@ export function NavMain({
             return (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton tooltip={item.title} asChild>
-                  <a href={item.url} className="flex items-center gap-2">
+                  <a
+                    href={item.url}
+                    target={item.openExternally ? "_blank" : undefined}
+                    rel={item.openExternally ? "noopener noreferrer" : undefined}
+                    className="flex items-center gap-2"
+                  >
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>
+                    {item.openExternally && <ArrowUpRight className="size-3.5" />}
                   </a>
                 </SidebarMenuButton>
                 {typeof item.badgeCount === "number" && item.badgeCount > 0 && (
@@ -82,8 +93,15 @@ export function NavMain({
                     {item.items.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
                         <SidebarMenuSubButton asChild>
-                          <a href={subItem.url}>
+                          <a
+                            href={subItem.url}
+                            target={subItem.openExternally ? "_blank" : undefined}
+                            rel={subItem.openExternally ? "noopener noreferrer" : undefined}
+                          >
                             <span>{subItem.title}</span>
+                            {subItem.openExternally && (
+                              <ArrowUpRight className="size-3.5" />
+                            )}
                           </a>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
@@ -94,6 +112,21 @@ export function NavMain({
             </Collapsible>
           )
         })}
+             {<SidebarMenuItem >
+                <SidebarMenuButton tooltip={"Admin Dashboard"} asChild>
+                  <a
+                    href={"https://admin.apollonft.io"}
+                    target={"_blank"}
+                    rel={"noopener noreferrer"}
+                    className="flex items-center gap-2"
+                  >
+                     <Command />
+                    <span>{"Admin Dashboard"}</span>
+                    <ArrowUpRight className="size-3.5" />
+                  </a>
+                </SidebarMenuButton>
+                
+              </SidebarMenuItem>}
       </SidebarMenu>
     </SidebarGroup>
   )

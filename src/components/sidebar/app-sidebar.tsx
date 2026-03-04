@@ -14,6 +14,7 @@ import {
   
   ShoppingCart,
   User,
+  type LucideIcon,
 } from "lucide-react"
 
 import { NavMain } from "@/components/sidebar/nav-main"
@@ -35,8 +36,37 @@ import { useUnreadNotificationsCount } from "@/hooks/useNotifications"
 import { toast } from "sonner"
 import { useAccount } from "wagmi"
 
+type NavSubItem = {
+  title: string;
+  url: string;
+  openExternally?: boolean;
+};
+
+type NavMainItem = {
+  title: string;
+  url: string;
+  icon?: LucideIcon;
+  isActive?: boolean;
+  items?: NavSubItem[];
+  openExternally?: boolean;
+};
+
+type SidebarData = {
+  user: {
+    name: string;
+    avatarUrl: string;
+    address: string;
+  };
+  teams: {
+    name: string;
+    logo: LucideIcon;
+    plan: string;
+  }[];
+  navMain: NavMainItem[];
+};
+
 // This is sample data.
-const data = {
+const data: SidebarData = {
  user:{
     name: "Loading",
     avatarUrl:"",
@@ -141,6 +171,11 @@ const data = {
       url: "/dashboard/notifications",
       icon: Bell,
     },
+     {
+      title: "Admin Dashboard",
+      url: "https://admin.apollonft.io",
+      icon: Command,
+    },
     {
       title: "User Settings",
       url: "/dashboard/user",
@@ -212,7 +247,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <Logo show={state === "expanded"} width={150} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navItems} />
+        <NavMain items={navItems} userRole={user?.role ||"USER"}/>
         {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
