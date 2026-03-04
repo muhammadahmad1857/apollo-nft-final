@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { useAccount } from 'wagmi'
 import Footer from '@/components/footer'
 import { useUser } from '@/hooks/useUser'
+import { BlockedUserNotice } from '@/components/blocked-user-notice'
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const {address,isConnected,isConnecting,isReconnecting} = useAccount()
   const { data: user, isLoading: isUserLoading } = useUser(address || "")
@@ -47,12 +48,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     ) : isUserLoading ? (
       <Loader text="Checking account status..." />
     ) : user?.isBlocked && !canAccessWhenBlocked ? (
-      <div className='mx-auto my-10 max-w-2xl rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-center'>
-        <h2 className='text-2xl font-bold text-destructive'>Your account is blocked</h2>
-        <p className='mt-3 text-sm text-muted-foreground'>
-          You can only access Notifications and Edit Profile right now. If this is a mistake, contact us at hello@blaqclouds.io.
-        </p>
-      </div>
+      <BlockedUserNotice
+        className='my-10'
+        message='You can only access Notifications and Edit Profile right now. If this is a mistake, contact us at hello@blaqclouds.io.'
+      />
     ) : (
       children
     )}

@@ -24,6 +24,7 @@ import { useAccount } from "wagmi";
 import { useUser } from "@/hooks/useUser";
 import Loader from "@/components/loader";
 import { NftModerationStatus } from "@/generated/prisma/enums";
+import { BlockedUserNotice } from "@/components/blocked-user-notice";
 
 export default function AuctionPage() {
   const params = useParams();
@@ -155,9 +156,10 @@ export default function AuctionPage() {
         </p>
       )}
       {user?.isBlocked && (
-        <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          Your account is blocked. You cannot bid right now. Contact us at hello@blaqclouds.io if this is a mistake.
-        </p>
+        <BlockedUserNotice
+          compact
+          message="Your account is temporarily blocked. You cannot bid right now. Contact us at hello@blaqclouds.io if this is a mistake."
+        />
       )}
       <AuctionStatus auction={auction} />
      { new Date() < new Date(auction.endTime)&&<BidInput isDisabled={(auction.seller.walletAddress === address)||auction.settled || new Date() >= new Date(auction.endTime) || !!user?.isBlocked} onPlaceBid={handlePlaceBid} minBid={auction.highestBid || auction.minBid} />}

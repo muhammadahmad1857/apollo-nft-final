@@ -7,6 +7,7 @@ import { Music4, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useUser } from "@/hooks/useUser";
+import { BlockedUserNotice } from "@/components/blocked-user-notice";
 
 type PlaylistSummary = {
   id: number;
@@ -66,12 +67,7 @@ export default function PlaylistIndexPage() {
       </div>
 
       {isUserBlocked ? (
-        <div className="mx-auto w-full max-w-2xl rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-center">
-          <h2 className="text-2xl font-bold text-destructive">Your account is blocked</h2>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Playlist content is unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io.
-          </p>
-        </div>
+        <BlockedUserNotice message="Playlist content is unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io." />
       ) : (
       <>
 

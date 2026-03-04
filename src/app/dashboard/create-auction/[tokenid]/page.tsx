@@ -25,6 +25,7 @@ import { getNFTByTokenId } from "@/actions/nft";
 import { differenceInSeconds, format, startOfDay } from "date-fns";
 import { NFTModel } from "@/generated/prisma/models";
 import Link from "next/link";
+import { BlockedUserNotice } from "@/components/blocked-user-notice";
 
 const presetDurations = [
   { label: "1 hour", value: "1" },
@@ -225,12 +226,7 @@ export default function CreateAuctionPage() {
 
         {/* Step Content */}
         {isUserBlocked ? (
-          <div className="mx-auto w-full max-w-2xl rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-center">
-            <h2 className="text-2xl font-bold text-destructive">Your account is blocked</h2>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Auction creation actions are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io.
-            </p>
-          </div>
+          <BlockedUserNotice message="Auction creation actions are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io." />
         ) : (
         <AnimatePresence mode="wait">
           {currentStep === 1 && (

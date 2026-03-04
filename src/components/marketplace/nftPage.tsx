@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { UniversalMediaIcon } from "../ui/UniversalMediaIcon";
+import { BlockedUserNotice } from "@/components/blocked-user-notice";
 
 interface NFTInteractiveContentProps {
   tokenId: number;
@@ -131,9 +132,10 @@ console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPr
       {/* Media Controls */}
       <div className="mt-8 flex flex-wrap gap-4 justify-center sm:justify-start">
         {isUserBlocked && (
-          <p className="w-full rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            Your account is blocked. Contact us at hello@blaqclouds.io if this is a mistake.
-          </p>
+          <BlockedUserNotice
+            compact
+            message="Your account is blocked. Contact us at hello@blaqclouds.io if this is a mistake."
+          />
         )}
         {isFlagged && (
           <p className="w-full rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">

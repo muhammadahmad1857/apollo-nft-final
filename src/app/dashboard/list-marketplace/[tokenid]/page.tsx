@@ -16,6 +16,7 @@ import { NFTModel } from "@/generated/prisma/models";
 import Link from "next/link"; 
 import { useAccount } from "wagmi";
 import { useUser } from "@/hooks/useUser";
+import { BlockedUserNotice } from "@/components/blocked-user-notice";
 
 export default function ListMarketplacePage() {
   const params = useParams();
@@ -232,12 +233,7 @@ export default function ListMarketplacePage() {
 
         {/* Step Content */}
         {isUserBlocked ? (
-          <div className="mx-auto w-full max-w-2xl rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-center">
-            <h2 className="text-2xl font-bold text-destructive">Your account is blocked</h2>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Marketplace listing actions are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io.
-            </p>
-          </div>
+          <BlockedUserNotice message="Marketplace listing actions are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io." />
         ) : (
         <AnimatePresence mode="wait">
           {currentStep === 1 && (

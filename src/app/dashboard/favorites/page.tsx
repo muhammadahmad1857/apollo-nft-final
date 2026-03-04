@@ -20,6 +20,7 @@ import { DraggableFavoritesList } from "@/components/playlist/DraggableFavorites
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { isPlayableNFT } from "@/lib/media";
 import { resolveIPFS } from "@/lib/ipfs";
+import { BlockedUserNotice } from "@/components/blocked-user-notice";
 
 type SortOption = "newest" | "oldest" | "price-low" | "price-high";
 type FilterStatus = "all" | "listed" | "unlisted";
@@ -307,12 +308,7 @@ export default function FavoritesPage() {
 
       {/* Blocked State (NFT cards/list area only) */}
       {!isLoading && isUserBlocked && (
-        <div className="mx-auto w-full max-w-2xl rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-center">
-          <h2 className="text-2xl font-bold text-destructive">Your account is blocked</h2>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Favorites NFT cards are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io.
-          </p>
-        </div>
+        <BlockedUserNotice message="Favorites NFT cards are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io." />
       )}
 
       {/* Empty State */}

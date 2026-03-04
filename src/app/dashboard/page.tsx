@@ -14,6 +14,7 @@ import { useAccount } from "wagmi";
 import { AuctionModel, NFTLikeModel, NFTModel, UserModel } from "@/generated/prisma/models";
 import Loader from "@/components/loader";
 import Link from "next/link";
+import { BlockedUserNotice } from "@/components/blocked-user-notice";
 
 export default function Page() {
   const router = useRouter();
@@ -109,12 +110,7 @@ export default function Page() {
         />
 
         {isUserBlocked ? (
-          <div className="mx-auto w-full max-w-2xl rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-center">
-            <h2 className="text-2xl font-bold text-destructive">Your account is blocked</h2>
-            <p className="mt-3 text-sm text-muted-foreground">
-              NFT cards are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io.
-            </p>
-          </div>
+          <BlockedUserNotice message="NFT cards are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io." />
         ) : loading ? (
           <Loader text="Loading NFT's..." facts={dashboardFacts}/>
         ) : filteredNFTs.length === 0 ? (
