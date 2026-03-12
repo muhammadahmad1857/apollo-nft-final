@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { marketplaceApi } from "@/lib/marketplaceApi";
 import { ArtistProfileHeader, ArtistProfileHeaderSkeleton } from "@/components/artist/ArtistProfileHeader";
 import { ArtistNFTGrid, ArtistNFTGridSkeleton } from "@/components/artist/ArtistNFTGrid";
+import { ArtistRealtimeRefresh } from "@/components/artist/artist-realtime-refresh";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { BlockedUserTopBanner } from "@/components/blocked-user-top-banner";
@@ -28,6 +29,7 @@ console.log("Fetched profile data:", profileData);
   return (
     <div className="min-h-screen">
           <Header/>
+      <ArtistRealtimeRefresh walletAddress={decodedAddress} />
       <div className="max-w-7xl mx-auto px-4 pt-24 pb-12 sm:px-6 lg:px-8">
         <div className="space-y-8">
           <BlockedUserTopBanner message="Your account is temporarily blocked. Artist page actions may be unavailable. Contact us at hello@blaqclouds.io if this is a mistake." />

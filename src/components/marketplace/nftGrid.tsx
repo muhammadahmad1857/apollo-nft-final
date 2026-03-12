@@ -22,9 +22,12 @@ export default function PublicMintsGrid() {
   const [error, setError] = useState<string | null>(null);
   const {address} = useAccount();
   const {data:user} = useUser(address);
-  const loadMints = useCallback(async () => {
+  const loadMints = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
       setError(null);
 
       const data = await marketplaceApi.nfts.getAll(true);
@@ -36,12 +39,14 @@ console.log("data",data)
       console.error(err);
       setError("Failed to load mints");
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    loadMints();
+    void loadMints();
   }, [loadMints]);
 
   useEffect(() => {
@@ -52,7 +57,7 @@ console.log("data",data)
         evt.type.startsWith("marketplace.bid.") ||
         evt.type.startsWith("marketplace.like.")
       ) {
-        void loadMints();
+        void loadMints({ silent: true });
       }
     });
 

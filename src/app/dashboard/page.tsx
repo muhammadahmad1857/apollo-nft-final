@@ -15,6 +15,7 @@ import { AuctionModel, NFTLikeModel, NFTModel, UserModel } from "@/generated/pri
 import Loader from "@/components/loader";
 import Link from "next/link";
 import { BlockedUserNotice } from "@/components/blocked-user-notice";
+import { subscribeMarketplaceStream } from "@/lib/marketplaceApi";
 
 export default function Page() {
   const router = useRouter();
@@ -25,6 +26,27 @@ export default function Page() {
   const [search, setSearch] = React.useState("");
   const [filterMinted, setFilterMinted] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
+
+  const fetchNFTs = React.useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
+    if (!address || !user?.id) {
+      return;
+    }
+
+    if (!silent) {
+      setLoading(true);
+    }
+    try {
+      const ownedNFTs = await marketplaceApi.nfts.getByOwner(user.id, true);
+      setNFTs(ownedNFTs);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      if (!silent) {
+        setLoading(false);
+      }
+    }
+  }, [address, user?.id]);
 
   const dashboardFacts = [
     "Your dashboard shows all NFTs you've minted and collected!",
@@ -38,22 +60,42 @@ export default function Page() {
   ];
 
   React.useEffect(() => {
-    if (!address) return;
+    void fetchNFTs();
+  }, [fetchNFTs]);
 
-    async function fetchNFTs() {
-      setLoading(true);
-      try {
-        const ownedNFTs = await marketplaceApi.nfts.getByOwner(user!.id,true);
-        setNFTs(ownedNFTs);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+  React.useEffect(() => {
+    if (!address || !user?.id) {
+      return;
     }
 
-    fetchNFTs();
-  }, [address, user]);
+    const normalizedWallet = address.trim().toLowerCase();
+
+    const unsubscribe = subscribeMarketplaceStream((evt) => {
+      if (
+        evt.type.startsWith("marketplace.nft.") ||
+        evt.type.startsWith("marketplace.auction.") ||
+        evt.type.startsWith("marketplace.bid.") ||
+        evt.type.startsWith("marketplace.like.") ||
+        evt.type.startsWith("marketplace.user.")
+      ) {
+        const wallets = Array.isArray(evt.data?.wallets)
+          ? (evt.data.wallets as unknown[])
+              .filter((value): value is string => typeof value === "string")
+              .map((value) => value.toLowerCase())
+          : [];
+
+        if (wallets.length === 0 || wallets.includes(normalizedWallet)) {
+          void fetchNFTs({ silent: true });
+        }
+      }
+    }, {
+      wallet: normalizedWallet,
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [address, user?.id, fetchNFTs]);
 
   const filteredNFTs = nfts.filter((nft) => {
     if (filterMinted && !nft.isListed) return false;
