@@ -17,6 +17,16 @@ import { toast } from "sonner";
 import Image from "next/image";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
+const PINATA_DIRECT_UPLOAD_URL = "https://api.pinata.cloud/pinning/pinFileToIPFS";
+const LEGACY_FALLBACK_MAX_BYTES = 100 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024 * 1024;
+
+interface SignedUploadPayload {
+  url: string;
+  method?: string;
+  headers?: Record<string, string> | null;
+  fields?: Record<string, string> | null;
+}
 
 function getFileType(file: File): string {
   const type = file.type.toLowerCase();
@@ -87,6 +97,166 @@ export function MintMetadataForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const trailerFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
+
+  const extractIpfsHash = useCallback((payload: unknown): string | null => {
+    if (!payload || typeof payload !== "object") return null;
+
+    const record = payload as Record<string, unknown>;
+    const nested = record.data as Record<string, unknown> | undefined;
+
+    const cid =
+      (typeof nested?.cid === "string" && nested.cid) ||
+      (typeof nested?.IpfsHash === "string" && nested.IpfsHash) ||
+      (typeof record.cid === "string" && record.cid) ||
+      (typeof record.IpfsHash === "string" && record.IpfsHash);
+
+    return cid || null;
+  }, []);
+
+  const getSignedUploadPayload = useCallback(
+    async (file: File, category: "main" | "trailer" | "cover") => {
+      const signedRes = await fetch("/api/pinata/signed-upload-url", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filename: file.name,
+          fileSize: file.size,
+          mimeType: file.type || undefined,
+          category,
+        }),
+      });
+
+      if (!signedRes.ok) {
+        const error = await signedRes.text();
+        throw new Error(error || "Failed to get signed upload URL");
+      }
+
+      const signedPayload = (await signedRes.json()) as SignedUploadPayload;
+      if (!signedPayload?.url) {
+        throw new Error("Signed upload URL was missing from server response");
+      }
+
+      return signedPayload;
+    },
+    []
+  );
+
+  const uploadWithJwtFallback = useCallback(
+    async (file: File, onProgress?: (value: number) => void) => {
+      const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
+      if (!jwtRes.ok) {
+        throw new Error("Failed to get upload token");
+      }
+      const { JWT } = await jwtRes.json();
+      onProgress?.(33);
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("network", "public");
+      onProgress?.(50);
+
+      const uploadRes = await fetch(PINATA_DIRECT_UPLOAD_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${JWT}`,
+        },
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        const error = await uploadRes.text();
+        throw new Error(error || "Legacy upload failed");
+      }
+
+      onProgress?.(77);
+      const uploadJson = await uploadRes.json();
+      const ipfsHash = extractIpfsHash(uploadJson);
+
+      if (!ipfsHash) {
+        throw new Error("Legacy upload succeeded but no CID was returned");
+      }
+
+      onProgress?.(100);
+      return `ipfs://${ipfsHash}`;
+    },
+    [extractIpfsHash]
+  );
+
+  const uploadWithSignedUrl = useCallback(
+    async (
+      file: File,
+      category: "main" | "trailer" | "cover",
+      onProgress?: (value: number) => void
+    ) => {
+      const signedPayload = await getSignedUploadPayload(file, category);
+      onProgress?.(33);
+
+      const formData = new FormData();
+      if (signedPayload.fields && typeof signedPayload.fields === "object") {
+        Object.entries(signedPayload.fields).forEach(([key, value]) => {
+          formData.append(key, value);
+        });
+      }
+      formData.append("file", file, file.name);
+      onProgress?.(50);
+
+      const method = signedPayload.method || "POST";
+      const headers = signedPayload.headers
+        ? Object.fromEntries(
+            Object.entries(signedPayload.headers).filter(
+              ([key]) => key.toLowerCase() !== "content-type"
+            )
+          )
+        : undefined;
+      const uploadRes = await fetch(signedPayload.url, {
+        method,
+        headers,
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        const error = await uploadRes.text();
+        throw new Error(error || "Signed URL upload failed");
+      }
+
+      onProgress?.(77);
+        const uploadJson = await uploadRes.json().catch(() => null);
+      const ipfsHash = extractIpfsHash(uploadJson);
+
+      if (!ipfsHash) {
+        throw new Error("Signed upload succeeded but no CID was returned");
+      }
+
+      onProgress?.(100);
+      return `ipfs://${ipfsHash}`;
+    },
+    [extractIpfsHash, getSignedUploadPayload]
+  );
+
+  const uploadFileWithFallback = useCallback(
+    async (
+      file: File,
+      category: "main" | "trailer" | "cover",
+      onProgress?: (value: number) => void
+    ) => {
+      try {
+        return await uploadWithSignedUrl(file, category, onProgress);
+      } catch (signedError) {
+        if (file.size > LEGACY_FALLBACK_MAX_BYTES) {
+          throw new Error(
+            signedError instanceof Error
+              ? signedError.message
+              : "Signed upload failed"
+          );
+        }
+
+        return uploadWithJwtFallback(file, onProgress);
+      }
+    },
+    [uploadWithJwtFallback, uploadWithSignedUrl]
+  );
 
   const handleChange = useCallback(
     (field: keyof MintFormValues, value: string | number | undefined) => {
@@ -203,41 +373,9 @@ export function MintMetadataForm({
         setIsUploadingFile(true);
         setUploadProgress(0);
 
-        const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
-        if (!jwtRes.ok) {
-          throw new Error("Failed to get upload token");
-        }
-        const { JWT } = await jwtRes.json();
-        setUploadProgress(33);
-
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("network", "public");
-        setUploadProgress(50);
-
-        const uploadRes = await fetch(
-          "https://api.pinata.cloud/pinning/pinFileToIPFS",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${JWT}`,
-            },
-            body: formData,
-          }
-        );
-
-        if (!uploadRes.ok) {
-          const error = await uploadRes.text();
-          throw new Error(error || "Upload failed");
-        }
-
-        setUploadProgress(77);
-        const json = await uploadRes.json();
-        const ipfsHash = json.IpfsHash;
-        const ipfsUrl = `ipfs://${ipfsHash}`;
+        const ipfsUrl = await uploadFileWithFallback(file, "main", setUploadProgress);
         const detectedFileType = getFileType(file);
 
-        setUploadProgress(100);
         console.log("🎵 File uploaded:", ipfsUrl);
         console.log("📁 File type detected:", detectedFileType);
         
@@ -264,7 +402,7 @@ export function MintMetadataForm({
         setUploadProgress(0);
       }
     },
-    [onChange]
+    [onChange, uploadFileWithFallback]
   );
 
   // Handle file selection
@@ -287,8 +425,8 @@ export function MintMetadataForm({
         return;
       }
 
-      if (file.size > 100 * 1024 * 1024) {
-        toast.error("File size must be less than 100MB");
+      if (file.size > MAX_UPLOAD_BYTES) {
+        toast.error("File size must be less than 10GB");
         return;
       }
 
@@ -336,41 +474,12 @@ export function MintMetadataForm({
         setIsUploadingTrailer(true);
         setTrailerUploadProgress(0);
 
-        const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
-        if (!jwtRes.ok) {
-          throw new Error("Failed to get upload token");
-        }
-        const { JWT } = await jwtRes.json();
-        setTrailerUploadProgress(33);
-
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("network", "public");
-        setTrailerUploadProgress(50);
-
-        const uploadRes = await fetch(
-          "https://api.pinata.cloud/pinning/pinFileToIPFS",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${JWT}`,
-            },
-            body: formData,
-          }
+        const ipfsUrl = await uploadFileWithFallback(
+          file,
+          "trailer",
+          setTrailerUploadProgress
         );
-
-        if (!uploadRes.ok) {
-          const error = await uploadRes.text();
-          throw new Error(error || "Upload failed");
-        }
-
-        setTrailerUploadProgress(77);
-        const json = await uploadRes.json();
-        const ipfsHash = json.IpfsHash;
-        const ipfsUrl = `ipfs://${ipfsHash}`;
         const detectedFileType = getFileType(file);
-
-        setTrailerUploadProgress(100);
 
         onChange((prev) => ({
           ...prev,
@@ -391,7 +500,7 @@ export function MintMetadataForm({
         setTrailerUploadProgress(0);
       }
     },
-    [onChange]
+    [onChange, uploadFileWithFallback]
   );
 
   const handleTrailerFile = useCallback(
@@ -413,8 +522,8 @@ export function MintMetadataForm({
         return;
       }
 
-      if (file.size > 100 * 1024 * 1024) {
-        toast.error("File size must be less than 100MB");
+      if (file.size > MAX_UPLOAD_BYTES) {
+        toast.error("File size must be less than 10GB");
         return;
       }
 
