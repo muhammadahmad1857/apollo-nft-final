@@ -75,7 +75,9 @@ export function useSignedUpload() {
       const { url } = (await signRes.json()) as { url: string };
 
       // 3. Upload directly to Pinata via XHR (progress tracking)
-      const ipfsUrl = await new Promise<string>((resolve, reject) => {
+      let ipfsUrl: string;
+      try {
+        ipfsUrl = await new Promise<string>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhrRef.current = xhr;
 
@@ -119,11 +121,15 @@ export function useSignedUpload() {
 
         const formData = new FormData();
         formData.append("file", file, file.name);
-        formData.append("network", "public");
 
         xhr.open("POST", url);
         xhr.send(formData);
-      });
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Upload failed";
+        setState((prev) => ({ ...prev, status: "failed", error: msg }));
+        throw err;
+      }
 
       // 4. Mark complete in DB and patch NFT media fields
       await fetch("/api/upload/complete", {

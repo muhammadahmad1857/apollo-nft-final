@@ -105,6 +105,7 @@ export async function POST(req: NextRequest) {
       max_file_size: fileSize,
       allow_mime_types: resolveAllowMimeTypes(mimeType),
       filename,
+      network: "public",
       keyvalues: { uploadedBy: "nextjs-client" },
     };
 
