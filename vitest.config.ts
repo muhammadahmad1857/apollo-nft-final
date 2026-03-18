@@ -7,10 +7,6 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    environmentMatchGlobs: [
-      // hook tests need a browser-like environment
-      ["src/__tests__/hooks/**", "jsdom"],
-    ],
   },
   resolve: {
     alias: {
