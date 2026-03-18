@@ -13,11 +13,10 @@ import {
   CheckCircle2,
   Trash2,
 } from "lucide-react";
-import { Cloud } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { useAccount } from "wagmi";
-import { useServerUpload } from "@/hooks/useServerUpload";
+import { useSignedUpload } from "@/hooks/useSignedUpload";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024 * 1024;
@@ -94,9 +93,9 @@ export function MintMetadataForm({
   const trailerFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
 
-  const mainUpload = useServerUpload();
-  const coverUpload = useServerUpload();
-  const trailerUpload = useServerUpload();
+  const mainUpload = useSignedUpload();
+  const coverUpload = useSignedUpload();
+  const trailerUpload = useSignedUpload();
 
   // Capture fileIds as soon as upload sessions start (before completion)
   useEffect(() => {
@@ -500,15 +499,9 @@ export function MintMetadataForm({
                 {coverUpload.isUploading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-2">
-                      {coverUpload.status === "server-processing" ? (
-                        <Cloud className="w-6 h-6 text-white animate-pulse" />
-                      ) : (
-                        <Loader2 className="w-6 h-6 animate-spin text-white" />
-                      )}
+                      <Loader2 className="w-6 h-6 animate-spin text-white" />
                       <p className="text-xs text-white font-bold">
-                        {coverUpload.status === "server-processing"
-                          ? "Server processing..."
-                          : `Uploading ${Math.round(coverUpload.progress)}%`}
+                        {`Uploading ${Math.round(coverUpload.progress)}%`}
                       </p>
                     </div>
                   </div>
@@ -548,15 +541,9 @@ export function MintMetadataForm({
 
               {coverUpload.isUploading ? (
                 <div className="flex flex-col items-center gap-2">
-                  {coverUpload.status === "server-processing" ? (
-                    <Cloud className="mx-auto h-6 w-6 text-white animate-pulse" />
-                  ) : (
-                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-white" />
-                  )}
+                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-white" />
                   <p className="text-xs text-white font-bold">
-                    {coverUpload.status === "server-processing"
-                      ? "Server processing..."
-                      : `Uploading ${Math.round(coverUpload.progress)}%`}
+                    {`Uploading ${Math.round(coverUpload.progress)}%`}
                   </p>
                 </div>
               ) : (
@@ -630,16 +617,10 @@ export function MintMetadataForm({
               className="rounded-lg border-2 border-dashed border-amber-500/40 bg-amber-500/5 backdrop-blur-lg p-8 text-center"
             >
               <div className="space-y-3">
-                {mainUpload.status === "server-processing" ? (
-                  <Cloud className="mx-auto h-8 w-8 text-amber-400 animate-pulse" />
-                ) : (
-                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
-                )}
+                <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
                 <div>
                   <p className="text-xs font-bold text-white mb-2">
-                    {mainUpload.status === "server-processing"
-                      ? "Server is finalizing your file..."
-                      : "Uploading to server..."}
+                    Uploading to Pinata...
                   </p>
                   <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                     <motion.div
@@ -650,9 +631,7 @@ export function MintMetadataForm({
                     />
                   </div>
                   <p className="text-xs text-zinc-500 mt-1">
-                    {mainUpload.status === "server-processing"
-                      ? "You can safely close this tab now"
-                      : `${Math.round(mainUpload.progress)}% — keep this tab open`}
+                    {`${Math.round(mainUpload.progress)}% — keep this tab open`}
                   </p>
                 </div>
               </div>
@@ -764,16 +743,10 @@ export function MintMetadataForm({
               />
               {trailerUpload.isUploading ? (
                 <div className="space-y-3">
-                  {trailerUpload.status === "server-processing" ? (
-                    <Cloud className="mx-auto h-8 w-8 text-amber-400 animate-pulse" />
-                  ) : (
-                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
-                  )}
+                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
                   <div>
                     <p className="text-xs font-bold text-white mb-2">
-                      {trailerUpload.status === "server-processing"
-                        ? "Server finalizing trailer..."
-                        : "Uploading trailer..."}
+                      Uploading trailer...
                     </p>
                     <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                       <motion.div
@@ -784,9 +757,7 @@ export function MintMetadataForm({
                       />
                     </div>
                     <p className="text-xs text-zinc-500 mt-1">
-                      {trailerUpload.status === "server-processing"
-                        ? "You can safely close this tab"
-                        : `${Math.round(trailerUpload.progress)}%`}
+                      {`${Math.round(trailerUpload.progress)}%`}
                     </p>
                   </div>
                 </div>
