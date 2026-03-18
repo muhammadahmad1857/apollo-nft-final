@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,37 +13,28 @@ import {
   CheckCircle2,
   Trash2,
 } from "lucide-react";
+import { Cloud } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
+import { useAccount } from "wagmi";
+import { useServerUpload } from "@/hooks/useServerUpload";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
-const PINATA_DIRECT_UPLOAD_URL = "https://api.pinata.cloud/pinning/pinFileToIPFS";
-const LEGACY_FALLBACK_MAX_BYTES = 100 * 1024 * 1024;
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024 * 1024;
-
-interface SignedUploadPayload {
-  url: string;
-  method?: string;
-  headers?: Record<string, string> | null;
-  fields?: Record<string, string> | null;
-}
 
 function getFileType(file: File): string {
   const type = file.type.toLowerCase();
   const ext = file.name.split(".").pop()?.toLowerCase();
 
-  // Handle audio/video/image dynamically
   if (type.startsWith("audio/")) return `audio/${type.split("/")[1]}`;
   if (type.startsWith("video/")) return `video/${type.split("/")[1]}`;
   if (type.startsWith("image/")) return `image/${type.split("/")[1]}`;
 
-  // Handle specific MIME types
   if (type === "text/plain") return ext === "md" ? "txt/md" : "txt/txt";
   if (type === "application/msword") return "doc/doc";
   if (type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "doc/docx";
   if (type === "application/pdf") return "pdf";
 
-  // Fallback to extension if MIME type is empty or unknown
   if (ext) {
     if (ext === "txt") return "txt/txt";
     if (ext === "md") return "txt/md";
@@ -52,7 +43,7 @@ function getFileType(file: File): string {
     if (ext === "pdf") return "pdf";
   }
 
-  return "other"; // unknown type
+  return "other";
 }
 
 export interface MintFormValues {
@@ -66,15 +57,21 @@ export interface MintFormValues {
   trailerUrl?: string;
   trailerFileType?: string;
   royaltyBps: number;
+  mainFileSelected?: boolean;
+  mainUploadInProgress?: boolean;
+  mainFileId?: string;
+  coverFileId?: string;
+  trailerFileId?: string;
 }
 
 interface MintMetadataFormProps {
   values: MintFormValues;
-onChange: (values: MintFormValues | ((prev: MintFormValues) => MintFormValues)) => void;
+  onChange: (values: MintFormValues | ((prev: MintFormValues) => MintFormValues)) => void;
   onRemove?: () => void;
   showRemoveButton?: boolean;
   royaltyLabel?: string;
   showRoyalty?: boolean;
+  walletAddress?: string;
 }
 
 export function MintMetadataForm({
@@ -84,248 +81,98 @@ export function MintMetadataForm({
   showRemoveButton = false,
   royaltyLabel = "Royalty Percentage",
   showRoyalty = true,
+  walletAddress: walletAddressProp,
 }: MintMetadataFormProps) {
+  const { address: connectedAddress } = useAccount();
+  const effectiveAddress = walletAddressProp || connectedAddress;
+
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [isUploadingCover, setIsUploadingCover] = useState(false);
-  const [isUploadingFile, setIsUploadingFile] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [isUploadingTrailer, setIsUploadingTrailer] = useState(false);
-  const [trailerUploadProgress, setTrailerUploadProgress] = useState(0);
   const [isTrailerDragging, setIsTrailerDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const trailerFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
 
-  const extractIpfsHash = useCallback((payload: unknown): string | null => {
-    if (!payload || typeof payload !== "object") return null;
+  const mainUpload = useServerUpload();
+  const coverUpload = useServerUpload();
+  const trailerUpload = useServerUpload();
 
-    const record = payload as Record<string, unknown>;
-    const nested = record.data as Record<string, unknown> | undefined;
+  // Capture fileIds as soon as upload sessions start (before completion)
+  useEffect(() => {
+    if (mainUpload.fileId) {
+      onChange((prev) => ({ ...prev, mainFileId: mainUpload.fileId! }));
+    }
+  }, [mainUpload.fileId, onChange]);
 
-    const cid =
-      (typeof nested?.cid === "string" && nested.cid) ||
-      (typeof nested?.IpfsHash === "string" && nested.IpfsHash) ||
-      (typeof record.cid === "string" && record.cid) ||
-      (typeof record.IpfsHash === "string" && record.IpfsHash);
+  useEffect(() => {
+    if (coverUpload.fileId) {
+      onChange((prev) => ({ ...prev, coverFileId: coverUpload.fileId! }));
+    }
+  }, [coverUpload.fileId, onChange]);
 
-    return cid || null;
-  }, []);
+  useEffect(() => {
+    if (trailerUpload.fileId) {
+      onChange((prev) => ({ ...prev, trailerFileId: trailerUpload.fileId! }));
+    }
+  }, [trailerUpload.fileId, onChange]);
 
-  const getSignedUploadPayload = useCallback(
-    async (file: File, category: "main" | "trailer" | "cover") => {
-      const signedRes = await fetch("/api/pinata/signed-upload-url", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          filename: file.name,
-          fileSize: file.size,
-          mimeType: file.type || undefined,
-          category,
-        }),
-      });
+  // Apply completed upload results to form state
+  useEffect(() => {
+    if (mainUpload.status === "completed" && mainUpload.ipfsUrl && mainUpload.fileId) {
+      onChange((prev) => ({
+        ...prev,
+        musicTrackUrl: mainUpload.ipfsUrl!,
+        mainUploadInProgress: false,
+        mainFileId: mainUpload.fileId!,
+      }));
+      toast.success("✓ File upload complete!");
+    }
+  }, [mainUpload.status, mainUpload.ipfsUrl, mainUpload.fileId, onChange]);
 
-      if (!signedRes.ok) {
-        const error = await signedRes.text();
-        throw new Error(error || "Failed to get signed upload URL");
-      }
+  useEffect(() => {
+    if (coverUpload.status === "completed" && coverUpload.ipfsUrl && coverUpload.fileId) {
+      onChange((prev) => ({
+        ...prev,
+        coverImageUrl: coverUpload.ipfsUrl!,
+        coverFileId: coverUpload.fileId!,
+      }));
+      toast.success("✓ Cover image upload complete!");
+    }
+  }, [coverUpload.status, coverUpload.ipfsUrl, coverUpload.fileId, onChange]);
 
-      const signedPayload = (await signedRes.json()) as SignedUploadPayload;
-      if (!signedPayload?.url) {
-        throw new Error("Signed upload URL was missing from server response");
-      }
+  useEffect(() => {
+    if (trailerUpload.status === "completed" && trailerUpload.ipfsUrl && trailerUpload.fileId) {
+      onChange((prev) => ({
+        ...prev,
+        trailerUrl: trailerUpload.ipfsUrl!,
+        trailerFileId: trailerUpload.fileId!,
+      }));
+      toast.success("✓ Trailer upload complete!");
+    }
+  }, [trailerUpload.status, trailerUpload.ipfsUrl, trailerUpload.fileId, onChange]);
 
-      return signedPayload;
-    },
-    []
-  );
-
-  const uploadWithJwtFallback = useCallback(
-    async (file: File, onProgress?: (value: number) => void) => {
-      const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
-      if (!jwtRes.ok) {
-        throw new Error("Failed to get upload token");
-      }
-      const { JWT } = await jwtRes.json();
-      onProgress?.(33);
-
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("network", "public");
-      onProgress?.(50);
-
-      const uploadRes = await fetch(PINATA_DIRECT_UPLOAD_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${JWT}`,
-        },
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        const error = await uploadRes.text();
-        throw new Error(error || "Legacy upload failed");
-      }
-
-      onProgress?.(77);
-      const uploadJson = await uploadRes.json();
-      const ipfsHash = extractIpfsHash(uploadJson);
-
-      if (!ipfsHash) {
-        throw new Error("Legacy upload succeeded but no CID was returned");
-      }
-
-      onProgress?.(100);
-      return `ipfs://${ipfsHash}`;
-    },
-    [extractIpfsHash]
-  );
-
-  const uploadWithSignedUrl = useCallback(
-    async (
-      file: File,
-      category: "main" | "trailer" | "cover",
-      onProgress?: (value: number) => void
-    ) => {
-      const signedPayload = await getSignedUploadPayload(file, category);
-      onProgress?.(33);
-
-      const formData = new FormData();
-      if (signedPayload.fields && typeof signedPayload.fields === "object") {
-        Object.entries(signedPayload.fields).forEach(([key, value]) => {
-          formData.append(key, value);
-        });
-      }
-      formData.append("file", file, file.name);
-      onProgress?.(50);
-
-      const method = signedPayload.method || "POST";
-      const headers = signedPayload.headers
-        ? Object.fromEntries(
-            Object.entries(signedPayload.headers).filter(
-              ([key]) => key.toLowerCase() !== "content-type"
-            )
-          )
-        : undefined;
-      const uploadRes = await fetch(signedPayload.url, {
-        method,
-        headers,
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        const error = await uploadRes.text();
-        throw new Error(error || "Signed URL upload failed");
-      }
-
-      onProgress?.(77);
-        const uploadJson = await uploadRes.json().catch(() => null);
-      const ipfsHash = extractIpfsHash(uploadJson);
-
-      if (!ipfsHash) {
-        throw new Error("Signed upload succeeded but no CID was returned");
-      }
-
-      onProgress?.(100);
-      return `ipfs://${ipfsHash}`;
-    },
-    [extractIpfsHash, getSignedUploadPayload]
-  );
-
-  const uploadFileWithFallback = useCallback(
-    async (
-      file: File,
-      category: "main" | "trailer" | "cover",
-      onProgress?: (value: number) => void
-    ) => {
-      try {
-        return await uploadWithSignedUrl(file, category, onProgress);
-      } catch (signedError) {
-        if (file.size > LEGACY_FALLBACK_MAX_BYTES) {
-          throw new Error(
-            signedError instanceof Error
-              ? signedError.message
-              : "Signed upload failed"
-          );
-        }
-
-        return uploadWithJwtFallback(file, onProgress);
-      }
-    },
-    [uploadWithJwtFallback, uploadWithSignedUrl]
-  );
+  // Reset main upload when file is cleared
+  useEffect(() => {
+    if (!values.mainFileSelected) {
+      mainUpload.reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values.mainFileSelected]);
 
   const handleChange = useCallback(
-    (field: keyof MintFormValues, value: string | number | undefined) => {
-      console.log(`🔄 handleChange called: ${field} =`, value);
-      const newValues = {
-        ...values,
-        [field]: value,
-      };
-      console.log("📦 New form values:", newValues);
-      onChange(newValues);
-    },
-    [onChange, values]
-  );
-
-  // Upload cover image to Pinata
-  const uploadCoverImage = useCallback(
-    async (file: File) => {
-      try {
-        setIsUploadingCover(true);
-
-        const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
-        if (!jwtRes.ok) {
-          throw new Error("Failed to get upload token");
-        }
-        const { JWT } = await jwtRes.json();
-
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("network", "public");
-
-        const uploadRes = await fetch(
-          "https://api.pinata.cloud/pinning/pinFileToIPFS",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${JWT}`,
-            },
-            body: formData,
-          }
-        );
-
-        if (!uploadRes.ok) {
-          const error = await uploadRes.text();
-          throw new Error(error || "Upload failed");
-        }
-
-        const json = await uploadRes.json();
-        const ipfsHash = json.IpfsHash;
-        const ipfsUrl = `ipfs://${ipfsHash}`;
-
-       onChange((prev) => ({
-  ...prev,
-  coverImageUrl: ipfsUrl,
-}));
-
-        toast.success("Cover image uploaded!");
-      } catch (error) {
-        console.error("Cover upload error:", error);
-        toast.error("Failed to upload cover image");
-      } finally {
-        setIsUploadingCover(false);
-      }
+    (
+      field: keyof MintFormValues,
+      value: string | number | boolean | undefined
+    ) => {
+      onChange((prev) => ({ ...prev, [field]: value }));
     },
     [onChange]
   );
 
-  // Handle cover file selection/drop
+  // Cover image upload
   const handleCoverFile = useCallback(
-    (file: File) => {
+    async (file: File) => {
       if (!file.type.startsWith("image/")) {
         toast.error("Please upload an image file");
         return;
@@ -335,19 +182,24 @@ export function MintMetadataForm({
         toast.error("Image size must be less than 10MB");
         return;
       }
-
-      setIsUploadingCover(true);
-
-      // Create preview
+      if (!effectiveAddress) {
+        toast.error("Please connect your wallet first");
+        return;
+      }
+      // Local preview immediately
       const reader = new FileReader();
       reader.onloadend = () => {
         setCoverPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-
-      uploadCoverImage(file);
+      try {
+        await coverUpload.startUpload(file, "COVER", effectiveAddress);
+      } catch (err) {
+        toast.error("Failed to upload cover image");
+        console.error(err);
+      }
     },
-    [uploadCoverImage]
+    [coverUpload, effectiveAddress]
   );
 
   const handleCoverDrop = useCallback(
@@ -362,57 +214,18 @@ export function MintMetadataForm({
   );
 
   const removeCover = () => {
-    handleChange("coverImageUrl", undefined);
+    onChange((prev) => ({ ...prev, coverImageUrl: undefined, coverFileId: undefined }));
     setCoverPreview(null);
+    coverUpload.reset();
   };
 
-  // Upload file to Pinata
-  const uploadToPinata = useCallback(
-    async (file: File) => {
-      try {
-        setIsUploadingFile(true);
-        setUploadProgress(0);
-
-        const ipfsUrl = await uploadFileWithFallback(file, "main", setUploadProgress);
-        const detectedFileType = getFileType(file);
-
-        console.log("🎵 File uploaded:", ipfsUrl);
-        console.log("📁 File type detected:", detectedFileType);
-        
-       onChange((prev) => ({
-  ...prev,
-  musicTrackUrl: ipfsUrl,
-  fileType: detectedFileType,
-}));
-
-        
-        console.log("✅ State updated - musicTrackUrl:", ipfsUrl);
-        
-        // Show success message
-        toast.success("✓ File uploaded successfully!", {
-          description: `File type: ${detectedFileType}`,
-        });
-      } catch (error) {
-        console.error("Upload error:", error);
-        toast.error("Failed to upload file", {
-          description: error instanceof Error ? error.message : "Please try again",
-        });
-      } finally {
-        setIsUploadingFile(false);
-        setUploadProgress(0);
-      }
-    },
-    [onChange, uploadFileWithFallback]
-  );
-
-  // Handle file selection
+  // Main file upload
   const handleFile = useCallback(
-    (file: File) => {
+    async (file: File) => {
       const fileExtension = file.name
         .toLowerCase()
         .slice(file.name.lastIndexOf("."));
       const acceptedTypes = [".md", ".pdf", ".doc", ".docx", ".txt"];
-
       const isMedia =
         file.type.startsWith("video/") ||
         file.type.startsWith("audio/") ||
@@ -429,10 +242,29 @@ export function MintMetadataForm({
         toast.error("File size must be less than 10GB");
         return;
       }
-
-      uploadToPinata(file);
+      if (!effectiveAddress) {
+        toast.error("Please connect your wallet first");
+        return;
+      }
+      const detectedType = getFileType(file);
+      onChange((prev) => ({
+        ...prev,
+        mainFileSelected: true,
+        mainUploadInProgress: true,
+        musicTrackUrl: "",
+        fileType: detectedType,
+      }));
+      try {
+        await mainUpload.startUpload(file, "MAIN", effectiveAddress);
+        // ipfsUrl arrives via polling → useEffect above writes to musicTrackUrl
+      } catch (err) {
+        onChange((prev) => ({ ...prev, mainUploadInProgress: false }));
+        toast.error("Failed to upload file", {
+          description: err instanceof Error ? err.message : "Please try again",
+        });
+      }
     },
-    [uploadToPinata]
+    [effectiveAddress, mainUpload, onChange]
   );
 
   const handleDrop = useCallback(
@@ -458,58 +290,13 @@ export function MintMetadataForm({
     setIsDragging(false);
   }, []);
 
-  const handleFileInput = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        handleFile(file);
-      }
-    },
-    [handleFile]
-  );
-
-  const uploadTrailerToPinata = useCallback(
-    async (file: File) => {
-      try {
-        setIsUploadingTrailer(true);
-        setTrailerUploadProgress(0);
-
-        const ipfsUrl = await uploadFileWithFallback(
-          file,
-          "trailer",
-          setTrailerUploadProgress
-        );
-        const detectedFileType = getFileType(file);
-
-        onChange((prev) => ({
-          ...prev,
-          trailerUrl: ipfsUrl,
-          trailerFileType: detectedFileType,
-        }));
-
-        toast.success("✓ Trailer uploaded successfully!", {
-          description: `Trailer type: ${detectedFileType}`,
-        });
-      } catch (error) {
-        console.error("Trailer upload error:", error);
-        toast.error("Failed to upload trailer", {
-          description: error instanceof Error ? error.message : "Please try again",
-        });
-      } finally {
-        setIsUploadingTrailer(false);
-        setTrailerUploadProgress(0);
-      }
-    },
-    [onChange, uploadFileWithFallback]
-  );
-
+  // Trailer upload
   const handleTrailerFile = useCallback(
-    (file: File) => {
+    async (file: File) => {
       const fileExtension = file.name
         .toLowerCase()
         .slice(file.name.lastIndexOf("."));
       const acceptedTypes = [".md", ".pdf", ".doc", ".docx", ".txt"];
-
       const isMedia =
         file.type.startsWith("video/") ||
         file.type.startsWith("audio/") ||
@@ -526,10 +313,21 @@ export function MintMetadataForm({
         toast.error("File size must be less than 10GB");
         return;
       }
-
-      uploadTrailerToPinata(file);
+      if (!effectiveAddress) {
+        toast.error("Please connect your wallet first");
+        return;
+      }
+      const detectedType = getFileType(file);
+      onChange((prev) => ({ ...prev, trailerFileType: detectedType, trailerUrl: "" }));
+      try {
+        await trailerUpload.startUpload(file, "TRAILER", effectiveAddress);
+      } catch (err) {
+        toast.error("Failed to upload trailer", {
+          description: err instanceof Error ? err.message : "Please try again",
+        });
+      }
     },
-    [uploadTrailerToPinata]
+    [effectiveAddress, onChange, trailerUpload]
   );
 
   const handleTrailerDrop = useCallback(
@@ -699,19 +497,25 @@ export function MintMetadataForm({
                   className="h-full w-full object-cover"
                   fill
                 />
-                {isUploadingCover && (
+                {coverUpload.isUploading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-2">
-                      <Loader2 className="w-6 h-6 animate-spin text-white" />
+                      {coverUpload.status === "server-processing" ? (
+                        <Cloud className="w-6 h-6 text-white animate-pulse" />
+                      ) : (
+                        <Loader2 className="w-6 h-6 animate-spin text-white" />
+                      )}
                       <p className="text-xs text-white font-bold">
-                        Uploading...
+                        {coverUpload.status === "server-processing"
+                          ? "Server processing..."
+                          : `Uploading ${Math.round(coverUpload.progress)}%`}
                       </p>
                     </div>
                   </div>
                 )}
                 <button
                   onClick={removeCover}
-                  disabled={isUploadingCover}
+                  disabled={coverUpload.isUploading}
                   className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-500/90 hover:bg-red-600 text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <X className="h-3 w-3" />
@@ -725,16 +529,16 @@ export function MintMetadataForm({
               exit={{ opacity: 0 }}
               onDrop={handleCoverDrop}
               onDragOver={(e) => e.preventDefault()}
-              onClick={() => !isUploadingCover && coverFileInputRef.current?.click()}
+              onClick={() => !coverUpload.isUploading && coverFileInputRef.current?.click()}
               className={`relative cursor-pointer rounded-lg border-2 border-dashed border-zinc-400/30 dark:border-zinc-600/30 p-6 text-center transition-all hover:border-white/50 hover:bg-zinc-500/5 bg-zinc-950/20 ${
-                isUploadingCover ? "opacity-50" : ""
+                coverUpload.isUploading ? "opacity-50" : ""
               }`}
             >
               <input
                 ref={coverFileInputRef}
                 type="file"
                 accept="image/*"
-                disabled={isUploadingCover}
+                disabled={coverUpload.isUploading}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) handleCoverFile(file);
@@ -742,10 +546,18 @@ export function MintMetadataForm({
                 className="hidden"
               />
 
-              {isUploadingCover ? (
+              {coverUpload.isUploading ? (
                 <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-white" />
-                  <p className="text-xs text-white font-bold">Uploading image...</p>
+                  {coverUpload.status === "server-processing" ? (
+                    <Cloud className="mx-auto h-6 w-6 text-white animate-pulse" />
+                  ) : (
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-white" />
+                  )}
+                  <p className="text-xs text-white font-bold">
+                    {coverUpload.status === "server-processing"
+                      ? "Server processing..."
+                      : `Uploading ${Math.round(coverUpload.progress)}%`}
+                  </p>
                 </div>
               ) : (
                 <>
@@ -793,13 +605,55 @@ export function MintMetadataForm({
                   </p>
                   <button
                     onClick={() => {
-                      handleChange("musicTrackUrl", "");
-                      handleChange("fileType", undefined);
+                        mainUpload.reset();
+                        onChange((prev) => ({
+                          ...prev,
+                          musicTrackUrl: "",
+                          fileType: undefined,
+                          mainFileSelected: false,
+                          mainUploadInProgress: false,
+                          mainFileId: undefined,
+                        }));
                     }}
                     className="mt-2 text-xs text-white hover:text-gray-300 underline"
                   >
                     Change file
                   </button>
+                </div>
+              </div>
+            </motion.div>
+          ) : mainUpload.isUploading ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="rounded-lg border-2 border-dashed border-amber-500/40 bg-amber-500/5 backdrop-blur-lg p-8 text-center"
+            >
+              <div className="space-y-3">
+                {mainUpload.status === "server-processing" ? (
+                  <Cloud className="mx-auto h-8 w-8 text-amber-400 animate-pulse" />
+                ) : (
+                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
+                )}
+                <div>
+                  <p className="text-xs font-bold text-white mb-2">
+                    {mainUpload.status === "server-processing"
+                      ? "Server is finalizing your file..."
+                      : "Uploading to server..."}
+                  </p>
+                  <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                    <motion.div
+                      className="h-full bg-linear-to-r from-amber-400 to-amber-500"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${mainUpload.progress}%` }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    {mainUpload.status === "server-processing"
+                      ? "You can safely close this tab now"
+                      : `${Math.round(mainUpload.progress)}% — keep this tab open`}
+                  </p>
                 </div>
               </div>
             </motion.div>
@@ -819,44 +673,18 @@ export function MintMetadataForm({
                     ? "border-cyan-500 bg-cyan-500/10 shadow-[0_0_15px_rgba(34,211,238,0.15)]"
                     : "border-zinc-400/30 dark:border-zinc-600/30 hover:border-cyan-500/50 hover:bg-cyan-500/5"
                 }
-                ${isUploadingFile ? "pointer-events-none opacity-50" : ""}
               `}
             >
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="audio/*,video/*,image/*,.md,.pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
-                onChange={handleFileInput}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
                 className="hidden"
               />
-
-              {isUploadingFile ? (
-                <div className="space-y-3">
-                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
-                  <div>
-                    <p className="text-xs font-bold text-white mb-2">
-                      Uploading...
-                    </p>
-                    <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
-                      <motion.div
-                        className="h-full bg-linear-to-r from-white to-gray-300"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${uploadProgress}%` }}
-                        transition={{ duration: 0.3 }}
-                      />
-                    </div>
-                    <p className="text-xs text-zinc-500 mt-1">{uploadProgress}%</p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <Upload className="mx-auto h-8 w-8 text-zinc-500 dark:text-zinc-400 mb-2" />
-                  <p className="text-sm font-semibold text-white">
-                    Drag & drop your file
-                  </p>
-                  <p className="text-xs text-zinc-400 mt-1">or click to browse</p>
-                </>
-              )}
+              <Upload className="mx-auto h-8 w-8 text-zinc-500 dark:text-zinc-400 mb-2" />
+              <p className="text-sm font-semibold text-white">Drag & drop your file</p>
+              <p className="text-xs text-zinc-400 mt-1">or click to browse</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -894,8 +722,13 @@ export function MintMetadataForm({
                   </p>
                   <button
                     onClick={() => {
-                      handleChange("trailerUrl", "");
-                      handleChange("trailerFileType", undefined);
+                      trailerUpload.reset();
+                      onChange((prev) => ({
+                        ...prev,
+                        trailerUrl: "",
+                        trailerFileType: undefined,
+                        trailerFileId: undefined,
+                      }));
                     }}
                     className="mt-2 text-xs text-white hover:text-gray-300 underline"
                   >
@@ -920,7 +753,6 @@ export function MintMetadataForm({
                     ? "border-cyan-500 bg-cyan-500/10 shadow-[0_0_15px_rgba(34,211,238,0.15)]"
                     : "border-zinc-400/30 dark:border-zinc-600/30 hover:border-cyan-500/50 hover:bg-cyan-500/5"
                 }
-                ${isUploadingTrailer ? "pointer-events-none opacity-50" : ""}
               `}
             >
               <input
@@ -930,31 +762,38 @@ export function MintMetadataForm({
                 onChange={handleTrailerFileInput}
                 className="hidden"
               />
-
-              {isUploadingTrailer ? (
+              {trailerUpload.isUploading ? (
                 <div className="space-y-3">
-                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
+                  {trailerUpload.status === "server-processing" ? (
+                    <Cloud className="mx-auto h-8 w-8 text-amber-400 animate-pulse" />
+                  ) : (
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
+                  )}
                   <div>
                     <p className="text-xs font-bold text-white mb-2">
-                      Uploading trailer...
+                      {trailerUpload.status === "server-processing"
+                        ? "Server finalizing trailer..."
+                        : "Uploading trailer..."}
                     </p>
                     <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                       <motion.div
-                        className="h-full bg-linear-to-r from-white to-gray-300"
+                        className="h-full bg-linear-to-r from-amber-400 to-amber-500"
                         initial={{ width: 0 }}
-                        animate={{ width: `${trailerUploadProgress}%` }}
+                        animate={{ width: `${trailerUpload.progress}%` }}
                         transition={{ duration: 0.3 }}
                       />
                     </div>
-                    <p className="text-xs text-zinc-500 mt-1">{trailerUploadProgress}%</p>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      {trailerUpload.status === "server-processing"
+                        ? "You can safely close this tab"
+                        : `${Math.round(trailerUpload.progress)}%`}
+                    </p>
                   </div>
                 </div>
               ) : (
                 <>
                   <Upload className="mx-auto h-8 w-8 text-zinc-500 dark:text-zinc-400 mb-2" />
-                  <p className="text-sm font-semibold text-white">
-                    Drag & drop trailer file
-                  </p>
+                  <p className="text-sm font-semibold text-white">Drag & drop trailer file</p>
                   <p className="text-xs text-zinc-400 mt-1">or click to browse</p>
                 </>
               )}

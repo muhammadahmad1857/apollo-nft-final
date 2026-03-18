@@ -53,6 +53,7 @@ export default function CreateAuctionPage() {
   const [customHour, setCustomHour] = useState<string>("12");
   const [customMinute, setCustomMinute] = useState<string>("00");
   const [customPeriod, setCustomPeriod] = useState<"AM" | "PM">("PM");
+  const isReadyForAuction = nft?.readinessStatus === "READY";
 
   const { createAuction, isPending: isTxPending } = useCreateAuction();
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
@@ -117,6 +118,9 @@ export default function CreateAuctionPage() {
     if (!address) return toast.error("Connect your wallet first");
     if (!minBid || !duration) return toast.error("Fill all fields");
     if (!nft) return toast.error("NFT not found");
+    if (nft.readinessStatus !== "READY") {
+      return toast.error("This NFT is still processing uploads and cannot be auctioned yet.");
+    }
 
     try {
       let durationHours = 0;
@@ -227,6 +231,8 @@ export default function CreateAuctionPage() {
         {/* Step Content */}
         {isUserBlocked ? (
           <BlockedUserNotice message="Auction creation actions are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io." />
+        ) : !isReadyForAuction ? (
+          <BlockedUserNotice message="This NFT is processing uploads. Auction actions unlock once upload is complete." />
         ) : (
         <AnimatePresence mode="wait">
           {currentStep === 1 && (

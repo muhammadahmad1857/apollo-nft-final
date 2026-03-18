@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ export default function MintPage() {
   const { data: user } = useUser(address);
   const { mint, handleToasts, isBusy, isPriceLoading } =
     useMintContract();
+  const latestSyncKeyRef = useRef<string | null>(null);
 
   // Form State
   const [formValues, setFormValues] = useState<MintFormValues>({
@@ -29,12 +30,15 @@ export default function MintPage() {
     trailerUrl: undefined,
     trailerFileType: undefined,
     royaltyBps: Number(getRoyalty("SINGLE")) || 500,
+    mainFileSelected: false,
+    mainUploadInProgress: false,
   });
 
   // Mint States
   const [isMinting, setIsMinting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [mintedTokenId, setMintedTokenId] = useState<number | undefined>(undefined);
+  const [mintedTokenUri, setMintedTokenUri] = useState<string | undefined>(undefined);
 
   // Update royalty in session storage
   useEffect(() => {
@@ -53,15 +57,73 @@ export default function MintPage() {
       trailerUrl: undefined,
       trailerFileType: undefined,
       royaltyBps: 500,
+      mainFileSelected: false,
+      mainUploadInProgress: false,
     });
     removeRoyalty("SINGLE");
     toast.success("Form reset");
   };
 
+  const registerMintState = useCallback(
+    async (tokenId: number, tokenUri: string) => {
+      if (!address) return;
+
+      const payload = {
+        tokenId,
+        walletAddress: address,
+        tokenUri,
+        name: formValues.name,
+        title: formValues.title,
+        description: formValues.description,
+        coverImageUrl: formValues.coverImageUrl,
+        musicTrackUrl: formValues.musicTrackUrl,
+        fileType: formValues.fileType,
+        trailerUrl: formValues.trailerUrl,
+        trailerFileType: formValues.trailerFileType,
+        royaltyBps: formValues.royaltyBps,
+        mainFileId: formValues.mainFileId,
+        coverFileId: formValues.coverFileId,
+        trailerFileId: formValues.trailerFileId,
+      };
+
+      const syncKey = JSON.stringify(payload);
+      if (latestSyncKeyRef.current === syncKey) {
+        return;
+      }
+
+      const registerRes = await fetch("/api/mint/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: syncKey,
+      });
+
+      if (!registerRes.ok) {
+        const error = await registerRes.text();
+        throw new Error(error || "Failed to sync mint state");
+      }
+
+      latestSyncKeyRef.current = syncKey;
+    },
+    [
+      address,
+      formValues.coverImageUrl,
+      formValues.description,
+      formValues.fileType,
+      formValues.musicTrackUrl,
+      formValues.name,
+      formValues.royaltyBps,
+      formValues.title,
+      formValues.trailerFileType,
+      formValues.trailerUrl,
+    ]
+  );
+
   // Handle mint
   const handleMint = async () => {
-    if (!formValues.musicTrackUrl) {
-      toast.error("Please upload a file to continue");
+    if (!formValues.mainFileSelected) {
+      toast.error("Please select a main file to continue");
       return;
     }
 
@@ -78,10 +140,10 @@ export default function MintPage() {
         name: formValues.name,
         title: formValues.title,
         description: formValues.description,
-        cover: formValues.coverImageUrl,
-        media: formValues.musicTrackUrl,
-        fileType: formValues.fileType,
-        trailer: formValues.trailerUrl,
+        cover: formValues.coverImageUrl || "processing",
+        media: formValues.musicTrackUrl || "processing",
+        fileType: formValues.fileType || "processing",
+        trailer: formValues.trailerUrl || "processing",
         trailerFileType: formValues.trailerFileType,
       };
 
@@ -126,14 +188,17 @@ export default function MintPage() {
       });
 
       if (success) {
+        const tokenIdNumber = Number(tokenId);
+        if (Number.isFinite(tokenIdNumber)) {
+          await registerMintState(tokenIdNumber, metadataUrl);
+        }
+
         // Wait for sync and fetch latest token
-        setMintedTokenId(Number(tokenId));
+        setMintedTokenId(tokenIdNumber);
+        setMintedTokenUri(metadataUrl);
         setTimeout(async () => {
         setShowSuccess(true);
         }, 1000);
-        
-        removeRoyalty("SINGLE");
-        handleReset();
       }
     } catch (error) {
       console.error("Mint error:", error);
@@ -142,6 +207,27 @@ export default function MintPage() {
       setIsMinting(false);
     }
   };
+
+  useEffect(() => {
+    if (!mintedTokenId || !Number.isFinite(mintedTokenId)) {
+      return;
+    }
+
+    if (!formValues.musicTrackUrl && !formValues.coverImageUrl && !formValues.trailerUrl) {
+      return;
+    }
+
+    registerMintState(mintedTokenId, mintedTokenUri || `ipfs://pending-${mintedTokenId}`).catch((error) => {
+      console.error("Mint state sync error:", error);
+    });
+  }, [
+    formValues.coverImageUrl,
+    formValues.musicTrackUrl,
+    formValues.trailerUrl,
+    mintedTokenId,
+    mintedTokenUri,
+    registerMintState,
+  ]);
 
 useEffect(() => {
   handleToasts();
@@ -190,8 +276,7 @@ useEffect(() => {
             <Button
               onClick={handleMint}
               disabled={
-                !formValues.musicTrackUrl ||
-                formValues.musicTrackUrl.trim() === "" ||
+                !formValues.mainFileSelected ||
                 isPriceLoading ||
                 isBusy ||
                 isMinting ||
@@ -207,7 +292,9 @@ useEffect(() => {
               ) : !address ? (
                 "Connect Wallet"
               ) : (
-                "Mint NFT"
+                formValues.mainUploadInProgress
+                  ? "Mint While Uploading"
+                  : "Mint NFT"
               )}
             </Button>
           </div>
@@ -220,6 +307,9 @@ useEffect(() => {
         onClose={() => {
           setShowSuccess(false);
           setMintedTokenId(undefined);
+          setMintedTokenUri(undefined);
+          latestSyncKeyRef.current = null;
+          handleReset();
         }}
         tokenId={mintedTokenId}
       />

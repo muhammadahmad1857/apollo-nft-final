@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { createPublicClient, http, zeroAddress, parseAbiItem } from "viem";
 import { nftABIArray, nftAddress } from "@/lib/wagmi/contracts";
+import { NftReadinessStatus } from "@/generated/prisma/enums";
 import { db } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -93,6 +94,11 @@ export async function GET() {
 
         // 7️⃣ Upsert NFT
         console.log(`[SYNC-MINTS] Step 7: Upserting NFT for tokenId ${tokenId}...`);
+        const isProcessingMetadata =
+          !meta?.media ||
+          meta.media === "processing" ||
+          !meta?.fileType ||
+          meta.fileType === "processing";
         await db.nFT.upsert({
           where: { tokenId },
           update: { updatedAt: new Date() },
@@ -112,6 +118,9 @@ export async function GET() {
             fileType:meta.fileType || "",
             trailer: meta.trailer || null,
             trailerFileType: meta.trailerFileType || null,
+            readinessStatus: isProcessingMetadata
+              ? NftReadinessStatus.PROCESSING
+              : NftReadinessStatus.READY,
           },
 
         });

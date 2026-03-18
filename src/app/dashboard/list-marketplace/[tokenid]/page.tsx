@@ -39,6 +39,7 @@ export default function ListMarketplacePage() {
 
   // const isListedOnChain = Boolean(listing && listing[0] && listing[0] !== ZERO_ADDRESS);
   const effectiveIsListed = Boolean(nft?.isListed);
+  const isReadyForMarketplace = nft?.readinessStatus === "READY";
   const isActionPending = isListing || isDelisting || listPending || cancelPending || updateNFT.isPending;
 
   // Fetch NFT data
@@ -87,6 +88,9 @@ export default function ListMarketplacePage() {
 
   const handleListNFT = async () => {
     if (!nft) return toast.error("NFT not found");
+    if (nft.readinessStatus !== "READY") {
+      return toast.error("This NFT is still processing uploads and cannot be listed yet.");
+    }
     if (nft.approvedAuction) {
       return toast.error("This NFT is approved for auction and cannot be listed on the marketplace.");
     }
@@ -234,6 +238,8 @@ export default function ListMarketplacePage() {
         {/* Step Content */}
         {isUserBlocked ? (
           <BlockedUserNotice message="Marketplace listing actions are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io." />
+        ) : !isReadyForMarketplace ? (
+          <BlockedUserNotice message="This NFT is processing uploads. Marketplace listing unlocks automatically once media upload is complete." />
         ) : (
         <AnimatePresence mode="wait">
           {currentStep === 1 && (

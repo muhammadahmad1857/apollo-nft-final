@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/prisma";
-import { NftModerationStatus } from "@/generated/prisma/enums";
+import { NftModerationStatus, NftReadinessStatus } from "@/generated/prisma/enums";
 import type {
   NFTModel as PrismaNFT,
   NFTCreateInput,
@@ -73,6 +73,7 @@ export async function getAllNFTs(likes:boolean=false): Promise<
   return db.nFT.findMany({
     where: {
       isListed: true,
+      readinessStatus: NftReadinessStatus.READY,
       moderationStatus: {
         in: [NftModerationStatus.ACTIVE, NftModerationStatus.FLAGGED],
       },
@@ -106,6 +107,7 @@ export async function getVisibleNFTByTokenId(
   return db.nFT.findFirst({
     where: {
       tokenId,
+      readinessStatus: NftReadinessStatus.READY,
       moderationStatus: {
         in: [NftModerationStatus.ACTIVE, NftModerationStatus.FLAGGED],
       },

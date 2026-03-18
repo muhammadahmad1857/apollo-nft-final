@@ -20,6 +20,25 @@ enum NftModerationStatus {
   HIDDEN
 }
 
+enum NftReadinessStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum FileUploadStatus {
+  PENDING
+  UPLOADING
+  COMPLETED
+  FAILED
+}
+
+enum FileRole {
+  MAIN
+  COVER
+  TRAILER
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   walletAddress String    @unique
@@ -81,11 +100,13 @@ model NFT {
   fileType   String @default("")
   trailer    String?
   trailerFileType String?
+  readinessStatus NftReadinessStatus @default(READY)
   creator     User      @relation("CreatorNFTs", fields: [creatorId], references: [id])
   owner       User      @relation("OwnerNFTs", fields: [ownerId], references: [id])
   likes       NFTLike[]
   playlistItems PlaylistItem[]
   auction     Auction?
+  files       File[]
 }
 
 model NFTLike {
@@ -162,13 +183,19 @@ model Bid {
 
 model File {
   id         String   @id @default(uuid())
+  nftId      Int?
   walletId   String
   ipfsUrl    String
   type       String
   isMinted   Boolean
   filename   String
+  role       FileRole @default(MAIN)
+  uploadStatus FileUploadStatus @default(COMPLETED)
+  uploadProgress Int @default(100)
+  failureReason String?
   createdAt  DateTime @default(now())
 
+  nft        NFT?     @relation(fields: [nftId], references: [id], onDelete: SetNull)
   user       User?    @relation(fields: [walletId], references: [walletAddress], onDelete: Cascade)
 }
 

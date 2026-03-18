@@ -23,6 +23,7 @@ interface NFTCardProps {
 export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
   const { address } = useAccount();
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const isReady = nft.readinessStatus === "READY";
 
   const handleShare = () => {
     if (!nft.isListed) {
@@ -59,6 +60,11 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
         {nft.isListed && (
           <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded text-white font-bold bg-cyan-400 z-5">
             Listed
+          </span>
+        )}
+        {nft.readinessStatus !== "READY" && (
+          <span className="absolute top-2 right-2 text-xs px-2 py-1 rounded text-white font-bold bg-amber-500 z-5">
+            {nft.readinessStatus === "FAILED" ? "Upload Failed" : "Processing"}
           </span>
         )}
         {nft.tokenUri && (
@@ -139,7 +145,11 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
                 <MarketplaceListing token={nft} />
               </DialogContent>
             </Dialog> */}
-            {!nft.approvedAuction ? (
+            {!isReady ? (
+              <p className="text-sm text-muted-foreground text-center">
+                Uploads are still processing. Listing unlocks when this NFT is ready.
+              </p>
+            ) : !nft.approvedAuction ? (
             <Link
               href={`/dashboard/list-marketplace/${nft.tokenId}/`}
               className="w-full"
@@ -158,12 +168,11 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
               </p>
             )
             }
-            {!nft.approvedMarket ? (
-              // <CreateAuctionButton
-              //   tokenId={BigInt(nft.tokenId)}
-              //   approvedAuction={nft.approvedAuction}
-              //   nftId={nft.id}
-              // />
+            {!isReady ? (
+              <p className="text-sm text-muted-foreground text-center">
+                Uploads are still processing. Auction creation unlocks when this NFT is ready.
+              </p>
+            ) : !nft.approvedMarket ? (
               <Link
               href={`/dashboard/create-auction/${nft.tokenId}/`}
               className="w-full"
