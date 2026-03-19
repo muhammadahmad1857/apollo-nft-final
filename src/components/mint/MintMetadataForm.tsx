@@ -16,7 +16,7 @@ import {
 import { toast } from "sonner";
 import Image from "next/image";
 import { useAccount } from "wagmi";
-import { useSignedUpload } from "@/hooks/useSignedUpload";
+import { useTusUpload } from "@/hooks/useTusUpload";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024 * 1024;
@@ -93,9 +93,9 @@ export function MintMetadataForm({
   const trailerFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
 
-  const mainUpload = useSignedUpload();
-  const coverUpload = useSignedUpload();
-  const trailerUpload = useSignedUpload();
+  const mainUpload = useTusUpload();
+  const coverUpload = useTusUpload();
+  const trailerUpload = useTusUpload();
 
   // Capture fileIds as soon as upload sessions start (before completion)
   useEffect(() => {
@@ -255,7 +255,7 @@ export function MintMetadataForm({
       }));
       try {
         await mainUpload.startUpload(file, "MAIN", effectiveAddress);
-        // ipfsUrl arrives via polling → useEffect above writes to musicTrackUrl
+        // ipfsUrl arrives via TUS onSuccess → useEffect above writes to musicTrackUrl
       } catch (err) {
         onChange((prev) => ({ ...prev, mainUploadInProgress: false }));
         toast.error("Failed to upload file", {

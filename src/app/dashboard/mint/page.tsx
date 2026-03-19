@@ -122,8 +122,8 @@ export default function MintPage() {
 
   // Handle mint
   const handleMint = async () => {
-    if (!formValues.mainFileSelected) {
-      toast.error("Please select a main file to continue");
+    if (!formValues.mainFileId) {
+      toast.error("Please select a file to continue");
       return;
     }
 
@@ -135,69 +135,25 @@ export default function MintPage() {
     setIsMinting(true);
 
     try {
-      // Create metadata JSON
-      const metadata = {
-        name: formValues.name,
-        title: formValues.title,
-        description: formValues.description,
-        cover: formValues.coverImageUrl || "processing",
-        media: formValues.musicTrackUrl || "processing",
-        fileType: formValues.fileType || "processing",
-        trailer: formValues.trailerUrl || "processing",
-        trailerFileType: formValues.trailerFileType,
-      };
+      // tokenURI points to our mutable metadata API — no IPFS pinning needed upfront.
+      // Once the TUS upload finishes, the endpoint automatically returns the real IPFS URLs.
+      const tokenURI = `${window.location.origin}/api/nft/metadata/file/${formValues.mainFileId}`;
 
-      // Upload metadata JSON to Pinata
-      const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
-      if (!jwtRes.ok) {
-        throw new Error("Failed to get upload token");
-      }
-      const { JWT } = await jwtRes.json();
-
-      const blob = new Blob([JSON.stringify(metadata)], { type: "application/json" });
-      const file = new File([blob], `${formValues.name || "nft"}-metadata.json`, { type: "application/json" });
-
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("network", "public");
-
-      const uploadRes = await fetch(
-        "https://api.pinata.cloud/pinning/pinFileToIPFS",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${JWT}`,
-          },
-          body: formData,
-        }
-      );
-
-      if (!uploadRes.ok) {
-        const error = await uploadRes.text();
-        throw new Error(error || "Metadata upload failed");
-      }
-
-      const uploadJson = await uploadRes.json();
-      const metadataIpfsHash = uploadJson.IpfsHash;
-      const metadataUrl = `ipfs://${metadataIpfsHash}`;
-
-      // Mint with metadata URL as token URI
-      const {success,tokenId} = await mint({
-        tokenURI: metadataUrl,
+      const { success, tokenId } = await mint({
+        tokenURI,
         royaltyBps: formValues.royaltyBps,
       });
 
       if (success) {
         const tokenIdNumber = Number(tokenId);
         if (Number.isFinite(tokenIdNumber)) {
-          await registerMintState(tokenIdNumber, metadataUrl);
+          await registerMintState(tokenIdNumber, tokenURI);
         }
 
-        // Wait for sync and fetch latest token
         setMintedTokenId(tokenIdNumber);
-        setMintedTokenUri(metadataUrl);
-        setTimeout(async () => {
-        setShowSuccess(true);
+        setMintedTokenUri(tokenURI);
+        setTimeout(() => {
+          setShowSuccess(true);
         }, 1000);
       }
     } catch (error) {
@@ -276,7 +232,7 @@ useEffect(() => {
             <Button
               onClick={handleMint}
               disabled={
-                !formValues.mainFileSelected ||
+                !formValues.mainFileId ||
                 isPriceLoading ||
                 isBusy ||
                 isMinting ||
@@ -291,10 +247,13 @@ useEffect(() => {
                 </span>
               ) : !address ? (
                 "Connect Wallet"
+              ) : formValues.mainUploadInProgress ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Mint NFT (uploading...)
+                </span>
               ) : (
-                formValues.mainUploadInProgress
-                  ? "Mint While Uploading"
-                  : "Mint NFT"
+                "Mint NFT"
               )}
             </Button>
           </div>
