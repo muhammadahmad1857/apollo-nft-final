@@ -9,6 +9,18 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // Auto-fix old NFTs that have readinessStatus=PROCESSING but mediaUrl already set
+    // (these were created before TUS flow and got PROCESSING as default)
+    await db.nFT.updateMany({
+      where: {
+        readinessStatus: "PROCESSING",
+        mediaUrl: { not: null },
+        NOT: { mediaUrl: "" },
+        files: { none: { uploadStatus: { in: ["PENDING", "UPLOADING"] } } },
+      },
+      data: { readinessStatus: "READY" },
+    });
+
     const nfts = await db.nFT.findMany({
       where: {
         creator: { walletAddress: wallet },

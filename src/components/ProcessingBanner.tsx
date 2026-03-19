@@ -108,7 +108,7 @@ export function ProcessingBanner({ walletAddress }: ProcessingBannerProps) {
 
             {!hasFailures && !allDone && (
               <p className="text-xs text-zinc-500 mt-1.5">
-                Uploads continue on the server — you can safely close this tab.
+                Upload is resumable — come back to this page to continue where you left off.
               </p>
             )}
           </div>

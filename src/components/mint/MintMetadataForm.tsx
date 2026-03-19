@@ -631,7 +631,7 @@ export function MintMetadataForm({
                     />
                   </div>
                   <p className="text-xs text-zinc-500 mt-1">
-                    {`${Math.round(mainUpload.progress)}% — keep this tab open`}
+                    {`${Math.round(mainUpload.progress)}% — you can mint while uploading`}
                   </p>
                 </div>
               </div>

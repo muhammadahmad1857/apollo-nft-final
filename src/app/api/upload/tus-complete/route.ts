@@ -24,23 +24,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid Pinata upload URL" }, { status: 400 });
     }
 
-    // Fetch file info from Pinata Files API to get the IPFS CID
-    const pinataRes = await fetch(`https://api.pinata.cloud/v3/files/${pinataFileId}`, {
-      headers: { Authorization: `Bearer ${process.env.PINATA_JWT}` },
-    });
-
-    if (!pinataRes.ok) {
-      return NextResponse.json(
-        { error: `Failed to fetch file info from Pinata: ${pinataRes.status}` },
-        { status: 500 }
-      );
+    // Pinata processes files async after TUS upload — poll until CID is available
+    let cid: string | undefined;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 2500));
+      const pinataRes = await fetch(`https://api.pinata.cloud/v3/files/${pinataFileId}`, {
+        headers: { Authorization: `Bearer ${process.env.PINATA_JWT}` },
+      });
+      if (!pinataRes.ok) continue;
+      const pinataData = (await pinataRes.json()) as { data?: { cid?: string } };
+      cid = pinataData?.data?.cid;
+      if (cid) break;
     }
 
-    const pinataData = (await pinataRes.json()) as { data?: { cid?: string } };
-    const cid = pinataData?.data?.cid;
-
     if (!cid) {
-      return NextResponse.json({ error: "No CID in Pinata response" }, { status: 500 });
+      return NextResponse.json(
+        { error: "CID not available after retries — Pinata may still be processing" },
+        { status: 500 }
+      );
     }
 
     const ipfsUrl = `ipfs://${cid}`;
