@@ -98,11 +98,11 @@ export async function POST(req: NextRequest) {
     }
 
     const now = Math.floor(Date.now() / 1000);
-
+const BUFFER = 5 * 1024 * 1024
     const payload = {
       date: now,
       expires: ONE_HOUR_SECONDS,
-      max_file_size: fileSize,
+      max_file_size: Math.min(fileSize + BUFFER, TEN_GB_BYTES),
       allow_mime_types: resolveAllowMimeTypes(mimeType),
       filename,
       network: "public",
