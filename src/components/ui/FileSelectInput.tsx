@@ -13,6 +13,7 @@ interface FileSelectInputProps {
   walletId: string;
   fileExtensions?: string[];
   onChange: (ipfsUrl: string) => void;
+  onFileChange?: (file: FileModel) => void;
   className?: string;
   file_id?:string
 }
@@ -22,8 +23,9 @@ const FileSelectInput = ({
   walletId,
   fileExtensions,
   onChange,
+  onFileChange,
   className,
-  
+
 }: FileSelectInputProps) => {
   const [files, setFiles] = useState<FileModel[]>([]);
   const [selectedFile, setSelectedFile] = useState<string>(file_id);
@@ -58,6 +60,10 @@ const FileSelectInput = ({
   const handleSelectChange = (value: string) => {
     setSelectedFile(value);
     onChange(value);
+    if (onFileChange) {
+      const file = files.find((f) => f.ipfsUrl === value);
+      if (file) onFileChange(file);
+    }
   };
 
   const options = files.map((file) => ({

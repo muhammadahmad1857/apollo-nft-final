@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { filename, maxFileSize = 500 * 1024 * 1024 } = await req.json(); // 500MB default
+    const { filename, maxFileSize = 5 * 1024 * 1024 * 1024 } = await req.json(); // 5GB default
     console.log("[Pinata] Parsed input:", { filename, maxFileSize });
     const expires = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour from now
 
@@ -10,7 +10,16 @@ export async function POST(req: NextRequest) {
       date: Math.floor(Date.now() / 1000),
       expires,
       max_file_size: maxFileSize,
-      allow_mime_types: ["audio/mpeg", "audio/wav", "video/mp4","image/*"],
+      allow_mime_types: [
+        "audio/*",
+        "video/*",
+        "image/*",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/plain",
+        "text/markdown",
+      ],
       filename,
       keyvalues: { uploadedBy: "nextjs-client" },
     };

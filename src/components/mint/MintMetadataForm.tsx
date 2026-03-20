@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
+import { startTusUpload, type TusUploadHandle } from "@/lib/tusUpload";
+import { formatUploadProgress } from "@/lib/formatBytes";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 
@@ -79,14 +81,20 @@ export function MintMetadataForm({
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadedBytes, setUploadedBytes] = useState(0);
+  const [totalBytes, setTotalBytes] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploadingTrailer, setIsUploadingTrailer] = useState(false);
   const [trailerUploadProgress, setTrailerUploadProgress] = useState(0);
+  const [trailerUploadedBytes, setTrailerUploadedBytes] = useState(0);
+  const [trailerTotalBytes, setTrailerTotalBytes] = useState(0);
   const [isTrailerDragging, setIsTrailerDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const trailerFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
+  const fileUploadHandleRef = useRef<TusUploadHandle | null>(null);
+  const trailerUploadHandleRef = useRef<TusUploadHandle | null>(null);
 
   const handleChange = useCallback(
     (field: keyof MintFormValues, value: string | number | undefined) => {
@@ -196,63 +204,55 @@ export function MintMetadataForm({
     setCoverPreview(null);
   };
 
-  // Upload file to Pinata
+  // Upload file to Pinata via TUS resumable upload
   const uploadToPinata = useCallback(
     async (file: File) => {
       try {
         setIsUploadingFile(true);
         setUploadProgress(0);
+        setUploadedBytes(0);
+        setTotalBytes(file.size);
 
-        const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
-        if (!jwtRes.ok) {
-          throw new Error("Failed to get upload token");
-        }
-        const { JWT } = await jwtRes.json();
-        setUploadProgress(33);
+        const signedRes = await fetch("/api/pinata/signed-upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: file.name,
+            maxFileSize: 5 * 1024 * 1024 * 1024,
+          }),
+        });
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("network", "public");
-        setUploadProgress(50);
+        if (!signedRes.ok) throw new Error("Failed to get signed upload URL");
 
-        const uploadRes = await fetch(
-          "https://api.pinata.cloud/pinning/pinFileToIPFS",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${JWT}`,
+        const signedData = await signedRes.json() as { data?: { url?: string }; url?: string };
+        const tusEndpoint = signedData?.data?.url ?? signedData?.url;
+        if (!tusEndpoint) throw new Error("No TUS endpoint in signed URL response");
+
+        await new Promise<void>((resolve, reject) => {
+          fileUploadHandleRef.current = startTusUpload({
+            file,
+            endpoint: tusEndpoint,
+            onProgress: (bytesSent, bytesTotal) => {
+              setUploadedBytes(bytesSent);
+              setTotalBytes(bytesTotal);
+              setUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
             },
-            body: formData,
-          }
-        );
-
-        if (!uploadRes.ok) {
-          const error = await uploadRes.text();
-          throw new Error(error || "Upload failed");
-        }
-
-        setUploadProgress(77);
-        const json = await uploadRes.json();
-        const ipfsHash = json.IpfsHash;
-        const ipfsUrl = `ipfs://${ipfsHash}`;
-        const detectedFileType = getFileType(file);
-
-        setUploadProgress(100);
-        console.log("🎵 File uploaded:", ipfsUrl);
-        console.log("📁 File type detected:", detectedFileType);
-        
-       onChange((prev) => ({
-  ...prev,
-  musicTrackUrl: ipfsUrl,
-  fileType: detectedFileType,
-}));
-
-        
-        console.log("✅ State updated - musicTrackUrl:", ipfsUrl);
-        
-        // Show success message
-        toast.success("✓ File uploaded successfully!", {
-          description: `File type: ${detectedFileType}`,
+            onSuccess: (cid) => {
+              const ipfsUrl = `ipfs://${cid}`;
+              const detectedFileType = getFileType(file);
+              setUploadProgress(100);
+              onChange((prev) => ({
+                ...prev,
+                musicTrackUrl: ipfsUrl,
+                fileType: detectedFileType,
+              }));
+              toast.success("✓ File uploaded successfully!", {
+                description: `File type: ${detectedFileType}`,
+              });
+              resolve();
+            },
+            onError: (err) => reject(err),
+          });
         });
       } catch (error) {
         console.error("Upload error:", error);
@@ -262,6 +262,7 @@ export function MintMetadataForm({
       } finally {
         setIsUploadingFile(false);
         setUploadProgress(0);
+        fileUploadHandleRef.current = null;
       }
     },
     [onChange]
@@ -287,12 +288,12 @@ export function MintMetadataForm({
         return;
       }
 
-      if (file.size > 100 * 1024 * 1024) {
-        toast.error("File size must be less than 100MB");
+      if (file.size > 5 * 1024 * 1024 * 1024) {
+        toast.error("File size must be less than 5GB");
         return;
       }
 
-      uploadToPinata(file);
+      void uploadToPinata(file);
     },
     [uploadToPinata]
   );
@@ -330,56 +331,55 @@ export function MintMetadataForm({
     [handleFile]
   );
 
+  // Upload trailer to Pinata via TUS resumable upload
   const uploadTrailerToPinata = useCallback(
     async (file: File) => {
       try {
         setIsUploadingTrailer(true);
         setTrailerUploadProgress(0);
+        setTrailerUploadedBytes(0);
+        setTrailerTotalBytes(file.size);
 
-        const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
-        if (!jwtRes.ok) {
-          throw new Error("Failed to get upload token");
-        }
-        const { JWT } = await jwtRes.json();
-        setTrailerUploadProgress(33);
+        const signedRes = await fetch("/api/pinata/signed-upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: file.name,
+            maxFileSize: 5 * 1024 * 1024 * 1024,
+          }),
+        });
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("network", "public");
-        setTrailerUploadProgress(50);
+        if (!signedRes.ok) throw new Error("Failed to get signed upload URL");
 
-        const uploadRes = await fetch(
-          "https://api.pinata.cloud/pinning/pinFileToIPFS",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${JWT}`,
+        const signedData = await signedRes.json() as { data?: { url?: string }; url?: string };
+        const tusEndpoint = signedData?.data?.url ?? signedData?.url;
+        if (!tusEndpoint) throw new Error("No TUS endpoint in signed URL response");
+
+        await new Promise<void>((resolve, reject) => {
+          trailerUploadHandleRef.current = startTusUpload({
+            file,
+            endpoint: tusEndpoint,
+            onProgress: (bytesSent, bytesTotal) => {
+              setTrailerUploadedBytes(bytesSent);
+              setTrailerTotalBytes(bytesTotal);
+              setTrailerUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
             },
-            body: formData,
-          }
-        );
-
-        if (!uploadRes.ok) {
-          const error = await uploadRes.text();
-          throw new Error(error || "Upload failed");
-        }
-
-        setTrailerUploadProgress(77);
-        const json = await uploadRes.json();
-        const ipfsHash = json.IpfsHash;
-        const ipfsUrl = `ipfs://${ipfsHash}`;
-        const detectedFileType = getFileType(file);
-
-        setTrailerUploadProgress(100);
-
-        onChange((prev) => ({
-          ...prev,
-          trailerUrl: ipfsUrl,
-          trailerFileType: detectedFileType,
-        }));
-
-        toast.success("✓ Trailer uploaded successfully!", {
-          description: `Trailer type: ${detectedFileType}`,
+            onSuccess: (cid) => {
+              const ipfsUrl = `ipfs://${cid}`;
+              const detectedFileType = getFileType(file);
+              setTrailerUploadProgress(100);
+              onChange((prev) => ({
+                ...prev,
+                trailerUrl: ipfsUrl,
+                trailerFileType: detectedFileType,
+              }));
+              toast.success("✓ Trailer uploaded successfully!", {
+                description: `Trailer type: ${detectedFileType}`,
+              });
+              resolve();
+            },
+            onError: (err) => reject(err),
+          });
         });
       } catch (error) {
         console.error("Trailer upload error:", error);
@@ -389,6 +389,7 @@ export function MintMetadataForm({
       } finally {
         setIsUploadingTrailer(false);
         setTrailerUploadProgress(0);
+        trailerUploadHandleRef.current = null;
       }
     },
     [onChange]
@@ -413,12 +414,12 @@ export function MintMetadataForm({
         return;
       }
 
-      if (file.size > 100 * 1024 * 1024) {
-        toast.error("File size must be less than 100MB");
+      if (file.size > 5 * 1024 * 1024 * 1024) {
+        toast.error("File size must be less than 5GB");
         return;
       }
 
-      uploadTrailerToPinata(file);
+      void uploadTrailerToPinata(file);
     },
     [uploadTrailerToPinata]
   );
@@ -728,12 +729,17 @@ export function MintMetadataForm({
                     <p className="text-xs font-bold text-white mb-2">
                       Uploading...
                     </p>
+                    {totalBytes > 0 && (
+                      <p className="text-xs text-zinc-400 mb-1">
+                        {formatUploadProgress(uploadedBytes, totalBytes)}
+                      </p>
+                    )}
                     <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                       <motion.div
                         className="h-full bg-linear-to-r from-white to-gray-300"
                         initial={{ width: 0 }}
                         animate={{ width: `${uploadProgress}%` }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ duration: 0.1 }}
                       />
                     </div>
                     <p className="text-xs text-zinc-500 mt-1">{uploadProgress}%</p>
@@ -829,12 +835,17 @@ export function MintMetadataForm({
                     <p className="text-xs font-bold text-white mb-2">
                       Uploading trailer...
                     </p>
+                    {trailerTotalBytes > 0 && (
+                      <p className="text-xs text-zinc-400 mb-1">
+                        {formatUploadProgress(trailerUploadedBytes, trailerTotalBytes)}
+                      </p>
+                    )}
                     <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                       <motion.div
                         className="h-full bg-linear-to-r from-white to-gray-300"
                         initial={{ width: 0 }}
                         animate={{ width: `${trailerUploadProgress}%` }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ duration: 0.1 }}
                       />
                     </div>
                     <p className="text-xs text-zinc-500 mt-1">{trailerUploadProgress}%</p>

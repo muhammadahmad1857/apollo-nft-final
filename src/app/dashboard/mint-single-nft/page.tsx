@@ -13,6 +13,7 @@ import { useSearchParams } from "next/navigation";
 import MintSuccessDialog from "@/components/MintSuccess";
 import { toast } from "sonner";
 import { saveRoyalty, removeRoyalty, getRoyalty } from "@/lib/royaltySessionStorage";
+import { markProcessing } from "@/lib/nftProcessingState";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 
@@ -87,8 +88,19 @@ export default function MintSingleNFTPage() {
         return;
       }
 
-        setShowSuccess(true);
-        removeRoyalty("SINGLE"); // remove after successful mint
+      // Mark the media as "processing" so the dashboard shows the badge
+      // until the IPFS gateway makes the file accessible
+      const mediaUrl = (metaJson?.media ?? metaJson?.animation_url) as string | undefined;
+      const fileType = metaJson?.fileType as string | undefined;
+      if (
+        mediaUrl?.startsWith("ipfs://") &&
+        (fileType?.startsWith("video/") || fileType?.startsWith("audio/"))
+      ) {
+        markProcessing(mediaUrl, 0);
+      }
+
+      setShowSuccess(true);
+      removeRoyalty("SINGLE"); // remove after successful mint
 
       
     } finally {

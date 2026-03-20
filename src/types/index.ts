@@ -35,6 +35,7 @@ export interface MetadataFormValues {
   description: string;
   coverImageUrl?: string;
   musicTrackUrl: string;
+  fileType?: string;
 }
 
 export interface PinataJSON{

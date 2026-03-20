@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { pruneStaleEntries } from "@/lib/nftProcessingState";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -58,6 +59,10 @@ export default function Page() {
     "Interesting: Most creators set royalties between 5-10% for fair value.",
     "Fun fact: Your profile information is linked to your wallet address for security!",
   ];
+
+  React.useEffect(() => {
+    pruneStaleEntries();
+  }, []);
 
   React.useEffect(() => {
     void fetchNFTs();

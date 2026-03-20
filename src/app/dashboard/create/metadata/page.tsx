@@ -24,6 +24,7 @@ const [showActions, setShowActions] = useState(false);
     description: string;
     coverImageUrl?: string;
     musicTrackUrl: string;
+    fileType?: string;
   }>({
     name: "",
     title: "",
@@ -63,6 +64,7 @@ const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
         description: metadata.description,
         cover: metadata.coverImageUrl || null,
         media: metadata.musicTrackUrl,
+        fileType: metadata.fileType || null,
       };
       console.log(metadataJSON)
 

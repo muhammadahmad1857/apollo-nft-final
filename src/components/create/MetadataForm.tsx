@@ -36,6 +36,7 @@ export function MetadataForm({
   const [musicTrackUrl, setMusicTrackUrl] = useState(
     initialData?.musicTrackUrl || ""
   );
+  const [fileType, setFileType] = useState(initialData?.fileType || "");
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -315,14 +316,24 @@ export function MetadataForm({
             onChange={(url) => {
               console.log("Our music track url", url);
               setMusicTrackUrl(url);
-              console.log("set", musicTrackUrl);
-
               onMetadataChange({
                 name,
                 title,
                 description,
                 coverImageUrl,
                 musicTrackUrl: url,
+                fileType,
+              });
+            }}
+            onFileChange={(file) => {
+              setFileType(file.type);
+              onMetadataChange({
+                name,
+                title,
+                description,
+                coverImageUrl,
+                musicTrackUrl,
+                fileType: file.type,
               });
             }}
             className="w-full"
