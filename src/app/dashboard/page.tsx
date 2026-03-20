@@ -9,13 +9,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NFTCard } from "@/components/nft-card";
 import { useUser } from "@/hooks/useUser"; // your wagmi-based hook
 import { truncateAddress } from "@/lib/truncate";
-import { marketplaceApi } from "@/lib/marketplaceApi";
 import { useAccount } from "wagmi";
 import { AuctionModel, NFTLikeModel, NFTModel, UserModel } from "@/generated/prisma/models";
 import Loader from "@/components/loader";
 import Link from "next/link";
 import { BlockedUserNotice } from "@/components/blocked-user-notice";
 import { subscribeMarketplaceStream } from "@/lib/marketplaceApi";
+import { getVisibleNFTsByOwner } from "@/actions/nft";
 
 export default function Page() {
   const router = useRouter();
@@ -37,7 +37,7 @@ export default function Page() {
       setLoading(true);
     }
     try {
-      const ownedNFTs = await marketplaceApi.nfts.getByOwner(user.id, true);
+      const ownedNFTs = await getVisibleNFTsByOwner(user.id, true);
       setNFTs(ownedNFTs);
     } catch (err) {
       console.error(err);
@@ -98,13 +98,12 @@ export default function Page() {
   }, [address, user?.id, fetchNFTs]);
 
   const filteredNFTs = nfts.filter((nft) => {
-    if (nft.isArchived) return false;
     if (filterMinted && !nft.isListed) return false;
     if (!nft.title.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
-  const visibleNFTCount = nfts.filter((nft) => !nft.isArchived).length;
+  const visibleNFTCount = nfts.length;
 
   if (!user) return <div>Connect your wallet to view your NFTs</div>;
 
