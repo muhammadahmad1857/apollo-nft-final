@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     console.log("[Pinata] Built payload:", payload);
 
     console.log("[Pinata] Sending request to Pinata...");
-    const res = await fetch("https://uploads.pinata.cloud/v3/files", {
+    const res = await fetch("https://api.pinata.cloud/v3/files/sign", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.PINATA_JWT}`,
