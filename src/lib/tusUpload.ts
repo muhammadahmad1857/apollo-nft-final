@@ -18,9 +18,8 @@ export interface TusUploadHandle {
 export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
   const upload = new tus.Upload(options.file, {
     endpoint: options.endpoint,
-    headers: {
-      Authorization: `Bearer ${options.token}`,
-    },
+    // Only send Authorization if a token is provided (proxy mode needs no header)
+    headers: options.token ? { Authorization: `Bearer ${options.token}` } : {},
     chunkSize: 50 * 1024 * 1024, // 50 MB chunks
     retryDelays: [0, 1000, 3000, 5000, 10000],
     metadata: {
@@ -55,13 +54,10 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * After a TUS upload completes, Pinata's upload URL contains the file ID.
  * We call our server-side /api/pinata/file-info to exchange it for the IPFS CID.
  *
- * Pinata v3 TUS URL formats:
- *   https://uploads.pinata.cloud/v3/files/{session-uuid}/{filename}
- *     → session-uuid is NOT the file's UUID in the Files API; use filename for name search
- *   https://uploads.pinata.cloud/v3/files/{filename}
- *     → use filename for name search
- *   https://uploads.pinata.cloud/v3/files/{file-uuid}
- *     → UUID is the last segment; use it for direct lookup
+ * upload.url is our proxy URL: /api/pinata/tus/{uuid}/{filename}
+ * OR the original Pinata URL: https://uploads.pinata.cloud/v3/files/{uuid}/{filename}
+ *
+ * In both cases the last segment is the filename → name-based search in file-info.
  */
 async function extractCid(uploadUrl: string): Promise<string> {
   const segments = uploadUrl.split("/").filter(Boolean);
