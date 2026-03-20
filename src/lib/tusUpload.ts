@@ -56,13 +56,29 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * We call our server-side /api/pinata/file-info to exchange it for the IPFS CID.
  *
  * Pinata v3 TUS URL formats:
- *   https://uploads.pinata.cloud/v3/files/{uuid}/{filename}  (preferred — UUID for direct lookup)
- *   https://uploads.pinata.cloud/v3/files/{filename}         (fallback — name-based search)
+ *   https://uploads.pinata.cloud/v3/files/{session-uuid}/{filename}
+ *     → session-uuid is NOT the file's UUID in the Files API; use filename for name search
+ *   https://uploads.pinata.cloud/v3/files/{filename}
+ *     → use filename for name search
+ *   https://uploads.pinata.cloud/v3/files/{file-uuid}
+ *     → UUID is the last segment; use it for direct lookup
  */
 async function extractCid(uploadUrl: string): Promise<string> {
-  const segments = uploadUrl.split("/");
-  // Prefer UUID segment for a direct /v3/files/{uuid} lookup; fall back to last segment
-  const fileId = segments.find((s) => UUID_RE.test(s)) ?? segments.pop();
+  const segments = uploadUrl.split("/").filter(Boolean);
+  const uuidIdx = segments.findIndex((s) => UUID_RE.test(s));
+
+  let fileId: string;
+  if (uuidIdx !== -1 && uuidIdx < segments.length - 1) {
+    // UUID followed by filename — session UUID, not file UUID; use filename
+    fileId = segments[segments.length - 1]!;
+  } else if (uuidIdx !== -1) {
+    // UUID is the last segment — direct file lookup
+    fileId = segments[uuidIdx]!;
+  } else {
+    // No UUID — last segment is the filename
+    fileId = segments[segments.length - 1] ?? "";
+  }
+
   if (!fileId) {
     throw new Error(`Cannot extract file ID from TUS upload URL: ${uploadUrl}`);
   }
