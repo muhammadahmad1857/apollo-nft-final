@@ -49,7 +49,7 @@ export async function createAuction(
 
   const nft = await db.nFT.findUnique({
     where: { id: nftId },
-    select: { ownerId: true, moderationStatus: true },
+    select: { ownerId: true, moderationStatus: true, isArchived: true },
   });
   if (!nft) throw new Error("NFT not found");
 
@@ -59,6 +59,10 @@ export async function createAuction(
 
   if (isTradeBlockedByModeration(nft.moderationStatus)) {
     throw new Error("This NFT is moderated and cannot be auctioned.");
+  }
+
+  if (nft.isArchived) {
+    throw new Error("Archived NFTs cannot be listed for auction.");
   }
 
   return db.auction.create({ data });
@@ -86,6 +90,7 @@ export async function getAuctionByNFT(nftId: number): Promise<
     where: {
       nftId,
       nft: {
+        isArchived: false,
         moderationStatus: {
           not: NftModerationStatus.HIDDEN,
         },
@@ -123,6 +128,7 @@ export async function getActiveAuctions(filters: {
       startTime: { lte: now },
       endTime: { gt: now },
       nft: {
+        isArchived: false,
         moderationStatus: {
           in: [NftModerationStatus.ACTIVE, NftModerationStatus.FLAGGED],
         },

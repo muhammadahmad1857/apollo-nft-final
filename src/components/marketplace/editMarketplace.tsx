@@ -58,6 +58,10 @@ export function MarketplaceListing({ token }: MarketplaceListingProps) {
    -------------------------------- */
   async function handleSaveListing() {
     if (!token) return;
+    if (token.isArchived) {
+      toast.error("Archived NFTs cannot be listed on the marketplace.");
+      return;
+    }
 
     try {
       // Unlist
@@ -114,6 +118,14 @@ export function MarketplaceListing({ token }: MarketplaceListingProps) {
       <p className="text-sm text-muted-foreground">
         This NFT is approved for auction and cannot be listed on the
         marketplace.
+      </p>
+    );
+  }
+
+  if (token.isArchived) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        This NFT is archived and cannot be listed on the marketplace.
       </p>
     );
   }

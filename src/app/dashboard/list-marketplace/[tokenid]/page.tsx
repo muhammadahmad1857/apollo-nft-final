@@ -87,6 +87,9 @@ export default function ListMarketplacePage() {
 
   const handleListNFT = async () => {
     if (!nft) return toast.error("NFT not found");
+    if (nft.isArchived) {
+      return toast.error("Archived NFTs cannot be listed on the marketplace.");
+    }
     if (nft.approvedAuction) {
       return toast.error("This NFT is approved for auction and cannot be listed on the marketplace.");
     }
@@ -124,6 +127,9 @@ export default function ListMarketplacePage() {
 
   const handleDelistNFT = async () => {
     if (!nft) return toast.error("NFT not found");
+    if (nft.isArchived) {
+      return toast.error("Archived NFTs cannot be managed on the marketplace.");
+    }
     if (nft.approvedAuction) {
       return toast.error("This NFT is approved for auction and cannot be listed on the marketplace.");
     }
@@ -249,15 +255,21 @@ export default function ListMarketplacePage() {
                 You need to approve the marketplace contract to manage your NFT. This is a one-time transaction.
               </p>
 
-              <ApproveMarketButton
-                tokenId={tokenId}
-                nftId={nft.id}
-                onSuccess={() => {
-                  setNft((prev) => (prev ? { ...prev, approvedMarket: true } : prev));
-                  setCurrentStep(2);
-                  toast.success("NFT approved! Now set your price and list it.");
-                }}
-              />
+              {nft.isArchived ? (
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  This NFT is archived and cannot be approved for marketplace listing.
+                </p>
+              ) : (
+                <ApproveMarketButton
+                  tokenId={tokenId}
+                  nftId={nft.id}
+                  onSuccess={() => {
+                    setNft((prev) => (prev ? { ...prev, approvedMarket: true } : prev));
+                    setCurrentStep(2);
+                    toast.success("NFT approved! Now set your price and list it.");
+                  }}
+                />
+              )}
             </motion.div>
           )}
 
@@ -324,6 +336,7 @@ export default function ListMarketplacePage() {
                   onClick={effectiveIsListed ? handleDelistNFT : handleListNFT}
                   disabled={
                     isActionPending ||
+                    nft.isArchived ||
                     nft.approvedAuction ||
                     (!effectiveIsListed && (!priceEth || Number(priceEth) <= 0))
                   }
@@ -342,6 +355,12 @@ export default function ListMarketplacePage() {
                 {nft.approvedAuction && (
                   <p className="text-sm text-zinc-600 dark:text-zinc-400">
                     This NFT is approved for auction and cannot be managed on the marketplace.
+                  </p>
+                )}
+
+                {nft.isArchived && (
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    This NFT is archived and cannot be listed or delisted here.
                   </p>
                 )}
               </div>

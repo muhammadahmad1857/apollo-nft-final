@@ -20,6 +20,19 @@ function isTradeBlockedByModeration(status: NftModerationStatus): boolean {
   );
 }
 
+function isBooleanUpdateTrue(value: unknown): boolean {
+  if (value === true) return true;
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "set" in value &&
+    (value as { set?: unknown }).set === true
+  ) {
+    return true;
+  }
+  return false;
+}
+
 async function ensureUserNotBlockedById(userId: number): Promise<void> {
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -73,6 +86,7 @@ export async function getAllNFTs(likes:boolean=false): Promise<
   return db.nFT.findMany({
     where: {
       isListed: true,
+      isArchived: false,
       moderationStatus: {
         in: [NftModerationStatus.ACTIVE, NftModerationStatus.FLAGGED],
       },
@@ -106,6 +120,7 @@ export async function getVisibleNFTByTokenId(
   return db.nFT.findFirst({
     where: {
       tokenId,
+      isArchived: false,
       moderationStatus: {
         in: [NftModerationStatus.ACTIVE, NftModerationStatus.FLAGGED],
       },
@@ -160,7 +175,7 @@ export async function updateNFT(
 ): Promise<PrismaNFT> {
   const nft = await db.nFT.findUnique({
     where: { id },
-    select: { moderationStatus: true, ownerId: true },
+    select: { moderationStatus: true, ownerId: true, isArchived: true },
   });
   if (!nft) throw new Error("NFT not found");
 
@@ -168,6 +183,22 @@ export async function updateNFT(
 
   if (isTradeBlockedByModeration(nft.moderationStatus)) {
     throw new Error("This NFT is moderated and cannot be updated for trading.");
+  }
+
+  const isTryingToListOrApprove =
+    isBooleanUpdateTrue((data as { isListed?: unknown }).isListed) ||
+    isBooleanUpdateTrue((data as { approvedAuction?: unknown }).approvedAuction) ||
+    isBooleanUpdateTrue((data as { approvedMarket?: unknown }).approvedMarket);
+
+  if (nft.isArchived && isTryingToListOrApprove) {
+    throw new Error("Archived NFTs cannot be listed or approved for trading.");
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(data, "isArchived") ||
+    Object.prototype.hasOwnProperty.call(data, "archivedAt")
+  ) {
+    throw new Error("Use archive/unarchive actions to manage archive status.");
   }
 
   return db.nFT.update({ where: { id }, data });
@@ -192,6 +223,8 @@ export async function transferOwnership(
     where: { tokenId },
     data: {
       isListed: false,
+      isArchived: false,
+      archivedAt: null,
       approvedMarket: false,
       approvedAuction: false,
       owner: {
@@ -214,7 +247,7 @@ export async function deleteNFT(id: number): Promise<PrismaNFT> {
 export async function approveAuctionNFT(nftId: number) {
   const nft = await db.nFT.findUnique({
     where: { id: nftId },
-    select: { ownerId: true, moderationStatus: true },
+    select: { ownerId: true, moderationStatus: true, isArchived: true },
   });
   if (!nft) throw new Error("NFT not found");
 
@@ -222,6 +255,10 @@ export async function approveAuctionNFT(nftId: number) {
 
   if (isTradeBlockedByModeration(nft.moderationStatus)) {
     throw new Error("This NFT is moderated and cannot be approved for auction.");
+  }
+
+  if (nft.isArchived) {
+    throw new Error("Archived NFTs cannot be approved for auction.");
   }
 
   return db.nFT.update({
@@ -233,7 +270,7 @@ export async function approveAuctionNFT(nftId: number) {
 export async function approveMarketNFT(nftId: number) {
   const nft = await db.nFT.findUnique({
     where: { id: nftId },
-    select: { ownerId: true, moderationStatus: true },
+    select: { ownerId: true, moderationStatus: true, isArchived: true },
   });
   if (!nft) throw new Error("NFT not found");
 
@@ -243,8 +280,102 @@ export async function approveMarketNFT(nftId: number) {
     throw new Error("This NFT is moderated and cannot be approved for marketplace.");
   }
 
+  if (nft.isArchived) {
+    throw new Error("Archived NFTs cannot be approved for marketplace.");
+  }
+
   return db.nFT.update({
     where: { id: nftId },
     data: { approvedMarket: true },
+  });
+}
+
+export async function archiveNFT(nftId: number, ownerId: number): Promise<PrismaNFT> {
+  const nft = await db.nFT.findUnique({
+    where: { id: nftId },
+    select: { id: true, ownerId: true, isListed: true, isArchived: true },
+  });
+  if (!nft) throw new Error("NFT not found");
+  if (nft.ownerId !== ownerId) {
+    throw new Error("Only the owner can archive this NFT.");
+  }
+
+  await ensureUserNotBlockedById(ownerId);
+
+  if (nft.isListed) {
+    throw new Error("Listed NFTs cannot be archived. Delist first.");
+  }
+
+  const now = new Date();
+  const activeAuction = await db.auction.findFirst({
+    where: {
+      nftId,
+      settled: false,
+      startTime: { lte: now },
+      endTime: { gt: now },
+    },
+    select: { id: true },
+  });
+
+  if (activeAuction) {
+    throw new Error("NFT with an active auction cannot be archived.");
+  }
+
+  if (nft.isArchived) {
+    return db.nFT.findUniqueOrThrow({ where: { id: nftId } });
+  }
+
+  return db.nFT.update({
+    where: { id: nftId },
+    data: {
+      isArchived: true,
+      archivedAt: now,
+      approvedAuction: false,
+      approvedMarket: false,
+    },
+  });
+}
+
+export async function unarchiveNFT(nftId: number, ownerId: number): Promise<PrismaNFT> {
+  const nft = await db.nFT.findUnique({
+    where: { id: nftId },
+    select: { id: true, ownerId: true, isListed: true, isArchived: true },
+  });
+  if (!nft) throw new Error("NFT not found");
+  if (nft.ownerId !== ownerId) {
+    throw new Error("Only the owner can unarchive this NFT.");
+  }
+
+  await ensureUserNotBlockedById(ownerId);
+
+  if (nft.isListed) {
+    throw new Error("Listed NFTs cannot be unarchived until delisted.");
+  }
+
+  const now = new Date();
+  const activeAuction = await db.auction.findFirst({
+    where: {
+      nftId,
+      settled: false,
+      startTime: { lte: now },
+      endTime: { gt: now },
+    },
+    select: { id: true },
+  });
+
+  if (activeAuction) {
+    throw new Error("NFT with an active auction cannot be unarchived.");
+  }
+
+  if (!nft.isArchived) {
+    return db.nFT.findUniqueOrThrow({ where: { id: nftId } });
+  }
+
+  return db.nFT.update({
+    where: { id: nftId },
+    data: {
+      isArchived: false,
+      archivedAt: null,
+    },
   });
 }

@@ -2,17 +2,20 @@
 
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Share, Edit, ListPlus, Heart } from "lucide-react";
+import { Share, Edit, ListPlus, Heart, Archive, ArchiveRestore } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useAccount } from "wagmi";
+import { useRouter } from "next/navigation";
 import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 
 import { UniversalMediaIcon } from "./ui/UniversalMediaIcon";
 import { NFTLikeModel, NFTModel } from "@/generated/prisma/models";
 import Link from "next/link";
 import { AddToPlaylistModal } from "./playlist/AddToPlaylistModal";
+import { useUser } from "@/hooks/useUser";
+import { useArchiveNFT, useUnarchiveNFT } from "@/hooks/useNft";
 
 interface NFTCardProps {
   nft: NFTModel & { likes?: NFTLikeModel[] };
@@ -22,7 +25,14 @@ interface NFTCardProps {
 
 export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
   const { address } = useAccount();
+  const router = useRouter();
+  const { data: user } = useUser(address || "");
+  const archiveMutation = useArchiveNFT();
+  const unarchiveMutation = useUnarchiveNFT();
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+
+  const isArchiveActionPending =
+    archiveMutation.isPending || unarchiveMutation.isPending;
 
   const handleShare = () => {
     if (!nft.isListed) {
@@ -32,6 +42,27 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
     const url = `${window.location.origin}/marketplace/${nft.id}`;
     navigator.clipboard.writeText(url);
     toast.success("Link copied to clipboard!");
+  };
+
+  const handleArchiveToggle = async () => {
+    if (!owner || !user) return;
+
+    try {
+      if (nft.isArchived) {
+        await unarchiveMutation.mutateAsync({ id: nft.id, ownerId: user.id });
+        toast.success("NFT unarchived");
+      } else {
+        if (nft.isListed) {
+          toast.error("Delist this NFT before archiving.");
+          return;
+        }
+        await archiveMutation.mutateAsync({ id: nft.id, ownerId: user.id });
+        toast.success("NFT archived");
+      }
+      router.refresh();
+    } catch (err) {
+      toast.error((err as Error)?.message || "Failed to update archive state");
+    }
   };
 
   return (
@@ -59,6 +90,11 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
         {nft.isListed && (
           <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded text-white font-bold bg-cyan-400 z-5">
             Listed
+          </span>
+        )}
+        {nft.isArchived && (
+          <span className="absolute top-2 right-2 text-xs px-2 py-1 rounded text-white font-bold bg-zinc-700 z-5">
+            Archived
           </span>
         )}
         {nft.tokenUri && (
@@ -120,68 +156,64 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
 
         {owner && (
           <div className="flex flex-col gap-2">
-            {/* Use dialog/modal for MarketplaceListing */}
-            {/* <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 w-full"
-                >
-                  <Edit /> Add to marketplace
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-xl w-full">
-                <DialogHeader>
-                  <DialogTitle>Edit Marketplace Listing</DialogTitle>
-                  <DialogClose />
-                </DialogHeader>
-                <MarketplaceListing token={nft} />
-              </DialogContent>
-            </Dialog> */}
-            {!nft.approvedAuction ? (
-            <Link
-              href={`/dashboard/list-marketplace/${nft.tokenId}/`}
-              className="w-full"
-            >
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2 w-full"
-              >
-                <Edit /> List on marketplace
-              </Button>
-            </Link>):(
-               <p className="text-sm text-muted-foreground text-center">
-                This NFT is already approved for auction and cannot be
-                listed on marketplace.
-              </p>
-            )
-            }
-            {!nft.approvedMarket ? (
-              // <CreateAuctionButton
-              //   tokenId={BigInt(nft.tokenId)}
-              //   approvedAuction={nft.approvedAuction}
-              //   nftId={nft.id}
-              // />
-              <Link
-              href={`/dashboard/create-auction/${nft.tokenId}/`}
-              className="w-full"
-            >
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2 w-full"
-              >
-                <Edit /> Create Auction
-              </Button>
-            </Link>
-            ) : (
+            {nft.isArchived ? (
               <p className="text-sm text-muted-foreground text-center">
-                This NFT is already approved for marketing and cannot be
-                approved for the auction.
+                Archived NFTs cannot be listed on the marketplace or added to auctions.
               </p>
+            ) : (
+              <>
+                {!nft.approvedAuction ? (
+                  <Link
+                    href={`/dashboard/list-marketplace/${nft.tokenId}/`}
+                    className="w-full"
+                  >
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2 w-full"
+                    >
+                      <Edit /> List on marketplace
+                    </Button>
+                  </Link>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center">
+                    This NFT is already approved for auction and cannot be
+                    listed on marketplace.
+                  </p>
+                )}
+
+                {!nft.approvedMarket ? (
+                  <Link
+                    href={`/dashboard/create-auction/${nft.tokenId}/`}
+                    className="w-full"
+                  >
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2 w-full"
+                    >
+                      <Edit /> Create Auction
+                    </Button>
+                  </Link>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center">
+                    This NFT is already approved for marketing and cannot be
+                    approved for the auction.
+                  </p>
+                )}
+              </>
             )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center justify-center gap-2 w-full"
+              onClick={handleArchiveToggle}
+              disabled={isArchiveActionPending || !user}
+            >
+              {nft.isArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+              <span>{nft.isArchived ? "Unarchive NFT" : "Archive NFT"}</span>
+            </Button>
 
             <Button
               variant="outline"

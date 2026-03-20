@@ -117,6 +117,7 @@ export default function CreateAuctionPage() {
     if (!address) return toast.error("Connect your wallet first");
     if (!minBid || !duration) return toast.error("Fill all fields");
     if (!nft) return toast.error("NFT not found");
+    if (nft.isArchived) return toast.error("Archived NFTs cannot be listed for auction.");
 
     try {
       let durationHours = 0;
@@ -242,15 +243,21 @@ export default function CreateAuctionPage() {
                 You need to approve the auction contract to manage your NFT. This is a one-time transaction.
               </p>
 
-              <ApproveAuctionButton
-                tokenId={tokenId}
-                nftId={nft.id}
-                onSuccess={() => {
-                  setIsApproved(true);
-                  setCurrentStep(2);
-                  toast.success("NFT approved! Now create your auction.");
-                }}
-              />
+              {nft.isArchived ? (
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  This NFT is archived and cannot be approved for auction.
+                </p>
+              ) : (
+                <ApproveAuctionButton
+                  tokenId={tokenId}
+                  nftId={nft.id}
+                  onSuccess={() => {
+                    setIsApproved(true);
+                    setCurrentStep(2);
+                    toast.success("NFT approved! Now create your auction.");
+                  }}
+                />
+              )}
             </motion.div>
           )}
 
@@ -382,7 +389,7 @@ export default function CreateAuctionPage() {
                 {/* Create Button */}
                 <Button
                   onClick={handleCreateAuction}
-                  disabled={isTxPending || isReceiptLoading || !minBid || !duration}
+                  disabled={isTxPending || isReceiptLoading || !minBid || !duration || nft.isArchived}
                   className="w-full h-14 bg-linear-to-r from-orange-500 via-pink-500 to-purple-500 hover:from-orange-600 hover:via-pink-600 hover:to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all text-lg"
                 >
                   {isTxPending || isReceiptLoading ? (
@@ -394,6 +401,12 @@ export default function CreateAuctionPage() {
                     "Create Auction"
                   )}
                 </Button>
+
+                {nft.isArchived && (
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    Archived NFTs cannot be auctioned until unarchived.
+                  </p>
+                )}
               </div>
             </motion.div>
           )}

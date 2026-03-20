@@ -37,3 +37,29 @@ export function useUpdateNFT() {
     },
   });
 }
+
+export function useArchiveNFT() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ownerId }: { id: number; ownerId: number }) => {
+      return await marketplaceApi.nfts.archive(id, ownerId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["nft"] });
+    },
+  });
+}
+
+export function useUnarchiveNFT() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ownerId }: { id: number; ownerId: number }) => {
+      return await marketplaceApi.nfts.unarchive(id, ownerId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["nft"] });
+    },
+  });
+}

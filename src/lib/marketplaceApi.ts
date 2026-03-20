@@ -189,6 +189,16 @@ export const marketplaceApi = {
         method: "PATCH",
         body: JSON.stringify(data),
       }),
+    archive: (id: number, ownerId: number) =>
+      request<NFTModel>(`/marketplace/nfts/${id}/archive`, {
+        method: "POST",
+        body: JSON.stringify({ ownerId }),
+      }),
+    unarchive: (id: number, ownerId: number) =>
+      request<NFTModel>(`/marketplace/nfts/${id}/unarchive`, {
+        method: "POST",
+        body: JSON.stringify({ ownerId }),
+      }),
     transferOwnership: (tokenId: number, newOwnerId: number) =>
       request<NFTModel>(`/marketplace/nfts/token/${tokenId}/transfer`, {
         method: "POST",
