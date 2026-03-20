@@ -29,9 +29,9 @@ export async function GET(req: NextRequest) {
     }
 
     // --- Path 2: fileId is actually the filename (Pinata TUS uses filename in URL) ---
-    // Search by name, sorted newest first
+    // Search by name, sorted newest first (Pinata v3 uses `limit`, not `pageSize`)
     const searchRes = await fetch(
-      `https://api.pinata.cloud/v3/files?name=${encodeURIComponent(fileId)}&pageSize=1&order=DESC`,
+      `https://api.pinata.cloud/v3/files?name=${encodeURIComponent(fileId)}&limit=5&order=DESC`,
       { headers }
     );
 
@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
     }
 
     const searchData = await searchRes.json();
+    console.log("[file-info] search result for", fileId, JSON.stringify(searchData?.data?.files?.slice(0, 3)));
     const cid = searchData?.data?.files?.[0]?.cid;
 
     if (cid) return NextResponse.json({ cid });
