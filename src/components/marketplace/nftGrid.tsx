@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import NFTCard from "./nftCard";
 import SkeletonCards from "./SekeletonCards";
 import { Button } from "../ui/button";
@@ -20,6 +20,7 @@ export default function PublicMintsGrid() {
   const [mints, setMints] = useState<(PrismaNFT & { owner: UserModel,auction:AuctionModel|null,likes:NFTLikeModel[] })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const {address} = useAccount();
   const {data:user} = useUser(address);
   const loadMints = useCallback(async (options?: { silent?: boolean }) => {
@@ -66,6 +67,33 @@ console.log("data",data)
     };
   }, [loadMints]);
 
+  const totalPages = Math.max(1, Math.ceil(mints.length / PAGE_SIZE));
+
+  useEffect(() => {
+    setCurrentPage((prev) => Math.min(prev, totalPages));
+  }, [totalPages]);
+
+  const pagedMints = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return mints.slice(start, start + PAGE_SIZE);
+  }, [mints, currentPage]);
+
+  const pageStart = mints.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const pageEnd = Math.min(currentPage * PAGE_SIZE, mints.length);
+
+  const pageNumbers = useMemo(() => {
+    const windowSize = 5;
+    const half = Math.floor(windowSize / 2);
+    let start = Math.max(1, currentPage - half);
+    let end = Math.min(totalPages, start + windowSize - 1);
+
+    if (end - start + 1 < windowSize) {
+      start = Math.max(1, end - windowSize + 1);
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
+  }, [currentPage, totalPages]);
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -106,8 +134,12 @@ console.log("data",data)
         </Button>
       </div>
 
+      <div className="mb-5 text-sm text-zinc-500 dark:text-zinc-400">
+        Showing {pageStart}-{pageEnd} of {mints.length}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {mints.map((nft) => (
+        {pagedMints.map((nft) => (
           <NFTCard
             key={nft.tokenId}
             tokenId={nft.tokenId}
@@ -143,6 +175,39 @@ console.log("data",data)
           />
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+          >
+            Previous
+          </Button>
+
+          {pageNumbers.map((page) => (
+            <Button
+              key={page}
+              variant={currentPage === page ? "default" : "outline"}
+              size="sm"
+              onClick={() => setCurrentPage(page)}
+            >
+              {page}
+            </Button>
+          ))}
+
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
