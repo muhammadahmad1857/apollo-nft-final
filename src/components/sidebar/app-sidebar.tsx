@@ -11,7 +11,7 @@ import {
   Heart,
   LayoutDashboard,
   ListMusic,
-  
+  Archive,
   ShoppingCart,
   User,
   type LucideIcon,
@@ -159,6 +159,12 @@ const data: SidebarData = {
       title: "My Favorites",
       url: "/dashboard/favorites",
       icon: Heart,
+      
+    },
+    {
+      title: "Archived NFTs",
+      url: "/dashboard/archived",
+      icon: Archive,
       
     },
     {

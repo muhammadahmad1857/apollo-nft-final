@@ -166,6 +166,35 @@ export async function getNFTsByOwner(
   });
 }
 
+export async function getArchivedNFTsByOwner(
+  ownerId: number,
+  needLike: boolean = false,
+  needAuction: boolean = false,
+  needOwner: boolean = false,
+): Promise<
+  (PrismaNFT & {
+    likes?: NFTLikeModel[];
+    auction?: AuctionModel | null;
+    owner?: UserModel;
+  })[]
+> {
+  return db.nFT.findMany({
+    where: {
+      ownerId,
+      isArchived: true,
+      moderationStatus: {
+        in: [NftModerationStatus.ACTIVE, NftModerationStatus.FLAGGED, NftModerationStatus.DELISTED],
+      },
+    },
+    orderBy: { archivedAt: "desc" },
+    include: {
+      likes: needLike,
+      auction: needAuction,
+      owner: needOwner,
+    },
+  });
+}
+
 /* --------------------
    UPDATE
 -------------------- */
