@@ -1,53 +1,42 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
-    const { filename, maxFileSize = 5 * 1024 * 1024 * 1024 } = await req.json(); // 5GB default
-    console.log("[Pinata] Parsed input:", { filename, maxFileSize });
-    const expires = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour from now
-
-    const payload = {
-      date: Math.floor(Date.now() / 1000),
-      expires,
-      max_file_size: maxFileSize,
-      allow_mime_types: [
-        "audio/*",
-        "video/*",
-        "image/*",
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "text/plain",
-        "text/markdown",
-      ],
-      filename,
-      keyvalues: { uploadedBy: "nextjs-client" },
-    };
-    console.log("[Pinata] Built payload:", payload);
-
-    console.log("[Pinata] Sending request to Pinata...");
-    const res = await fetch("https://api.pinata.cloud/v3/files/sign", {
+    // Create a short-lived scoped API key for this upload
+    const keyRes = await fetch("https://api.pinata.cloud/v3/api_keys", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.PINATA_JWT}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        keyname: `tus-upload-${Date.now()}`,
+        permissions: { admin: true },
+        maxUses: 100, // enough for chunked TUS patches
+      }),
     });
-    console.log("[Pinata] Response status:", res.status);
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("[Pinata] Error response:", errText);
-      throw new Error(errText || "Failed to generate signed URL");
+    if (!keyRes.ok) {
+      const errText = await keyRes.text();
+      console.error("[signed-upload-url] Pinata key error:", errText);
+      throw new Error(errText || "Failed to create upload key");
     }
 
-    const data = await res.json();
-    console.log("[Pinata] Success response:", data);
-    // data contains the signed URL and fields
-    return NextResponse.json(data);
+    const keyData = await keyRes.json() as { JWT?: string; token?: string };
+    const token = keyData.JWT ?? keyData.token;
+
+    if (!token) {
+      throw new Error("No JWT returned from Pinata API keys endpoint");
+    }
+
+    return NextResponse.json({
+      data: {
+        url: "https://uploads.pinata.cloud/v3/files",
+        token,
+      },
+    });
   } catch (err) {
-    console.error("[Pinata] Exception:", err);
+    console.error("[signed-upload-url] Exception:", err);
     return NextResponse.json(
       { error: "Failed to generate signed URL" },
       { status: 500 }

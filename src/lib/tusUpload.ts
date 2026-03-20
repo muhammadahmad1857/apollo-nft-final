@@ -2,8 +2,10 @@ import * as tus from "tus-js-client";
 
 export interface TusUploadOptions {
   file: File;
-  /** Signed TUS endpoint URL from /api/pinata/signed-upload-url */
+  /** TUS endpoint URL from /api/pinata/signed-upload-url */
   endpoint: string;
+  /** Bearer token for Pinata authorization */
+  token: string;
   onProgress: (bytesSent: number, bytesTotal: number) => void;
   onSuccess: (cid: string) => void;
   onError: (err: Error) => void;
@@ -16,6 +18,9 @@ export interface TusUploadHandle {
 export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
   const upload = new tus.Upload(options.file, {
     endpoint: options.endpoint,
+    headers: {
+      Authorization: `Bearer ${options.token}`,
+    },
     chunkSize: 50 * 1024 * 1024, // 50 MB chunks
     retryDelays: [0, 1000, 3000, 5000, 10000],
     metadata: {

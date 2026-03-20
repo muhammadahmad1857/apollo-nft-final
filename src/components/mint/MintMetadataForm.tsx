@@ -224,14 +224,16 @@ export function MintMetadataForm({
 
         if (!signedRes.ok) throw new Error("Failed to get signed upload URL");
 
-        const signedData = await signedRes.json() as { data?: { url?: string }; url?: string };
+        const signedData = await signedRes.json() as { data?: { url?: string; token?: string }; url?: string };
         const tusEndpoint = signedData?.data?.url ?? signedData?.url;
+        const tusToken = signedData?.data?.token ?? "";
         if (!tusEndpoint) throw new Error("No TUS endpoint in signed URL response");
 
         await new Promise<void>((resolve, reject) => {
           fileUploadHandleRef.current = startTusUpload({
             file,
             endpoint: tusEndpoint,
+            token: tusToken,
             onProgress: (bytesSent, bytesTotal) => {
               setUploadedBytes(bytesSent);
               setTotalBytes(bytesTotal);
@@ -351,14 +353,16 @@ export function MintMetadataForm({
 
         if (!signedRes.ok) throw new Error("Failed to get signed upload URL");
 
-        const signedData = await signedRes.json() as { data?: { url?: string }; url?: string };
+        const signedData = await signedRes.json() as { data?: { url?: string; token?: string }; url?: string };
         const tusEndpoint = signedData?.data?.url ?? signedData?.url;
+        const tusToken = signedData?.data?.token ?? "";
         if (!tusEndpoint) throw new Error("No TUS endpoint in signed URL response");
 
         await new Promise<void>((resolve, reject) => {
           trailerUploadHandleRef.current = startTusUpload({
             file,
             endpoint: tusEndpoint,
+            token: tusToken,
             onProgress: (bytesSent, bytesTotal) => {
               setTrailerUploadedBytes(bytesSent);
               setTrailerTotalBytes(bytesTotal);
