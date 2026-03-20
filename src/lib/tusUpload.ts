@@ -39,8 +39,7 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
     onError: (err) => {
       options.onError(err instanceof Error ? err : new Error(String(err)));
     },
-    storeFingerprintForResuming: true,
-    removeFingerprintOnSuccess: true,
+    storeFingerprintForResuming: false,
   });
 
   upload.start();
@@ -50,14 +49,20 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
   };
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * After a TUS upload completes, Pinata's upload URL contains the file ID.
  * We call our server-side /api/pinata/file-info to exchange it for the IPFS CID.
  *
- * Example upload URL: https://uploads.pinata.cloud/v3/files/{fileId}
+ * Pinata v3 TUS URL formats:
+ *   https://uploads.pinata.cloud/v3/files/{uuid}/{filename}  (preferred — UUID for direct lookup)
+ *   https://uploads.pinata.cloud/v3/files/{filename}         (fallback — name-based search)
  */
 async function extractCid(uploadUrl: string): Promise<string> {
-  const fileId = uploadUrl.split("/").pop();
+  const segments = uploadUrl.split("/");
+  // Prefer UUID segment for a direct /v3/files/{uuid} lookup; fall back to last segment
+  const fileId = segments.find((s) => UUID_RE.test(s)) ?? segments.pop();
   if (!fileId) {
     throw new Error(`Cannot extract file ID from TUS upload URL: ${uploadUrl}`);
   }
