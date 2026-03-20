@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     await db.nFT.updateMany({
       where: {
         readinessStatus: "PROCESSING",
-        NOT: { OR: [{ mediaUrl: null }, { mediaUrl: "" }] },
+        NOT: { mediaUrl: "" },
         files: { none: { uploadStatus: { in: ["PENDING", "UPLOADING"] } } },
       },
       data: { readinessStatus: "READY" },

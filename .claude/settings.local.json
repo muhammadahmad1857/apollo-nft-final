@@ -4,7 +4,8 @@
       "Bash(pnpm build:*)",
       "Bash(pnpm add:*)",
       "Bash(pnpm test:*)",
-      "Bash(pnpm dlx:*)"
+      "Bash(pnpm dlx:*)",
+      "Bash(pnpm run:*)"
     ]
   }
 }
