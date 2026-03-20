@@ -98,10 +98,13 @@ export default function Page() {
   }, [address, user?.id, fetchNFTs]);
 
   const filteredNFTs = nfts.filter((nft) => {
+    if (nft.isArchived) return false;
     if (filterMinted && !nft.isListed) return false;
     if (!nft.title.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  const visibleNFTCount = nfts.filter((nft) => !nft.isArchived).length;
 
   if (!user) return <div>Connect your wallet to view your NFTs</div>;
 
@@ -125,7 +128,7 @@ export default function Page() {
             <span className="font-semibold">Stats</span>
             <span className="text-muted-foreground">NFTs Owned</span>
           </div>
-          <div className="text-2xl font-bold">{nfts.length}</div>
+          <div className="text-2xl font-bold">{visibleNFTCount}</div>
         </Card>
 
         {/* Minted filter */}
