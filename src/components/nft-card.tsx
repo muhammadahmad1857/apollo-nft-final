@@ -7,7 +7,6 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useAccount } from "wagmi";
-import { useRouter } from "next/navigation";
 import UniversalMediaViewer from "@/components/ui/UniversalMediaViewer";
 
 import { UniversalMediaIcon } from "./ui/UniversalMediaIcon";
@@ -25,7 +24,6 @@ interface NFTCardProps {
 
 export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
   const { address } = useAccount();
-  const router = useRouter();
   const { data: user } = useUser(address || "");
   const archiveMutation = useArchiveNFT();
   const unarchiveMutation = useUnarchiveNFT();
@@ -59,7 +57,6 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
         await archiveMutation.mutateAsync({ id: nft.id, ownerId: user.id });
         toast.success("NFT archived");
       }
-      router.refresh();
     } catch (err) {
       toast.error((err as Error)?.message || "Failed to update archive state");
     }
@@ -67,8 +64,22 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
 
   return (
     <Card className="p-0 overflow-hidden bg-card shadow-lg hover:shadow-xl transition-shadow relative">
-      {/* Top icons: Share + Edit page */}
-      <div className="absolute bottom-2 right-2 flex gap-2 z-10">
+      {/* Top icons: Share + Archive toggle */}
+      <div className="absolute top-2 right-2 flex gap-2 z-10">
+        {owner && (
+          <button
+            className="bg-background/80 rounded-full p-2 hover:bg-primary/20 transition disabled:opacity-50"
+            onClick={handleArchiveToggle}
+            disabled={isArchiveActionPending || !user}
+            title={nft.isArchived ? "Unarchive" : "Archive"}
+          >
+            {nft.isArchived ? (
+              <ArchiveRestore className="text-lg text-primary" size={20} />
+            ) : (
+              <Archive className="text-lg text-primary" size={20} />
+            )}
+          </button>
+        )}
         <button
           className="bg-background/80 rounded-full p-2 hover:bg-primary/20 transition"
           onClick={handleShare}
@@ -76,13 +87,6 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
         >
           <Share className="text-lg text-primary" />
         </button>
-        {/* <button
-          className="bg-background/80 rounded-full p-2 hover:bg-primary/20 transition"
-          onClick={handleEditPage}
-          title="Edit NFT"
-        >
-          <Edit className="text-lg text-primary" />
-        </button> */}
       </div>
 
       {/* Media as Main Focus */}
@@ -90,11 +94,6 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
         {nft.isListed && (
           <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded text-white font-bold bg-cyan-400 z-5">
             Listed
-          </span>
-        )}
-        {nft.isArchived && (
-          <span className="absolute top-2 right-2 text-xs px-2 py-1 rounded text-white font-bold bg-zinc-700 z-5">
-            Archived
           </span>
         )}
         {nft.tokenUri && (
@@ -157,8 +156,8 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
         {owner && (
           <div className="flex flex-col gap-2">
             {nft.isArchived ? (
-              <p className="text-sm text-muted-foreground text-center">
-                Archived NFTs cannot be listed on the marketplace or added to auctions.
+              <p className="text-xs text-muted-foreground text-center py-2">
+                Archived • Cannot list or auction
               </p>
             ) : (
               <>
@@ -172,13 +171,12 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
                       size="sm"
                       className="flex items-center gap-2 w-full"
                     >
-                      <Edit /> List on marketplace
+                      <Edit size={16} /> List
                     </Button>
                   </Link>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center">
-                    This NFT is already approved for auction and cannot be
-                    listed on marketplace.
+                  <p className="text-xs text-muted-foreground text-center">
+                    Approved for auction
                   </p>
                 )}
 
@@ -192,13 +190,12 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
                       size="sm"
                       className="flex items-center gap-2 w-full"
                     >
-                      <Edit /> Create Auction
+                      <Edit size={16} /> Auction
                     </Button>
                   </Link>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center">
-                    This NFT is already approved for marketing and cannot be
-                    approved for the auction.
+                  <p className="text-xs text-muted-foreground text-center">
+                    Approved for marketplace
                   </p>
                 )}
               </>
@@ -208,20 +205,9 @@ export function NFTCard({ nft, owner = true, onBuy }: NFTCardProps) {
               variant="outline"
               size="sm"
               className="flex items-center justify-center gap-2 w-full"
-              onClick={handleArchiveToggle}
-              disabled={isArchiveActionPending || !user}
-            >
-              {nft.isArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
-              <span>{nft.isArchived ? "Unarchive NFT" : "Archive NFT"}</span>
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center justify-center gap-2 w-full"
               onClick={() => setShowPlaylistModal(true)}
             >
-              <ListPlus className="h-4 w-4" />
+              <ListPlus size={16} />
               <span className="hidden sm:inline">Add to Playlist</span>
               <span className="sm:hidden">Playlist</span>
             </Button>

@@ -1,5 +1,8 @@
+"use client";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { marketplaceApi } from "@/lib/marketplaceApi";
+import { archiveNFT, unarchiveNFT } from "@/actions/nft";
 
 export function useNFT(tokenid?: number) {
   return useQuery({
@@ -43,7 +46,7 @@ export function useArchiveNFT() {
 
   return useMutation({
     mutationFn: async ({ id, ownerId }: { id: number; ownerId: number }) => {
-      return await marketplaceApi.nfts.archive(id, ownerId);
+      return await archiveNFT(id, ownerId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["nft"] });
@@ -56,7 +59,7 @@ export function useUnarchiveNFT() {
 
   return useMutation({
     mutationFn: async ({ id, ownerId }: { id: number; ownerId: number }) => {
-      return await marketplaceApi.nfts.unarchive(id, ownerId);
+      return await unarchiveNFT(id, ownerId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["nft"] });
