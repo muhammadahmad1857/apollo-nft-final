@@ -22,8 +22,9 @@ export async function POST() {
       throw new Error(errText || "Failed to create upload key");
     }
 
-    const keyData = await keyRes.json() as { JWT?: string; token?: string };
-    const token = keyData.JWT ?? keyData.token;
+    const keyData = await keyRes.json() as Record<string, unknown>;
+    console.log("[signed-upload-url] api_keys response:", JSON.stringify(keyData));
+    const token = (keyData.JWT ?? keyData.token) as string | undefined;
 
     if (!token) {
       throw new Error("No JWT returned from Pinata API keys endpoint");
