@@ -137,8 +137,8 @@ export function FileUpload({
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024 * 1024) {
-        toast.error("File size must be less than 5GB");
+      if (file.size > 15 * 1024 * 1024 * 1024) {
+        toast.error("File size must be less than 15GB");
         return;
       }
 
