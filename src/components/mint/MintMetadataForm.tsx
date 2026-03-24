@@ -218,7 +218,7 @@ export function MintMetadataForm({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             filename: file.name,
-            maxFileSize: 5 * 1024 * 1024 * 1024,
+            maxFileSize: 15 * 1024 * 1024 * 1024,
           }),
         });
 
@@ -347,7 +347,7 @@ export function MintMetadataForm({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             filename: file.name,
-            maxFileSize: 5 * 1024 * 1024 * 1024,
+            maxFileSize: 15 * 1024 * 1024 * 1024,
           }),
         });
 
