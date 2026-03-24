@@ -57,21 +57,18 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * upload.url is our proxy URL: /api/pinata/tus/{uuid}/{filename}
  * OR the original Pinata URL: https://uploads.pinata.cloud/v3/files/{uuid}/{filename}
  *
- * In both cases the last segment is the filename → name-based search in file-info.
+ * In both cases the UUID segment IS the Pinata file ID → direct UUID lookup in file-info.
  */
 async function extractCid(uploadUrl: string): Promise<string> {
   const segments = uploadUrl.split("/").filter(Boolean);
   const uuidIdx = segments.findIndex((s) => UUID_RE.test(s));
 
   let fileId: string;
-  if (uuidIdx !== -1 && uuidIdx < segments.length - 1) {
-    // UUID followed by filename — session UUID, not file UUID; use filename
-    fileId = segments[segments.length - 1]!;
-  } else if (uuidIdx !== -1) {
-    // UUID is the last segment — direct file lookup
+  if (uuidIdx !== -1) {
+    // UUID is the Pinata file ID — use it for a direct /v3/files/{uuid} lookup
     fileId = segments[uuidIdx]!;
   } else {
-    // No UUID — last segment is the filename
+    // No UUID in URL — fall back to filename-based search
     fileId = segments[segments.length - 1] ?? "";
   }
 
