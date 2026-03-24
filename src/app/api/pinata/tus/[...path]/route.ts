@@ -12,9 +12,10 @@ const PINATA_TUS_BASE = "https://uploads.pinata.cloud/v3/files";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const pinataUrl = `${PINATA_TUS_BASE}/${params.path.join("/")}`;
+  const { path } = await params;
+  const pinataUrl = `${PINATA_TUS_BASE}/${path.join("/")}`;
 
   const forwardHeaders: Record<string, string> = {
     Authorization: `Bearer ${process.env.PINATA_JWT}`,
@@ -45,9 +46,10 @@ export async function PATCH(
 
 export async function HEAD(
   req: Request,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const pinataUrl = `${PINATA_TUS_BASE}/${params.path.join("/")}`;
+  const { path } = await params;
+  const pinataUrl = `${PINATA_TUS_BASE}/${path.join("/")}`;
 
   const pinataRes = await fetch(pinataUrl, {
     method: "HEAD",
