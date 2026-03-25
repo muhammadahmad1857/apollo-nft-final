@@ -6,6 +6,7 @@ export interface PendingMint {
   id: string;
   walletAddress: string;
   pinataFileId: string;
+  pinataFilename?: string | null;
   name: string;
   title: string;
   description: string;
@@ -49,7 +50,8 @@ export function usePendingMints(wallet: string | undefined) {
 
       for (const pm of uploading) {
         try {
-          const res = await fetch(`/api/pinata/file-info?id=${pm.pinataFileId}`);
+          const filenameParam = pm.pinataFilename ? `&filename=${encodeURIComponent(pm.pinataFilename)}` : "";
+          const res = await fetch(`/api/pinata/file-info?id=${pm.pinataFileId}${filenameParam}`);
           if (!res.ok) continue;
           const { cid } = (await res.json()) as { cid?: string };
           if (!cid) continue;

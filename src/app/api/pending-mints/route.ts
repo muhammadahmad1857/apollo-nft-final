@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
     const {
       walletAddress,
       pinataFileId,
+      pinataFilename,
       name,
       title,
       description,
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest) {
     } = body as {
       walletAddress: string;
       pinataFileId: string;
+      pinataFilename?: string;
       name: string;
       title: string;
       description: string;
@@ -58,6 +60,7 @@ export async function POST(req: NextRequest) {
       data: {
         walletAddress,
         pinataFileId,
+        pinataFilename,
         name,
         title,
         description: description ?? "",

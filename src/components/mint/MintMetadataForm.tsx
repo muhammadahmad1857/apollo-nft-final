@@ -68,7 +68,7 @@ interface MintMetadataFormProps {
   royaltyLabel?: string;
   showRoyalty?: boolean;
   /** Called as soon as the Pinata file UUID is known (first chunk uploaded) — before upload completes */
-  onFileCreated?: (fileId: string) => void;
+  onFileCreated?: (fileId: string, filename: string) => void;
 }
 
 export function MintMetadataForm({

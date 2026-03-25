@@ -10,7 +10,7 @@ export interface TusUploadOptions {
   onSuccess: (cid: string) => void;
   onError: (err: Error) => void;
   /** Called as soon as the TUS session is created and the Pinata file UUID is known — well before upload completes */
-  onFileCreated?: (fileId: string) => void;
+  onFileCreated?: (fileId: string, filename: string) => void;
 }
 
 export interface TusUploadHandle {
@@ -35,7 +35,7 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
         const segments = upload.url.split("/").filter(Boolean);
         const uuid = segments.find((s) => UUID_RE.test(s));
         if (uuid) {
-          options.onFileCreated(uuid);
+          options.onFileCreated(uuid, options.file.name);
           // Prevent firing again by clearing the callback reference
           options.onFileCreated = undefined;
         }

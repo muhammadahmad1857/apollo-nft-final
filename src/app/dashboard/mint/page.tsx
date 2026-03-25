@@ -18,8 +18,9 @@ export default function MintPage() {
   const { mint, handleToasts, isBusy, isPriceLoading } =
     useMintContract();
 
-  // Pinata file UUID — available as soon as first chunk lands, before upload completes
+  // Pinata file UUID + original filename — available as soon as first chunk lands, before upload completes
   const [pinataFileId, setPinataFileId] = useState<string | undefined>(undefined);
+  const [pinataFilename, setPinataFilename] = useState<string | undefined>(undefined);
   const [isQueueing, setIsQueueing] = useState(false);
 
   // Form State
@@ -59,6 +60,7 @@ export default function MintPage() {
       royaltyBps: 500,
     });
     setPinataFileId(undefined);
+    setPinataFilename(undefined);
     removeRoyalty("SINGLE");
     toast.success("Form reset");
   };
@@ -85,6 +87,7 @@ export default function MintPage() {
           trailerUrl: formValues.trailerUrl,
           trailerFileType: formValues.trailerFileType,
           royaltyBps: formValues.royaltyBps,
+          pinataFilename,
         }),
       });
       if (!res.ok) throw new Error("Failed to queue mint");
@@ -217,7 +220,7 @@ useEffect(() => {
           <MintMetadataForm
             values={formValues}
             onChange={setFormValues}
-            onFileCreated={setPinataFileId}
+            onFileCreated={(fileId, filename) => { setPinataFileId(fileId); setPinataFilename(filename); }}
           />
 
           {/* Action Buttons */}

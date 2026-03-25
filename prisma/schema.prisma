@@ -192,6 +192,7 @@ model PendingMint {
   id              String   @id @default(uuid())
   walletAddress   String
   pinataFileId    String
+  pinataFilename  String?
   name            String
   title           String
   description     String
