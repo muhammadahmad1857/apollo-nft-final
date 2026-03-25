@@ -62,11 +62,13 @@ export interface MintFormValues {
 
 interface MintMetadataFormProps {
   values: MintFormValues;
-onChange: (values: MintFormValues | ((prev: MintFormValues) => MintFormValues)) => void;
+  onChange: (values: MintFormValues | ((prev: MintFormValues) => MintFormValues)) => void;
   onRemove?: () => void;
   showRemoveButton?: boolean;
   royaltyLabel?: string;
   showRoyalty?: boolean;
+  /** Called as soon as the Pinata file UUID is known (first chunk uploaded) — before upload completes */
+  onFileCreated?: (fileId: string) => void;
 }
 
 export function MintMetadataForm({
@@ -76,6 +78,7 @@ export function MintMetadataForm({
   showRemoveButton = false,
   royaltyLabel = "Royalty Percentage",
   showRoyalty = true,
+  onFileCreated,
 }: MintMetadataFormProps) {
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
@@ -234,6 +237,7 @@ export function MintMetadataForm({
             file,
             endpoint: tusEndpoint,
             token: tusToken,
+            onFileCreated,
             onProgress: (bytesSent, bytesTotal) => {
               setUploadedBytes(bytesSent);
               setTotalBytes(bytesTotal);
@@ -267,7 +271,7 @@ export function MintMetadataForm({
         fileUploadHandleRef.current = null;
       }
     },
-    [onChange]
+    [onChange, onFileCreated]
   );
 
   // Handle file selection

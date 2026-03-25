@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "NFT" ADD COLUMN IF NOT EXISTS "trailer" TEXT,
+ADD COLUMN IF NOT EXISTS "trailerFileType" TEXT;

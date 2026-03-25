@@ -17,6 +17,8 @@ import Link from "next/link";
 import { BlockedUserNotice } from "@/components/blocked-user-notice";
 import { subscribeMarketplaceStream } from "@/lib/marketplaceApi";
 import { getVisibleNFTsByOwner } from "@/actions/nft";
+import { usePendingMints } from "@/hooks/usePendingMints";
+import { Clock, Pen } from "lucide-react";
 
 export default function Page() {
   const router = useRouter();
@@ -27,6 +29,7 @@ export default function Page() {
   const [search, setSearch] = React.useState("");
   const [filterMinted, setFilterMinted] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
+  const { pendingMints } = usePendingMints(address);
 
   const fetchNFTs = React.useCallback(async (options?: { silent?: boolean }) => {
     const silent = options?.silent ?? false;
@@ -157,6 +160,47 @@ export default function Page() {
           onChange={(e) => setSearch(e.target.value)}
           className="bg-zinc-950!"
         />
+
+        {/* Pending Mints */}
+        {pendingMints.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Pending Mints</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {pendingMints.map((pm) => (
+                <Card key={pm.id} className="p-4 flex gap-4 items-start border-zinc-700/50">
+                  {pm.coverImageUrl ? (
+                    <img src={pm.coverImageUrl.replace("ipfs://", `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`)} alt={pm.title} className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-14 h-14 rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                      <Clock className="w-6 h-6 text-zinc-500" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">{pm.title}</p>
+                    <p className="text-xs text-zinc-500 truncate">{pm.name}</p>
+                    <div className="mt-2">
+                      {pm.status === "pending_upload" && (
+                        <span className="inline-flex items-center gap-1 text-xs bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-2 py-0.5 rounded-full">
+                          <Clock className="w-3 h-3" /> Uploading...
+                        </span>
+                      )}
+                      {pm.status === "pending_sign" && (
+                        <span className="inline-flex items-center gap-1 text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2 py-0.5 rounded-full">
+                          <Pen className="w-3 h-3" /> Ready to Sign
+                        </span>
+                      )}
+                      {pm.status === "minting" && (
+                        <span className="inline-flex items-center gap-1 text-xs bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded-full">
+                          <Clock className="w-3 h-3 animate-spin" /> Confirming...
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         {isUserBlocked ? (
           <BlockedUserNotice message="NFT cards are unavailable right now. If this is a mistake, contact us at hello@blaqclouds.io." />

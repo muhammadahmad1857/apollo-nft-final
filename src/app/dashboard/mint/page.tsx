@@ -18,6 +18,10 @@ export default function MintPage() {
   const { mint, handleToasts, isBusy, isPriceLoading } =
     useMintContract();
 
+  // Pinata file UUID — available as soon as first chunk lands, before upload completes
+  const [pinataFileId, setPinataFileId] = useState<string | undefined>(undefined);
+  const [isQueueing, setIsQueueing] = useState(false);
+
   // Form State
   const [formValues, setFormValues] = useState<MintFormValues>({
     name: "",
@@ -54,8 +58,45 @@ export default function MintPage() {
       trailerFileType: undefined,
       royaltyBps: 500,
     });
+    setPinataFileId(undefined);
     removeRoyalty("SINGLE");
     toast.success("Form reset");
+  };
+
+  // Called when upload is still in progress but user wants to queue the mint
+  const handleQueueMint = async () => {
+    if (!address || !pinataFileId || !formValues.name || !formValues.title) {
+      toast.error("Please fill in Name and Title before queuing");
+      return;
+    }
+    setIsQueueing(true);
+    try {
+      const res = await fetch("/api/pending-mints", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          walletAddress: address,
+          pinataFileId,
+          name: formValues.name,
+          title: formValues.title,
+          description: formValues.description ?? "",
+          coverImageUrl: formValues.coverImageUrl,
+          fileType: formValues.fileType ?? "other",
+          trailerUrl: formValues.trailerUrl,
+          trailerFileType: formValues.trailerFileType,
+          royaltyBps: formValues.royaltyBps,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to queue mint");
+      toast.success("Mint queued!", {
+        description: "We'll notify you when the upload finishes. You can close this page.",
+      });
+      handleReset();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to queue mint");
+    } finally {
+      setIsQueueing(false);
+    }
   };
 
   // Handle mint
@@ -176,6 +217,7 @@ useEffect(() => {
           <MintMetadataForm
             values={formValues}
             onChange={setFormValues}
+            onFileCreated={setPinataFileId}
           />
 
           {/* Action Buttons */}
@@ -187,29 +229,48 @@ useEffect(() => {
             >
               Reset
             </Button>
-            <Button
-              onClick={handleMint}
-              disabled={
-                !formValues.musicTrackUrl ||
-                formValues.musicTrackUrl.trim() === "" ||
-                isPriceLoading ||
-                isBusy ||
-                isMinting ||
-                !address
-              }
-              className="flex-1 py-3 h-auto text-base font-semibold rounded-xl  shadow-lg disabled:opacity-80 disabled:cursor-not-allowed! transition-all"
-            >
-              {isBusy || isMinting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin " />
-                  Minting...
-                </span>
-              ) : !address ? (
-                "Connect Wallet"
-              ) : (
-                "Mint NFT"
-              )}
-            </Button>
+
+            {/* Upload in progress but file ID known — offer to queue */}
+            {pinataFileId && !formValues.musicTrackUrl ? (
+              <Button
+                onClick={handleQueueMint}
+                disabled={isQueueing || !address || !formValues.name || !formValues.title}
+                className="flex-1 py-3 h-auto text-base font-semibold rounded-xl shadow-lg disabled:opacity-80 disabled:cursor-not-allowed! transition-all"
+              >
+                {isQueueing ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Queuing...
+                  </span>
+                ) : (
+                  "Queue Mint"
+                )}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleMint}
+                disabled={
+                  !formValues.musicTrackUrl ||
+                  formValues.musicTrackUrl.trim() === "" ||
+                  isPriceLoading ||
+                  isBusy ||
+                  isMinting ||
+                  !address
+                }
+                className="flex-1 py-3 h-auto text-base font-semibold rounded-xl shadow-lg disabled:opacity-80 disabled:cursor-not-allowed! transition-all"
+              >
+                {isBusy || isMinting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Minting...
+                  </span>
+                ) : !address ? (
+                  "Connect Wallet"
+                ) : (
+                  "Mint NFT"
+                )}
+              </Button>
+            )}
           </div>
         </motion.div>
       </div>

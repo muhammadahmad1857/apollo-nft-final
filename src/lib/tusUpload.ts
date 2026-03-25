@@ -9,6 +9,8 @@ export interface TusUploadOptions {
   onProgress: (bytesSent: number, bytesTotal: number) => void;
   onSuccess: (cid: string) => void;
   onError: (err: Error) => void;
+  /** Called as soon as the TUS session is created and the Pinata file UUID is known — well before upload completes */
+  onFileCreated?: (fileId: string) => void;
 }
 
 export interface TusUploadHandle {
@@ -27,6 +29,18 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
       filetype: options.file.type || "application/octet-stream",
     },
     onProgress: options.onProgress,
+    onChunkComplete: (_chunkSize, _bytesAccepted, _bytesTotal) => {
+      // Fire once as soon as the first chunk lands — upload.url is now set and contains the Pinata file UUID
+      if (options.onFileCreated && upload.url) {
+        const segments = upload.url.split("/").filter(Boolean);
+        const uuid = segments.find((s) => UUID_RE.test(s));
+        if (uuid) {
+          options.onFileCreated(uuid);
+          // Prevent firing again by clearing the callback reference
+          options.onFileCreated = undefined;
+        }
+      }
+    },
     onSuccess: async () => {
       try {
         const cid = await extractCid(upload.url ?? "");
