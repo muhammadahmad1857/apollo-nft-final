@@ -14,34 +14,43 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const { path } = await params;
-  const pinataUrl = `${PINATA_TUS_BASE}/${path.join("/")}`;
+  try {
+    const { path } = await params;
+    const pinataUrl = `${PINATA_TUS_BASE}/${path.join("/")}`;
 
-  const forwardHeaders: Record<string, string> = {
-    Authorization: `Bearer ${process.env.PINATA_JWT}`,
-  };
+    const forwardHeaders: Record<string, string> = {
+      Authorization: `Bearer ${process.env.PINATA_JWT}`,
+    };
 
-  for (const h of ["Content-Type", "Content-Length", "Upload-Offset", "Tus-Resumable", "Upload-Checksum"]) {
-    const v = req.headers.get(h);
-    if (v) forwardHeaders[h] = v;
+    for (const h of ["Content-Type", "Content-Length", "Upload-Offset", "Tus-Resumable", "Upload-Checksum"]) {
+      const v = req.headers.get(h);
+      if (v) forwardHeaders[h] = v;
+    }
+
+    if (!req.body) {
+      return new Response("Missing request body", { status: 400 });
+    }
+
+    // Stream the chunk body directly to Pinata — no buffering
+    const pinataRes = await fetch(pinataUrl, {
+      method: "PATCH",
+      headers: forwardHeaders,
+      body: req.body,
+      // @ts-expect-error — duplex required for streaming request bodies in Node fetch
+      duplex: "half",
+    });
+
+    const responseHeaders = new Headers();
+    for (const h of ["Upload-Offset", "Tus-Resumable", "Upload-Expires"]) {
+      const v = pinataRes.headers.get(h);
+      if (v) responseHeaders.set(h, v);
+    }
+
+    return new Response(null, { status: pinataRes.status, headers: responseHeaders });
+  } catch (err) {
+    console.error("[tus proxy PATCH] error:", err);
+    return new Response("Proxy error", { status: 502 });
   }
-
-  // Stream the chunk body directly to Pinata — no buffering
-  const pinataRes = await fetch(pinataUrl, {
-    method: "PATCH",
-    headers: forwardHeaders,
-    body: req.body,
-    // @ts-expect-error — duplex required for streaming request bodies in Node fetch
-    duplex: "half",
-  });
-
-  const responseHeaders = new Headers();
-  for (const h of ["Upload-Offset", "Tus-Resumable", "Upload-Expires"]) {
-    const v = pinataRes.headers.get(h);
-    if (v) responseHeaders.set(h, v);
-  }
-
-  return new Response(null, { status: pinataRes.status, headers: responseHeaders });
 }
 
 export async function HEAD(
