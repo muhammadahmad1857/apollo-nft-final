@@ -5,6 +5,7 @@ const UUID_RE =
 
 export async function GET(req: NextRequest) {
   const fileId = req.nextUrl.searchParams.get("id");
+  const filename = req.nextUrl.searchParams.get("filename") ?? undefined;
 
   if (!fileId) {
     return NextResponse.json({ error: "id required" }, { status: 400 });
@@ -13,49 +14,80 @@ export async function GET(req: NextRequest) {
   const headers = { Authorization: `Bearer ${process.env.PINATA_JWT}` };
 
   try {
-    // --- Path 1: fileId looks like a real Pinata UUID ---
     if (UUID_RE.test(fileId)) {
-      const res = await fetch(`https://api.pinata.cloud/v3/files/${fileId}`, {
-        headers,
-      });
-
+      // --- Strategy 1: v3 direct UUID lookup ---
+      const res = await fetch(`https://api.pinata.cloud/v3/files/${fileId}`, { headers });
       if (res.ok) {
         const data = await res.json();
         const cid = data?.data?.cid;
         if (cid) return NextResponse.json({ cid });
+        console.log(`[file-info] v3 UUID ${fileId} found but no CID yet`);
+      } else {
+        const errText = await res.text();
+        console.warn(`[file-info] v3 direct lookup ${res.status} for ${fileId}:`, errText.slice(0, 200));
+      }
+
+      // --- Strategy 2: v3 list files, match by ID ---
+      const listRes = await fetch(`https://api.pinata.cloud/v3/files?limit=50`, { headers });
+      if (listRes.ok) {
+        const listData = await listRes.json();
+        const files: Array<{ id: string; name: string; cid: string }> = listData?.data?.files ?? [];
+        const match = files.find((f) => f.id === fileId);
+        if (match?.cid) {
+          console.log(`[file-info] v3 list matched UUID ${fileId}`);
+          return NextResponse.json({ cid: match.cid });
+        }
+      }
+
+      // --- Strategy 3: v1 pinList by filename (scoped keys always have access) ---
+      if (filename) {
+        const v1Res = await fetch(
+          `https://api.pinata.cloud/data/pinList?status=pinned&pageLimit=10&metadata%5Bname%5D=${encodeURIComponent(filename)}`,
+          { headers }
+        );
+        if (v1Res.ok) {
+          const v1Data = await v1Res.json();
+          const rows: Array<{ ipfs_pin_hash: string; metadata?: { name?: string } }> = v1Data?.rows ?? [];
+          const v1Match = rows.find((r) => r.metadata?.name === filename);
+          if (v1Match?.ipfs_pin_hash) {
+            console.log(`[file-info] v1 pinList matched filename "${filename}"`);
+            return NextResponse.json({ cid: v1Match.ipfs_pin_hash });
+          }
+        } else {
+          const errText = await v1Res.text();
+          console.warn(`[file-info] v1 pinList ${v1Res.status}:`, errText.slice(0, 200));
+        }
+      }
+
+      // --- Strategy 4: v1 pinList recent, match by name if filename known ---
+      if (filename) {
+        const recentRes = await fetch(
+          `https://api.pinata.cloud/data/pinList?status=pinned&pageLimit=20&sortBy=date_pinned&sortOrder=DESC`,
+          { headers }
+        );
+        if (recentRes.ok) {
+          const recentData = await recentRes.json();
+          const rows: Array<{ ipfs_pin_hash: string; metadata?: { name?: string } }> = recentData?.rows ?? [];
+          const match = rows.find((r) => r.metadata?.name === filename);
+          if (match?.ipfs_pin_hash) {
+            console.log(`[file-info] v1 recent list matched filename "${filename}"`);
+            return NextResponse.json({ cid: match.ipfs_pin_hash });
+          }
+        }
       }
 
       return NextResponse.json({ error: "CID not available yet" }, { status: 404 });
     }
 
-    // --- Path 2: fileId is actually the filename (Pinata TUS uses filename in URL) ---
-    // Search by name (Pinata v3 uses `limit`, not `pageSize`)
+    // --- Non-UUID: search by name using v3 ---
     const searchRes = await fetch(
       `https://api.pinata.cloud/v3/files?name=${encodeURIComponent(fileId)}&limit=5`,
       { headers }
     );
-
-    if (!searchRes.ok) {
-      const errText = await searchRes.text();
-      console.error("[file-info] Pinata search error:", errText);
-      return NextResponse.json({ error: "Search failed" }, { status: 500 });
-    }
-
-    const searchData = await searchRes.json();
-    const cid = searchData?.data?.files?.[0]?.cid;
-    if (cid) return NextResponse.json({ cid });
-
-    // Fallback: name search returned nothing — list recent files and match by name
-    const recentRes = await fetch(
-      `https://api.pinata.cloud/v3/files?limit=10`,
-      { headers }
-    );
-    if (recentRes.ok) {
-      const recentData = await recentRes.json();
-      const files: Array<{ name: string; cid: string; id: string }> = recentData?.data?.files ?? [];
-      console.log("[file-info] recent files:", JSON.stringify(files.map(f => ({ name: f.name, cid: f.cid, id: f.id }))));
-      const match = files.find(f => f.name === fileId || f.name?.endsWith(`/${fileId}`));
-      if (match?.cid) return NextResponse.json({ cid: match.cid });
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      const cid = searchData?.data?.files?.[0]?.cid;
+      if (cid) return NextResponse.json({ cid });
     }
 
     return NextResponse.json({ error: "CID not available yet" }, { status: 404 });

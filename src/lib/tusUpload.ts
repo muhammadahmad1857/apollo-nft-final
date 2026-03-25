@@ -43,7 +43,7 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
     },
     onSuccess: async () => {
       try {
-        const cid = await extractCid(upload.url ?? "");
+        const cid = await extractCid(upload.url ?? "", options.file.name);
         options.onSuccess(cid);
       } catch (err) {
         options.onError(err instanceof Error ? err : new Error(String(err)));
@@ -73,7 +73,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  *
  * In both cases the UUID segment IS the Pinata file ID → direct UUID lookup in file-info.
  */
-async function extractCid(uploadUrl: string): Promise<string> {
+async function extractCid(uploadUrl: string, filename?: string): Promise<string> {
   const segments = uploadUrl.split("/").filter(Boolean);
   const uuidIdx = segments.findIndex((s) => UUID_RE.test(s));
 
@@ -91,8 +91,9 @@ async function extractCid(uploadUrl: string): Promise<string> {
   }
 
   // Poll up to 10 times (Pinata may take a moment to assign the CID)
+  const filenameParam = filename ? `&filename=${encodeURIComponent(filename)}` : "";
   for (let attempt = 0; attempt < 10; attempt++) {
-    const res = await fetch(`/api/pinata/file-info?id=${fileId}`);
+    const res = await fetch(`/api/pinata/file-info?id=${fileId}${filenameParam}`);
     if (res.ok) {
       const data = (await res.json()) as { cid?: string };
       if (data.cid) return data.cid;
