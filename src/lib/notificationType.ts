@@ -5,6 +5,7 @@ import {
   ShieldCheck,
   ShieldMinus,
   ShieldPlus,
+  Sparkles,
   UserMinus,
   UserPlus,
   type LucideIcon,
@@ -30,6 +31,8 @@ export function getNotificationTypeMeta(type: NotificationType): {
       return { label: "Auction frozen", Icon: Gavel };
     case "ADMIN_AUCTION_UNFROZEN":
       return { label: "Auction resumed", Icon: ShieldPlus };
+    case "PENDING_MINT_READY":
+      return { label: "Ready to mint", Icon: Sparkles };
     default:
       return { label: "Notification", Icon: Bell };
   }

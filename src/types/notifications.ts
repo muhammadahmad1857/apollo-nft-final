@@ -6,6 +6,7 @@ export type NotificationType =
   | "ADMIN_NFT_DELISTED"
   | "ADMIN_AUCTION_FROZEN"
   | "ADMIN_AUCTION_UNFROZEN"
+  | "PENDING_MINT_READY"
   | string;
 
 export interface NotificationItem {

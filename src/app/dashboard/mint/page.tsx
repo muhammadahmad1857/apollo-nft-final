@@ -65,10 +65,15 @@ export default function MintPage() {
     toast.success("Form reset");
   };
 
+  const requiredFieldsFilled =
+    !!formValues.name?.trim() &&
+    !!formValues.title?.trim() &&
+    !!formValues.description?.trim();
+
   // Called when upload is still in progress but user wants to queue the mint
   const handleQueueMint = async () => {
-    if (!address || !pinataFileId || !formValues.name || !formValues.title) {
-      toast.error("Please fill in Name and Title before queuing");
+    if (!address || !pinataFileId || !requiredFieldsFilled) {
+      toast.error("Please fill in Name, Title, and Description before queuing");
       return;
     }
     setIsQueueing(true);
@@ -106,6 +111,11 @@ export default function MintPage() {
   const handleMint = async () => {
     if (!formValues.musicTrackUrl) {
       toast.error("Please upload a file to continue");
+      return;
+    }
+
+    if (!requiredFieldsFilled) {
+      toast.error("Please fill in Name, Title, and Description");
       return;
     }
 
@@ -237,7 +247,7 @@ useEffect(() => {
             {pinataFileId && !formValues.musicTrackUrl ? (
               <Button
                 onClick={handleQueueMint}
-                disabled={isQueueing || !address || !formValues.name || !formValues.title}
+                disabled={isQueueing || !address || !requiredFieldsFilled}
                 className="flex-1 py-3 h-auto text-base font-semibold rounded-xl shadow-lg disabled:opacity-80 disabled:cursor-not-allowed! transition-all"
               >
                 {isQueueing ? (
@@ -255,6 +265,7 @@ useEffect(() => {
                 disabled={
                   !formValues.musicTrackUrl ||
                   formValues.musicTrackUrl.trim() === "" ||
+                  !requiredFieldsFilled ||
                   isPriceLoading ||
                   isBusy ||
                   isMinting ||

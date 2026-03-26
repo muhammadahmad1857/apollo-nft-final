@@ -1,9 +1,12 @@
+"use client";
+
 import { formatDistanceToNow } from "date-fns";
 import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getNotificationTypeMeta } from "@/lib/notificationType";
 import type { NotificationItem } from "@/types/notifications";
+import { PendingMintSignButton } from "@/components/PendingMintSignButton";
 
 interface NotificationItemCardProps {
   item: NotificationItem;
@@ -74,18 +77,28 @@ export function NotificationItemCard({
               {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
             </p>
 
-            {!item.isRead && (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={isMarking}
-                onClick={() => onMarkRead(item.id)}
-                className="border-zinc-600/60 bg-zinc-900/30 hover:bg-zinc-800/50"
-              >
-                <Check className="h-3.5 w-3.5" />
-                Mark as read
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {item.type === "PENDING_MINT_READY" &&
+                typeof item.metadata?.pendingMintId === "string" && (
+                  <PendingMintSignButton
+                    pendingMintId={item.metadata.pendingMintId}
+                    onMinted={() => onMarkRead(item.id)}
+                  />
+                )}
+
+              {!item.isRead && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={isMarking}
+                  onClick={() => onMarkRead(item.id)}
+                  className="border-zinc-600/60 bg-zinc-900/30 hover:bg-zinc-800/50"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  Mark as read
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
