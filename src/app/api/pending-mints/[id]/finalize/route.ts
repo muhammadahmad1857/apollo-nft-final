@@ -73,10 +73,17 @@ export async function POST(
       data: { mediaUrl, metadataUrl, status: "pending_sign" },
     });
 
+    // Look up user ID by wallet so recipientUserId is set
+    const user = await db.user.findUnique({
+      where: { walletAddress: pending.walletAddress },
+      select: { id: true },
+    });
+
     // Create in-app notification
     await db.notification.create({
       data: {
         recipientWalletAddress: pending.walletAddress,
+        recipientUserId: user?.id ?? null,
         type: "PENDING_MINT_READY",
         title: "Your NFT is ready to mint!",
         message: `"${pending.title}" finished uploading. Tap to sign and mint it on-chain.`,

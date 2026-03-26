@@ -216,6 +216,10 @@ export function MintMetadataForm({
         setUploadedBytes(0);
         setTotalBytes(file.size);
 
+        // Detect fileType immediately so Queue Mint has it before upload finishes
+        const earlyFileType = getFileType(file);
+        onChange((prev) => ({ ...prev, fileType: earlyFileType }));
+
         const signedRes = await fetch("/api/pinata/signed-upload-url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

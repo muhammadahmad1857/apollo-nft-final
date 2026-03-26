@@ -3,7 +3,8 @@
     "allow": [
       "Bash(pnpm dlx:*)",
       "Bash(pnpm exec:*)",
-      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")"
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(node -e \":*)"
     ]
   }
 }
