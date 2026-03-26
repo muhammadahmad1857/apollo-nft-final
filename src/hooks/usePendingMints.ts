@@ -15,6 +15,7 @@ export interface PendingMint {
   trailerUrl?: string | null;
   trailerFileType?: string | null;
   royaltyBps: number;
+  quantity: number;
   mediaUrl?: string | null;
   metadataUrl?: string | null;
   status: "pending_upload" | "pending_sign" | "minting" | "minted" | "failed";

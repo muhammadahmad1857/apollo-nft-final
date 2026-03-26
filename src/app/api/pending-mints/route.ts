@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
       trailerUrl,
       trailerFileType,
       royaltyBps,
+      quantity,
     } = body as {
       walletAddress: string;
       pinataFileId: string;
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
       trailerUrl?: string;
       trailerFileType?: string;
       royaltyBps: number;
+      quantity?: number;
     };
 
     if (!walletAddress || !pinataFileId || !name || !title || !fileType) {
@@ -69,6 +71,7 @@ export async function POST(req: NextRequest) {
         trailerUrl,
         trailerFileType,
         royaltyBps: royaltyBps ?? 500,
+        quantity: quantity ?? 1,
       },
     });
 

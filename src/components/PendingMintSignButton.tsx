@@ -11,6 +11,7 @@ interface Props {
   /** Optional: if already known, avoids an extra fetch */
   initialMetadataUrl?: string | null;
   initialRoyaltyBps?: number;
+  initialQuantity?: number;
   initialTitle?: string;
   onMinted?: () => void;
 }
@@ -19,12 +20,14 @@ export function PendingMintSignButton({
   pendingMintId,
   initialMetadataUrl,
   initialRoyaltyBps,
+  initialQuantity,
   initialTitle,
   onMinted,
 }: Props) {
   const { mint, isBusy, handleToasts } = useMintContract();
   const [metadataUrl, setMetadataUrl] = useState<string | null>(initialMetadataUrl ?? null);
   const [royaltyBps, setRoyaltyBps] = useState<number>(initialRoyaltyBps ?? 500);
+  const [quantity, setQuantity] = useState<number>(initialQuantity ?? 1);
   const [title, setTitle] = useState<string>(initialTitle ?? "");
   const [isSigning, setIsSigning] = useState(false);
   const [done, setDone] = useState(false);
@@ -40,6 +43,7 @@ export function PendingMintSignButton({
         if (!data?.pendingMint) return;
         setMetadataUrl(data.pendingMint.metadataUrl ?? null);
         setRoyaltyBps(data.pendingMint.royaltyBps ?? 500);
+        setQuantity(data.pendingMint.quantity ?? 1);
         setTitle(data.pendingMint.title ?? "");
         if (data.pendingMint.status === "minted") setDone(true);
       })
@@ -58,7 +62,7 @@ export function PendingMintSignButton({
       body: JSON.stringify({ status: "minting" }),
     });
 
-    const { success } = await mint({ tokenURI: metadataUrl, royaltyBps });
+    const { success } = await mint({ tokenURI: metadataUrl, royaltyBps, quantity });
 
     if (success) {
       await fetch(`/api/pending-mints/${pendingMintId}`, {

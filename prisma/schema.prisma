@@ -201,6 +201,7 @@ model PendingMint {
   trailerUrl      String?
   trailerFileType String?
   royaltyBps      Int
+  quantity        Int      @default(1)
   mediaUrl        String?
   metadataUrl     String?
   status          String   @default("pending_upload")

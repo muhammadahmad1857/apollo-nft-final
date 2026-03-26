@@ -69,6 +69,7 @@ export default function PendingMintPoller() {
     const { success } = await mintRef.current({
       tokenURI: pm.metadataUrl,
       royaltyBps: pm.royaltyBps,
+      quantity: pm.quantity,
     });
 
     if (success) {
@@ -111,6 +112,7 @@ export default function PendingMintPoller() {
             pendingMintId={pm.id}
             initialMetadataUrl={pm.metadataUrl}
             initialRoyaltyBps={pm.royaltyBps}
+            initialQuantity={pm.quantity}
             initialTitle={pm.title}
             onMinted={() => refreshRef.current()}
           />
