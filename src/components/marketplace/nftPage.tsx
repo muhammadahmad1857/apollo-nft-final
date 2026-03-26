@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
 import { useAccount } from "wagmi";
 import { useBuyNFT } from "@/hooks/useMarketplace";
-import ShareModal from "./ShareModel";
+import ShareModal from "./ShareModal";
 import LikeButton from "./nftLikes";
 import { parseEther } from "viem";
 import { NftModerationStatus } from "@/generated/prisma/enums";
@@ -59,7 +59,6 @@ export default function NFTInteractiveContent({
   const [isProcessingBuy, setIsProcessingBuy] = useState(false);
   const isUserBlocked = !!user?.isBlocked;
   const isFlagged = moderationStatus === NftModerationStatus.FLAGGED;
-console.log("NFTInteractiveContent props", { tokenId, media, title, name, mintPrice, ownerAddress, tokenUri });
   // Load initial like state and count
   // useEffect(() => {
   //   let mounted = true;

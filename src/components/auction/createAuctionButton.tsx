@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -102,8 +101,7 @@ export function CreateAuctionButton({
         } else {
           setAuctionStatus("notStarted");
         }
-      } catch (err) {
-        console.error(err);
+      } catch {
         toast.error("Failed to fetch auction data");
       }
     };
@@ -176,9 +174,8 @@ export function CreateAuctionButton({
       const tx = await createAuctionOnChain(tokenId, durationSec, minBid, user?.id || 0, nftId);
       setTxHash(tx);
       toast.info("Transaction sent! Waiting for confirmation...");
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err?.message || "Failed to create auction");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create auction");
     }
   };
 
@@ -239,7 +236,7 @@ export function CreateAuctionButton({
 
               <Select
                 value={duration}
-                onValueChange={(val: any) => {
+                onValueChange={(val: string) => {
                   setDuration(val);
                   if (val !== "custom") setCustomEndDate(undefined);
                 }}
@@ -315,7 +312,7 @@ export function CreateAuctionButton({
                     </div>
                     <div className="flex-1">
                       <Label className="text-xs">Period</Label>
-                      <Select value={customPeriod} onValueChange={(val: any) => setCustomPeriod(val)}>
+                      <Select value={customPeriod} onValueChange={(val: "AM" | "PM") => setCustomPeriod(val)}>
                         <SelectTrigger className="mt-1">
                           <SelectValue />
                         </SelectTrigger>

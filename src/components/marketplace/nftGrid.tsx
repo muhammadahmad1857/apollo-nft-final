@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import NFTCard from "./nftCard";
-import SkeletonCards from "./SekeletonCards";
+import SkeletonCards from "./SkeletonCards";
 import { Button } from "../ui/button";
 import { marketplaceApi, subscribeMarketplaceStream } from "@/lib/marketplaceApi";
 import type { AuctionModel, NFTLikeModel, NFTModel as PrismaNFT, UserModel } from "@/generated/prisma/models";
@@ -34,10 +34,7 @@ export default function PublicMintsGrid() {
       const data = await marketplaceApi.nfts.getAll(true);
 
 setMints(data as (PrismaNFT & { owner: UserModel,auction:AuctionModel|null,likes:NFTLikeModel[] })[]);
-console.log("data",data)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      console.error(err);
+    } catch {
       setError("Failed to load mints");
     } finally {
       if (!silent) {

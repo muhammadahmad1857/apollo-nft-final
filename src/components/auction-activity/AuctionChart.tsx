@@ -46,7 +46,6 @@ export default function AuctionCharts({ auctionHistory }: AuctionChartsProps) {
    * Chart B: Auction Outcomes
    * ------------------------------- */
   const auctionOutcomeData = useMemo(() => {
-    const now = new Date();
     let won = 0,
       lost = 0,
       active = 0;

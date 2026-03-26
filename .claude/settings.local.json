@@ -4,7 +4,9 @@
       "Bash(pnpm dlx:*)",
       "Bash(pnpm exec:*)",
       "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(xargs grep:*)",
+      "Bash(find \"c:\\\\Users\\\\Lenovo\\\\Desktop\\\\apollo-nft-final\\\\src\\\\components\" -type f -name \"*.tsx\" -exec wc -l {} +)"
     ]
   }
 }

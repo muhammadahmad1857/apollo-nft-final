@@ -42,7 +42,6 @@ export function MetadataForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFieldChange = () => {
-    console.log("Setting metadata to ", musicTrackUrl)
     onMetadataChange({
       name,
       title,
@@ -60,7 +59,6 @@ export function MetadataForm({
  setDisabled(true)
     
     const jwtRes = await fetch("/api/pinata/jwt", { method: "POST" });
-      console.log("JWT", jwtRes);
       if (!jwtRes.ok) {
         throw new Error("Failed to get upload token");
       }
@@ -81,13 +79,11 @@ export function MetadataForm({
           body: formData,
         }
       );
-      console.log("uploadRes", uploadRes);
       if (!uploadRes.ok) {
         const error = await uploadRes.text();
         throw new Error(error || "Upload failed");
       }
       const json = await uploadRes.json();
-      console.log("uploadRes.json()", json);
       const ipfsHash = json.IpfsHash;
       const ipfsUrl = `ipfs://${ipfsHash}`;
    
@@ -102,7 +98,6 @@ export function MetadataForm({
       setCoverImageUrl(ipfsUrl);
       toast.success("Cover image uploaded!");
     } catch (error) {
-      console.log("Cover upload error:", error);
       toast.error("Failed to upload cover image");
     } finally {
       setIsUploadingCover(false);

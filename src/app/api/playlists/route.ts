@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
+import { resolveUser } from "@/lib/apiHelpers";
 
 export async function GET(req: NextRequest) {
   try {
     const walletAddress = req.nextUrl.searchParams.get("walletAddress");
+    const user = await resolveUser(walletAddress);
 
     if (!walletAddress) {
       return NextResponse.json({ error: "walletAddress is required" }, { status: 400 });
     }
-
-    const user = await db.user.findUnique({ where: { walletAddress } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "walletAddress and name are required" }, { status: 400 });
     }
 
-    const user = await db.user.findUnique({ where: { walletAddress } });
+    const user = await resolveUser(walletAddress);
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }

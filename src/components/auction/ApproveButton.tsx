@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -33,9 +32,8 @@ export function ApproveAuctionButton({ nftId, disabled = false, onSuccess,tokenI
         args: [auctionAddress, BigInt(tokenId)],
       });
       toast.info("Approval transaction sent...");
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err?.message || "Approval failed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Approval failed");
     } finally {
       setIsApproving(false);
     }

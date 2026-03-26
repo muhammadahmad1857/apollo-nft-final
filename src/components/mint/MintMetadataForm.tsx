@@ -82,16 +82,20 @@ export function MintMetadataForm({
 }: MintMetadataFormProps) {
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
-  const [isUploadingFile, setIsUploadingFile] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadedBytes, setUploadedBytes] = useState(0);
-  const [totalBytes, setTotalBytes] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploadingTrailer, setIsUploadingTrailer] = useState(false);
-  const [trailerUploadProgress, setTrailerUploadProgress] = useState(0);
-  const [trailerUploadedBytes, setTrailerUploadedBytes] = useState(0);
-  const [trailerTotalBytes, setTrailerTotalBytes] = useState(0);
-  const [isTrailerDragging, setIsTrailerDragging] = useState(false);
+  const [fileUpload, setFileUpload] = useState({
+    isUploading: false,
+    progress: 0,
+    uploadedBytes: 0,
+    totalBytes: 0,
+    isDragging: false,
+  });
+  const [trailerUpload, setTrailerUpload] = useState({
+    isUploading: false,
+    progress: 0,
+    uploadedBytes: 0,
+    totalBytes: 0,
+    isDragging: false,
+  });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const trailerFileInputRef = useRef<HTMLInputElement>(null);
@@ -101,12 +105,10 @@ export function MintMetadataForm({
 
   const handleChange = useCallback(
     (field: keyof MintFormValues, value: string | number | undefined) => {
-      console.log(`🔄 handleChange called: ${field} =`, value);
       const newValues = {
         ...values,
         [field]: value,
       };
-      console.log("📦 New form values:", newValues);
       onChange(newValues);
     },
     [onChange, values]
@@ -154,8 +156,7 @@ export function MintMetadataForm({
 }));
 
         toast.success("Cover image uploaded!");
-      } catch (error) {
-        console.error("Cover upload error:", error);
+      } catch {
         toast.error("Failed to upload cover image");
       } finally {
         setIsUploadingCover(false);
@@ -211,10 +212,7 @@ export function MintMetadataForm({
   const uploadToPinata = useCallback(
     async (file: File) => {
       try {
-        setIsUploadingFile(true);
-        setUploadProgress(0);
-        setUploadedBytes(0);
-        setTotalBytes(file.size);
+        setFileUpload({ isUploading: true, progress: 0, uploadedBytes: 0, totalBytes: file.size, isDragging: false });
 
         // Detect fileType immediately so Queue Mint has it before upload finishes
         const earlyFileType = getFileType(file);
@@ -243,14 +241,17 @@ export function MintMetadataForm({
             token: tusToken,
             onFileCreated,
             onProgress: (bytesSent, bytesTotal) => {
-              setUploadedBytes(bytesSent);
-              setTotalBytes(bytesTotal);
-              setUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
+              setFileUpload((prev) => ({
+                ...prev,
+                uploadedBytes: bytesSent,
+                totalBytes: bytesTotal,
+                progress: Math.round((bytesSent / bytesTotal) * 100),
+              }));
             },
             onSuccess: (cid) => {
               const ipfsUrl = `ipfs://${cid}`;
               const detectedFileType = getFileType(file);
-              setUploadProgress(100);
+              setFileUpload((prev) => ({ ...prev, progress: 100 }));
               onChange((prev) => ({
                 ...prev,
                 musicTrackUrl: ipfsUrl,
@@ -265,13 +266,11 @@ export function MintMetadataForm({
           });
         });
       } catch (error) {
-        console.error("Upload error:", error);
         toast.error("Failed to upload file", {
           description: error instanceof Error ? error.message : "Please try again",
         });
       } finally {
-        setIsUploadingFile(false);
-        setUploadProgress(0);
+        setFileUpload({ isUploading: false, progress: 0, uploadedBytes: 0, totalBytes: 0, isDragging: false });
         fileUploadHandleRef.current = null;
       }
     },
@@ -311,7 +310,7 @@ export function MintMetadataForm({
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
-      setIsDragging(false);
+      setFileUpload((prev) => ({ ...prev, isDragging: false }));
 
       const file = e.dataTransfer.files[0];
       if (file) {
@@ -323,12 +322,12 @@ export function MintMetadataForm({
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setIsDragging(true);
+    setFileUpload((prev) => ({ ...prev, isDragging: true }));
   }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setIsDragging(false);
+    setFileUpload((prev) => ({ ...prev, isDragging: false }));
   }, []);
 
   const handleFileInput = useCallback(
@@ -345,10 +344,7 @@ export function MintMetadataForm({
   const uploadTrailerToPinata = useCallback(
     async (file: File) => {
       try {
-        setIsUploadingTrailer(true);
-        setTrailerUploadProgress(0);
-        setTrailerUploadedBytes(0);
-        setTrailerTotalBytes(file.size);
+        setTrailerUpload({ isUploading: true, progress: 0, uploadedBytes: 0, totalBytes: file.size, isDragging: false });
 
         const signedRes = await fetch("/api/pinata/signed-upload-url", {
           method: "POST",
@@ -372,14 +368,17 @@ export function MintMetadataForm({
             endpoint: tusEndpoint,
             token: tusToken,
             onProgress: (bytesSent, bytesTotal) => {
-              setTrailerUploadedBytes(bytesSent);
-              setTrailerTotalBytes(bytesTotal);
-              setTrailerUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
+              setTrailerUpload((prev) => ({
+                ...prev,
+                uploadedBytes: bytesSent,
+                totalBytes: bytesTotal,
+                progress: Math.round((bytesSent / bytesTotal) * 100),
+              }));
             },
             onSuccess: (cid) => {
               const ipfsUrl = `ipfs://${cid}`;
               const detectedFileType = getFileType(file);
-              setTrailerUploadProgress(100);
+              setTrailerUpload((prev) => ({ ...prev, progress: 100 }));
               onChange((prev) => ({
                 ...prev,
                 trailerUrl: ipfsUrl,
@@ -394,13 +393,11 @@ export function MintMetadataForm({
           });
         });
       } catch (error) {
-        console.error("Trailer upload error:", error);
         toast.error("Failed to upload trailer", {
           description: error instanceof Error ? error.message : "Please try again",
         });
       } finally {
-        setIsUploadingTrailer(false);
-        setTrailerUploadProgress(0);
+        setTrailerUpload({ isUploading: false, progress: 0, uploadedBytes: 0, totalBytes: 0, isDragging: false });
         trailerUploadHandleRef.current = null;
       }
     },
@@ -439,7 +436,7 @@ export function MintMetadataForm({
   const handleTrailerDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
-      setIsTrailerDragging(false);
+      setTrailerUpload((prev) => ({ ...prev, isDragging: false }));
 
       const file = e.dataTransfer.files[0];
       if (file) {
@@ -451,12 +448,12 @@ export function MintMetadataForm({
 
   const handleTrailerDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setIsTrailerDragging(true);
+    setTrailerUpload((prev) => ({ ...prev, isDragging: true }));
   }, []);
 
   const handleTrailerDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setIsTrailerDragging(false);
+    setTrailerUpload((prev) => ({ ...prev, isDragging: false }));
   }, []);
 
   const handleTrailerFileInput = useCallback(
@@ -719,11 +716,11 @@ export function MintMetadataForm({
               className={`
                 relative cursor-pointer rounded-lg border-2 border-dashed p-8 backdrop-blur-lg text-center transition-all duration-300 bg-zinc-950/20
                 ${
-                  isDragging
+                  fileUpload.isDragging
                     ? "border-cyan-500 bg-cyan-500/10 shadow-[0_0_15px_rgba(34,211,238,0.15)]"
                     : "border-zinc-400/30 dark:border-zinc-600/30 hover:border-cyan-500/50 hover:bg-cyan-500/5"
                 }
-                ${isUploadingFile ? "pointer-events-none opacity-50" : ""}
+                ${fileUpload.isUploading ? "pointer-events-none opacity-50" : ""}
               `}
             >
               <input
@@ -734,27 +731,27 @@ export function MintMetadataForm({
                 className="hidden"
               />
 
-              {isUploadingFile ? (
+              {fileUpload.isUploading ? (
                 <div className="space-y-3">
                   <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
                   <div>
                     <p className="text-xs font-bold text-white mb-2">
                       Uploading...
                     </p>
-                    {totalBytes > 0 && (
+                    {fileUpload.totalBytes > 0 && (
                       <p className="text-xs text-zinc-400 mb-1">
-                        {formatUploadProgress(uploadedBytes, totalBytes)}
+                        {formatUploadProgress(fileUpload.uploadedBytes, fileUpload.totalBytes)}
                       </p>
                     )}
                     <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                       <motion.div
                         className="h-full bg-linear-to-r from-white to-gray-300"
                         initial={{ width: 0 }}
-                        animate={{ width: `${uploadProgress}%` }}
+                        animate={{ width: `${fileUpload.progress}%` }}
                         transition={{ duration: 0.1 }}
                       />
                     </div>
-                    <p className="text-xs text-zinc-500 mt-1">{uploadProgress}%</p>
+                    <p className="text-xs text-zinc-500 mt-1">{fileUpload.progress}%</p>
                   </div>
                 </div>
               ) : (
@@ -825,11 +822,11 @@ export function MintMetadataForm({
               className={`
                 relative cursor-pointer rounded-lg border-2 border-dashed p-8 backdrop-blur-lg text-center transition-all duration-300 bg-zinc-950/20
                 ${
-                  isTrailerDragging
+                  trailerUpload.isDragging
                     ? "border-cyan-500 bg-cyan-500/10 shadow-[0_0_15px_rgba(34,211,238,0.15)]"
                     : "border-zinc-400/30 dark:border-zinc-600/30 hover:border-cyan-500/50 hover:bg-cyan-500/5"
                 }
-                ${isUploadingTrailer ? "pointer-events-none opacity-50" : ""}
+                ${trailerUpload.isUploading ? "pointer-events-none opacity-50" : ""}
               `}
             >
               <input
@@ -840,27 +837,27 @@ export function MintMetadataForm({
                 className="hidden"
               />
 
-              {isUploadingTrailer ? (
+              {trailerUpload.isUploading ? (
                 <div className="space-y-3">
                   <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
                   <div>
                     <p className="text-xs font-bold text-white mb-2">
                       Uploading trailer...
                     </p>
-                    {trailerTotalBytes > 0 && (
+                    {trailerUpload.totalBytes > 0 && (
                       <p className="text-xs text-zinc-400 mb-1">
-                        {formatUploadProgress(trailerUploadedBytes, trailerTotalBytes)}
+                        {formatUploadProgress(trailerUpload.uploadedBytes, trailerUpload.totalBytes)}
                       </p>
                     )}
                     <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                       <motion.div
                         className="h-full bg-linear-to-r from-white to-gray-300"
                         initial={{ width: 0 }}
-                        animate={{ width: `${trailerUploadProgress}%` }}
+                        animate={{ width: `${trailerUpload.progress}%` }}
                         transition={{ duration: 0.1 }}
                       />
                     </div>
-                    <p className="text-xs text-zinc-500 mt-1">{trailerUploadProgress}%</p>
+                    <p className="text-xs text-zinc-500 mt-1">{trailerUpload.progress}%</p>
                   </div>
                 </div>
               ) : (

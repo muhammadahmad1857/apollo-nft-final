@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useCountdown } from "@/hooks/useCountdown";
 import { AuctionModel, NFTModel, UserModel } from "@/generated/prisma/models";
 import Image from "next/image";
 import Link from "next/link";
@@ -25,33 +26,11 @@ export function AuctionDetails({
   const isOwner = auction.seller.walletAddress.toLowerCase() === address?.toLowerCase();
   const hasTrailer = !!auction.nft.trailer && auction.nft.trailer.trim() !== "";
   const shouldShowTrailer = !isOwner && hasTrailer;
-  // Countdown timer state
-  const [timeLeft, setTimeLeft] = useState<{
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
-  } | null>(null);
+  const timeLeft = useCountdown(auction.endTime);
 
   // Local state for settle button
   const [settleLoading, setSettleLoading] = useState(false);
   const [settledLocally, setSettledLocally] = useState(false);
-
-  useEffect(() => {
-    function updateCountdown() {
-      const now = new Date();
-      const end = new Date(auction.endTime);
-      const diff = Math.max(0, end.getTime() - now.getTime());
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-      setTimeLeft({ days, hours, minutes, seconds });
-    }
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
-  }, [auction.endTime]);
 
   return (
     <div className="bg-white mt-20 dark:bg-zinc-900 shadow-lg rounded-2xl p-6 flex flex-col lg:flex-row gap-6">

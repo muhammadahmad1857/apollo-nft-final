@@ -12,7 +12,7 @@ import { useUser } from "@/hooks/useUser";
 import AuctionTabs from "@/components/auction-activity/AuctionTabs";
 import ApolloOverview from "@/components/auction-activity/ApolloOverview";
 import AuctionList from "@/components/auction-activity/AuctionList";
-import AuctionCharts from "@/components/auction-activity/AucionChart";
+import AuctionCharts from "@/components/auction-activity/AuctionChart";
 
 export default function AuctionHistoryPage() {
   const { address, isConnected } = useAccount();

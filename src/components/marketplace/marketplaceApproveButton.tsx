@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -51,9 +50,9 @@ export function ApproveMarketButton({
       toastIdRef.current = toast.loading(
         "Waiting for marketplace approval confirmation..."
       );
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err?.shortMessage || err?.message || "Approval failed");
+    } catch (err) {
+      const msg = err instanceof Error ? (err as { shortMessage?: string }).shortMessage ?? err.message : "Approval failed";
+      toast.error(msg);
     }
   };
 

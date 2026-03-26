@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -41,9 +40,6 @@ export function useCreateAuction() {
     nftId: number,
   ) => {
     try {
-    //  toast.loading("Creating auction on blockchain...", {
-    //       id: toastIdRef.current ?? undefined,
-    //     });
       const hash = await writeContractAsync({
         address: auctionAddress,
         abi: auctionABIArray,
@@ -55,10 +51,9 @@ export function useCreateAuction() {
       setTxHash(hash);
 
       return hash;
-    } catch (err: any) {
-      toast.error(err?.shortMessage || "Failed to create auction", {
-        id: toastIdRef.current ?? undefined,
-      });
+    } catch (err) {
+      const msg = err instanceof BaseError ? err.shortMessage : err instanceof Error ? err.message : "Failed to create auction";
+      toast.error(msg, { id: toastIdRef.current ?? undefined });
       throw err;
     }
   };
@@ -96,9 +91,7 @@ await marketplaceApi.nfts.update(pendingData.nftId, { isListed: true, });
           id: toastIdRef.current ?? undefined,
         });
         router.push(`/auction/${pendingData.nftId}`);
-      } catch (err) {
-                console.error(err);
-
+      } catch {
         toast.error("Auction confirmed but DB sync failed", {
           id: toastIdRef.current ?? undefined,
         });
@@ -152,10 +145,9 @@ export function usePlaceBid() {
       setPendingData({ tokenId, auctionId, bidderId, bidEth });
       setTxHash(hash);
       return hash;
-    } catch (err: any) {
-      toast.error(err?.shortMessage || err?.message || "Bid failed", {
-        id: toastIdRef.current ?? undefined,
-      });
+    } catch (err) {
+      const msg = err instanceof BaseError ? err.shortMessage : err instanceof Error ? err.message : "Bid failed";
+      toast.error(msg, { id: toastIdRef.current ?? undefined });
       throw err;
     }
   };
@@ -183,8 +175,7 @@ export function usePlaceBid() {
         toast.success("Bid placed successfully 🔥", {
           id: toastIdRef.current ?? undefined,
         });
-      } catch (err) {
-        console.error(err);
+      } catch {
         toast.error("Bid confirmed on-chain but DB update failed", {
           id: toastIdRef.current ?? undefined,
         });
@@ -225,10 +216,9 @@ export function useSettleAuction() {
       setTxHash(hash);
 
       return hash;
-    } catch (err: any) {
-      toast.error(err?.shortMessage || "Settlement failed", {
-        id: toastIdRef.current ?? undefined,
-      });
+    } catch (err) {
+      const msg = err instanceof BaseError ? err.shortMessage : err instanceof Error ? err.message : "Settlement failed";
+      toast.error(msg, { id: toastIdRef.current ?? undefined });
       throw err;
     }
   };

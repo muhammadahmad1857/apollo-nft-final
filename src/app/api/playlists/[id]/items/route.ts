@@ -96,21 +96,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if ("error" in resolved) return resolved.error;
 
     const playlistId = Number(id);
-    const nftIdFromQuery = req.nextUrl.searchParams.get("nftId");
-    let nftIdFromBody: unknown = undefined;
-
-    try {
-      const body = await req.json();
-      nftIdFromBody = body?.nftId;
-    } catch {
-      nftIdFromBody = undefined;
-    }
-
-    const rawNftId = nftIdFromQuery ?? nftIdFromBody;
-    const nftId = Number(rawNftId);
+    const nftId = Number(req.nextUrl.searchParams.get("nftId"));
 
     if (Number.isNaN(nftId)) {
-      return NextResponse.json({ error: "nftId is required in query param or request body" }, { status: 400 });
+      return NextResponse.json({ error: "nftId query param is required" }, { status: 400 });
     }
 
     await db.playlistItem.delete({
@@ -128,10 +117,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       select: { id: true },
     });
 
-    for (let index = 0; index < remaining.length; index++) {
-      const item = remaining[index];
-      await db.playlistItem.update({ where: { id: item.id }, data: { position: index } });
-    }
+    await db.$transaction(
+      remaining.map((item, index) =>
+        db.playlistItem.update({ where: { id: item.id }, data: { position: index } })
+      )
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -1,7 +1,6 @@
 // Centralized types for Apollo NFT project
 
 import { AuctionModel, BidModel, NFTModel } from "@/generated/prisma/models";
-import { db } from "@/lib/prisma";
 
 export interface FileFromDB {
   type: string;

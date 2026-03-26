@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveUser } from "@/lib/apiHelpers";
 import { db } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
@@ -9,7 +10,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "walletAddress is required" }, { status: 400 });
     }
 
-    const user = await db.user.findUnique({ where: { walletAddress } });
+    const user = await resolveUser(walletAddress);
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }

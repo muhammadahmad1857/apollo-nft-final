@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { Share, ListPlus } from "lucide-react";
 import LikeButton from "./nftLikes";
-import ShareModal from "./ShareModel";
+import ShareModal from "./ShareModal";
 import { useBuyNFT } from "@/hooks/useMarketplace";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -107,9 +107,6 @@ const NFTCard = ({
     new Date(auction.endTime) >= now;
   const isFlagged = moderationStatus === NftModerationStatus.FLAGGED;
 
-  console.log("nft.media", cover);
-  console.log("NFT title received:", auction);
-
   const handleBuy = async () => {
     if (userBlocked) {
       toast.error("Your account is blocked. Contact us at hello@blaqclouds.io if this is a mistake.");
@@ -119,7 +116,6 @@ const NFTCard = ({
 
     try {
       await buyNFT(BigInt(tokenId), parseEther(String(mintPrice))); // use real price
-      console.log("User ID", userId);
       if (userId) {
         await marketplaceApi.nfts.transferOwnership(tokenId, userId);
       }
@@ -129,10 +125,8 @@ const NFTCard = ({
       }
       toast.success("NFT purchased successfully!");
       router.refresh();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (e: any) {
-      console.error("error in buying", e);
-      toast.error(e?.message || "Failed to purchase NFT.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to purchase NFT.");
     }
   };
 
