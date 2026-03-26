@@ -46,6 +46,30 @@ export async function GET(req: NextRequest) {
         console.warn(`[file-info] S2 v3 list ${listRes.status}:`, errText.slice(0, 200));
       }
 
+      // --- Strategy 2.5: v3 search by filename ---
+      if (filename) {
+        const nameRes = await fetch(
+          `https://api.pinata.cloud/v3/files?name=${encodeURIComponent(filename)}&limit=5`,
+          { headers }
+        );
+        if (nameRes.ok) {
+          const nameData = await nameRes.json();
+          const nameFiles: Array<{ id: string; name: string; cid: string }> = nameData?.data?.files ?? [];
+          console.log(`[file-info] S2.5 v3 name search returned ${nameFiles.length} files for "${filename}"`);
+          const nameMatch = nameFiles.find((f) => f.name === filename);
+          if (nameMatch?.cid) {
+            console.log(`[file-info] S2.5 hit cid=${nameMatch.cid}`);
+            return NextResponse.json({ cid: nameMatch.cid });
+          }
+          if (nameFiles.length > 0) {
+            console.log(`[file-info] S2.5 names returned:`, nameFiles.map((f) => f.name));
+          }
+        } else {
+          const errText = await nameRes.text();
+          console.warn(`[file-info] S2.5 v3 name search ${nameRes.status}:`, errText.slice(0, 200));
+        }
+      }
+
       // --- Strategy 3: v1 pinList by filename ---
       if (!filename) {
         console.log(`[file-info] S3/S4 skipped — no filename param`);
