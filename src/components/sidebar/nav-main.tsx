@@ -1,6 +1,7 @@
 "use client"
 
 import { ArrowUpRight, ChevronRight, Command, type LucideIcon } from "lucide-react"
+import Link from "next/link"
 
 import {
   Collapsible,
@@ -49,7 +50,7 @@ export function NavMain({
             return (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton tooltip={item.title} asChild>
-                  <a
+                  <Link
                     href={item.url}
                     target={item.openExternally ? "_blank" : undefined}
                     rel={item.openExternally ? "noopener noreferrer" : undefined}
@@ -58,7 +59,7 @@ export function NavMain({
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>
                     {item.openExternally && <ArrowUpRight className="size-3.5" />}
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
                 {typeof item.badgeCount === "number" && item.badgeCount > 0 && (
                   <SidebarMenuAction
@@ -93,7 +94,7 @@ export function NavMain({
                     {item.items.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
                         <SidebarMenuSubButton asChild>
-                          <a
+                          <Link
                             href={subItem.url}
                             target={subItem.openExternally ? "_blank" : undefined}
                             rel={subItem.openExternally ? "noopener noreferrer" : undefined}
@@ -102,7 +103,7 @@ export function NavMain({
                             {subItem.openExternally && (
                               <ArrowUpRight className="size-3.5" />
                             )}
-                          </a>
+                          </Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}
