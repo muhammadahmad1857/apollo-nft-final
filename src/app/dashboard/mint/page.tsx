@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,18 @@ export default function MintPage() {
   useEffect(() => {
     saveRoyalty(formValues.royaltyBps, "SINGLE");
   }, [formValues.royaltyBps]);
+
+  // Warn on browser tab close/refresh while upload is in progress — in-app navigation is fine
+  const uploadInProgress = !!pinataFileId && !formValues.musicTrackUrl;
+  const uploadInProgressRef = useRef(uploadInProgress);
+  uploadInProgressRef.current = uploadInProgress;
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (uploadInProgressRef.current) e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
 
   // Reset form
   const handleReset = () => {
@@ -97,9 +109,9 @@ export default function MintPage() {
       });
       if (!res.ok) throw new Error("Failed to queue mint");
       toast.success("Mint queued!", {
-        description: "We'll notify you when the upload finishes. You can close this page.",
+        description: "Upload is running in the background. Navigate anywhere in the app — just don't close this browser tab.",
+        duration: 8000,
       });
-      handleReset();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to queue mint");
     } finally {
@@ -290,14 +302,15 @@ useEffect(() => {
       </div>
 
       {/* Success Dialog */}
-      <MintSuccessDialog 
-        open={showSuccess} 
+      <MintSuccessDialog
+        open={showSuccess}
         onClose={() => {
           setShowSuccess(false);
           setMintedTokenId(undefined);
         }}
         tokenId={mintedTokenId}
       />
+
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
 import { Loader2, SparklesIcon } from "lucide-react";
@@ -54,6 +54,18 @@ export default function BatchMintPage() {
   useEffect(() => {
     handleToasts();
   }, [handleToasts]);
+
+  // Warn on browser tab close/refresh while upload is in progress — in-app navigation is fine
+  const uploadInProgress = !!pinataFileId && !formValues.musicTrackUrl;
+  const uploadInProgressRef = useRef(uploadInProgress);
+  uploadInProgressRef.current = uploadInProgress;
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (uploadInProgressRef.current) e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
 
   const requiredFieldsFilled =
     !!formValues.name?.trim() &&
@@ -125,9 +137,9 @@ export default function BatchMintPage() {
       });
       if (!res.ok) throw new Error("Failed to queue mint");
       toast.success("Mint queued!", {
-        description: "We'll notify you when the upload finishes. You can close this page.",
+        description: "Upload is running in the background. Navigate anywhere in the app — just don't close this browser tab.",
+        duration: 8000,
       });
-      handleReset();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to queue mint");
     } finally {
@@ -375,6 +387,7 @@ export default function BatchMintPage() {
         }}
         tokenId={mintedTokenId}
       />
+
     </div>
   );
 }

@@ -7,7 +7,7 @@ Apollo supports two minting modes:
 - **Single Mint** — one file, one NFT
 - **Batch Mint** — one file, multiple identical copies (set a quantity)
 
-Both support files up to **15 GB**. For small files, minting is instant. For large files, you can **queue your mint** and walk away while the upload runs in the background.
+Both support files up to **15 GB**. For large files, you can **queue your mint** — save your details and navigate freely around the app while the upload runs in the background.
 
 ---
 
@@ -23,7 +23,7 @@ Go to **Dashboard → Mint** and drop or select your file.
 
 - Supported formats: audio, video, image, PDF, Word, Markdown, text
 - Maximum size: **15 GB**
-- The upload starts immediately in the background
+- The upload starts immediately
 - You can fill in the metadata form while the upload is running — you don't have to wait
 
 ### Step 3 — Fill in the Metadata
@@ -45,12 +45,15 @@ Once the upload finishes, the **Mint NFT** button becomes active. Click it, appr
 
 ### Step 4b — Queue Mint (upload still in progress)
 
-If your file is still uploading and you don't want to wait:
+If your file is still uploading and you don't want to sit and wait:
 
 1. Fill in Name, Title, and Description
 2. Click **Queue Mint**
-3. A confirmation toast appears — *"We'll notify you when the upload finishes. You can close this page."*
-4. You can now close the tab or navigate away safely
+3. Your mint details are saved to the server
+4. Navigate anywhere else in the app — Notifications, Marketplace, wherever
+5. You'll get a notification automatically when the upload finishes and it's ready to sign
+
+> **Important:** The upload runs in your browser tab. You can freely navigate within the app, but **don't close the browser tab** until the upload is done — that will cancel it.
 
 ---
 
@@ -71,22 +74,20 @@ Same required fields: **Name, Title, and Description**. Cover image and trailer 
 - **Quantity** — how many copies to mint (must be a whole number ≥ 1)
 - **Royalty %** — applied to all copies on secondary sales (default 5%)
 
-The estimated total cost is shown in the mint summary before you confirm.
-
 ### Step 4a — Mint Now (upload finished)
 
 The **Mint N NFTs** button becomes active once the upload completes. One wallet transaction mints all copies at once.
 
 ### Step 4b — Queue Mint (upload still in progress)
 
-Same as single mint — click **Queue Mint** while the upload runs. The quantity you set is saved with the queued mint and will be used when you sign.
+Same as single mint — click **Queue Mint**, navigate away freely, and come back when you get the notification. The quantity you set is saved and used when you sign.
 
 ---
 
 ## What Happens After You Queue
 
 ```
-Upload in progress
+Upload running in background (browser tab stays open)
       ↓
 Upload completes → CID confirmed on Pinata
       ↓
@@ -97,7 +98,7 @@ Notification: "Your NFT is ready to mint!"
 You sign one wallet transaction → NFT(s) minted on-chain
 ```
 
-The system checks your upload progress every **15 seconds** automatically. You don't need to stay on any particular page.
+The system checks your upload every **15 seconds** automatically. You don't need to be on any particular page.
 
 ---
 
@@ -132,8 +133,11 @@ Any of these three places triggers the exact same flow — pick whichever is mos
 
 ## Frequently Asked Questions
 
-**Can I close the browser while uploading?**
-Yes. Once you click Queue Mint, the system tracks everything. Come back anytime and you'll see your pending NFTs.
+**Can I navigate away while uploading?**
+Yes — once you click Queue Mint, navigate freely anywhere in the app. The upload keeps running silently in the background. You'll get a notification when it's ready to sign. Just don't close the browser tab or window, as that will cancel the upload.
+
+**Can I close the browser tab while uploading?**
+No. The upload runs in your browser, so closing the tab cancels it. Keep the tab open in the background (you can switch to other tabs or apps). Once the upload finishes and you've signed the mint, you can close everything.
 
 **What if I forget to sign?**
 Your queued mint stays in the system. Every time you open the app and connect your wallet, the floating panel and notifications will remind you.
@@ -148,7 +152,7 @@ Yes. Each file upload creates its own queued mint (with its own quantity for bat
 The queued mint will remain in "uploading" state. If you encounter a stuck upload, try re-uploading the file from the Mint or Batch Mint page.
 
 **For batch mint, does each copy get the same metadata?**
-Yes. All copies in a batch mint share the same metadata URI. The quantity just controls how many on-chain tokens are created pointing to that metadata.
+Yes. All copies in a batch mint share the same metadata URI. The quantity controls how many on-chain tokens are created pointing to that metadata.
 
 **When does the royalty apply?**
 The royalty percentage is locked in at the time of on-chain minting and applies to all secondary sales of that NFT (or all copies in a batch).
