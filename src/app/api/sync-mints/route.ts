@@ -10,8 +10,8 @@ const publicClient = createPublicClient({
   transport: http("https://mainnet-rpc.apolloscan.io"),
 });
 
-// Adjust batch size based on RPC performance
-const BLOCK_BATCH_SIZE = 5000;
+// Reduced batch size to avoid RPC timeouts
+const BLOCK_BATCH_SIZE = 1000;
 
 export async function GET() {
   try {
@@ -21,18 +21,21 @@ export async function GET() {
       select: { tokenId: true },
       orderBy: { tokenId: "desc" },
     });
-
     const fromToken = lastNFT ? Number(lastNFT.tokenId) + 1 : 60;
     console.log(`[SYNC-MINTS] Last tokenId: ${lastNFT?.tokenId ?? "none"}, starting from tokenId: ${fromToken}`);
 
-    // Fetch latest block number
+    // Fetch latest block
     const latestBlock = Number(await publicClient.getBlockNumber());
     console.log(`[SYNC-MINTS] Latest block: ${latestBlock}`);
 
-    let currentBlock = 0;
+    // Fetch last synced block from DB
+    const syncState = await db.syncState.findUnique({ where: { id: 1 } });
+    let currentBlock = syncState?.lastBlock ? Number(syncState.lastBlock) + 1 : 6997373; // Starting block for mints
+
+    console.log(`[SYNC-MINTS] Starting from block: ${currentBlock}`);
+
     let syncedCount = 0;
 
-    // Loop through blocks in batches
     while (currentBlock <= latestBlock) {
       const toBlock = Math.min(currentBlock + BLOCK_BATCH_SIZE - 1, latestBlock);
       console.log(`[SYNC-MINTS] Fetching logs from blocks ${currentBlock} → ${toBlock}...`);
@@ -45,7 +48,7 @@ export async function GET() {
             "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)"
           ),
           fromBlock: BigInt(currentBlock),
-          toBlock:BigInt(toBlock),
+          toBlock: BigInt(toBlock),
           args: { from: zeroAddress },
         });
       } catch (err) {
@@ -54,7 +57,6 @@ export async function GET() {
         continue;
       }
 
-      // Only process new mints after last tokenId
       const newMints = logs
         .filter((log) => Number(log.args.tokenId) >= fromToken)
         .sort((a, b) => Number(a.args.tokenId) - Number(b.args.tokenId));
@@ -64,7 +66,6 @@ export async function GET() {
         const ownerAddress = log.args.to;
 
         try {
-          // Fetch tokenURI
           const uri = (await publicClient.readContract({
             address: nftAddress,
             abi: nftABIArray,
@@ -77,7 +78,6 @@ export async function GET() {
           if (!res.ok) continue;
           const meta = await res.json();
 
-          // Fetch royalty
           let royaltyBps = 0;
           try {
             royaltyBps = Number(await publicClient.readContract({
@@ -88,11 +88,9 @@ export async function GET() {
             }));
           } catch { /* ignore missing royalties */ }
 
-          // Map owner to user
           const creator = await db.user.findUnique({ where: { walletAddress: ownerAddress } });
           if (!creator) continue;
 
-          // Upsert NFT (without blockNumber)
           await db.nFT.upsert({
             where: { tokenId },
             update: { updatedAt: new Date() },
@@ -117,9 +115,16 @@ export async function GET() {
 
           syncedCount++;
         } catch (e) {
-          console.error(`[SYNC-MINTS] Failed token #${log.args.tokenId}:`, e);
+          console.error(`[SYNC-MINTS] Failed token #${tokenId}:`, e);
         }
       }
+
+      // Update last synced block in DB
+      await db.syncState.upsert({
+        where: { id: 1 },
+        update: { lastBlock: BigInt(toBlock) },
+        create: { id: 1, lastBlock: BigInt(toBlock) },
+      });
 
       currentBlock = toBlock + 1;
     }

@@ -20,9 +20,9 @@ export interface TusUploadHandle {
 export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
   const upload = new tus.Upload(options.file, {
     endpoint: options.endpoint,
-    // Only send Authorization if a token is provided (proxy mode needs no header)
+    // Always send Authorization header when token is provided (direct-to-Pinata mode)
     headers: options.token ? { Authorization: `Bearer ${options.token}` } : {},
-    chunkSize: 4 * 1024 * 1024, // 4 MB — Vercel serverless payload limit is 4.5 MB
+    chunkSize: 50 * 1024 * 1024, // 50 MB — direct to Pinata, no Vercel proxy limit
     retryDelays: [0, 1000, 3000, 5000, 10000],
     metadata: {
       filename: options.file.name,

@@ -7,6 +7,12 @@ datasource db {
   provider = "postgresql"
 }
 
+model SyncState {
+  id         Int     @id
+  lastBlock  BigInt
+  updatedAt  DateTime @updatedAt
+}
+
 enum UserRole {
   ADMIN
   SUPER_ADMIN

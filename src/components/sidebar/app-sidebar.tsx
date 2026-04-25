@@ -224,7 +224,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       toast.error("Error fetching user data: " + error.message);
       console.log("User data: in condition 1", user, isLoading, error);
     }
-    if (!user && !isLoading) {
+    if (!user && !isLoading && error) {
       console.log("User data: in condition 2", user, isLoading, error);
       toast.error("User not found. Please complete your profile.");
       setNavUser(null);
