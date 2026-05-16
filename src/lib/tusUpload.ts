@@ -2,7 +2,7 @@ import * as tus from "tus-js-client";
 import { toast } from "sonner";
 
 // Pinata max file size limit (adjust based on your plan)
-const MAX_FILE_SIZE = 15 * 1024 * 1024 * 1024; // 2 GB
+const MAX_FILE_SIZE = 25 * 1024 * 1024 * 1024; // 25 GB - Pinata limit
 
 export interface TusUploadOptions {
   file: File;
@@ -26,6 +26,7 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
     `[TUS Upload] Starting upload for file: ${options.file.name} (${options.file.size} bytes, type: ${options.file.type})`
   );
   console.log(`[TUS Upload] Endpoint: ${options.endpoint}`);
+  console.log(`[TUS Upload] Token: ${options.token ? `${options.token.slice(0, 20)}...` : "none"} (${options.token?.length || 0} chars)`);
 
   // Validate file size
   if (options.file.size > MAX_FILE_SIZE) {
@@ -51,7 +52,7 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
     endpoint: options.endpoint,
     // Always send Authorization header when token is provided (direct-to-Pinata mode)
     headers: options.token ? { Authorization: `Bearer ${options.token}` } : {},
-    chunkSize: 2 * 1024 * 1024, // 2 MB — direct to Pinata, no Vercel proxy limit
+    chunkSize: 5 * 1024 * 1024, // 5 MB — Pinata TUS max chunk size per PATCH request
     retryDelays: [0, 1000, 3000, 5000, 10000],
     metadata: {
       filename: options.file.name,
@@ -114,20 +115,32 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
       if (connectionCheckInterval) clearInterval(connectionCheckInterval);
 
       const errMsg = err instanceof Error ? err.message : String(err);
+      const errStack = err instanceof Error ? err.stack : "";
       console.error(`[TUS Upload] UPLOAD ERROR: ${errMsg}`);
+      console.error(`[TUS Upload] Full error details:`, err);
+      if (errStack) console.error(`[TUS Upload] Stack: ${errStack}`);
+
+      // Log the full error object to see response headers, status, etc
+      if (typeof err === "object" && err !== null) {
+        Object.keys(err as object).forEach((key) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          console.error(`[TUS Upload]   ${key}:`, (err as Record<string, any>)[key]);
+        });
+      }
 
       // Detect file too large error (413)
       const isFileTooLarge =
         errMsg.includes("response code: 413") ||
         errMsg.includes("413") ||
         errMsg.includes("exceeds maximum upload size") ||
-        errMsg.includes("Payload Too Large");
+        errMsg.includes("Payload Too Large") ||
+        errMsg.includes("Upload-Length exceeds");
 
       if (isFileTooLarge) {
         console.error(`[TUS Upload] File size exceeds Pinata's limit`);
-        toast.error(`File too large`, {
+        toast.error(`File too large for Pinata`, {
           id: uploadToastId,
-          description: `This file exceeds Pinata's maximum upload size limit. Try a smaller file or split into multiple uploads.`,
+          description: `Your file exceeds Pinata's max file size. Check console for full error details.`,
         });
         options.onError(err instanceof Error ? err : new Error(String(err)));
         return;

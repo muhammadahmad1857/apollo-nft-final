@@ -39,11 +39,11 @@ export async function POST() {
     }
 
     // Return the direct Pinata TUS endpoint URL with the scoped key
-    console.log(`[Signed Upload URL] SUCCESS! Returning TUS endpoint and token`);
+    console.log(`[Signed Upload URL] SUCCESS! Returning TUS endpoint and scoped token`);
     return NextResponse.json({
       data: {
         url: "https://uploads.pinata.cloud/v3/files",
-        token: process.env.PINATA_JWT,
+        token: jwtData.JWT, // Use the scoped JWT, not the main one
       },
     });
   } catch (error) {
