@@ -28,15 +28,23 @@ export function usePendingMints(wallet: string | undefined) {
 
   const fetchPendingMints = useCallback(async () => {
     if (!wallet) {
+      console.log(`[Pending Mints] No wallet, clearing pending mints`);
       setPendingMints([]);
       return;
     }
     try {
+      console.log(`[Pending Mints] Fetching pending mints for wallet: ${wallet}`);
       const res = await fetch(`/api/pending-mints?wallet=${wallet}`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.warn(`[Pending Mints] FAILED: HTTP ${res.status}`);
+        return;
+      }
       const { pendingMints: data } = (await res.json()) as { pendingMints: PendingMint[] };
+      console.log(`[Pending Mints] Loaded ${data?.length ?? 0} pending mints`);
       setPendingMints(data ?? []);
-    } catch {
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error(`[Pending Mints] FAILED to fetch: ${errMsg}`);
       // silently ignore — poller will retry
     }
   }, [wallet]);
@@ -47,16 +55,39 @@ export function usePendingMints(wallet: string | undefined) {
       const uploading = pendingMints.filter(
         (p) => p.status === "pending_upload" && !finalizedIds.current.has(p.id)
       );
-      if (!uploading.length) return;
+      if (!uploading.length) {
+        console.log(`[Check & Finalize] No pending uploads to check`);
+        return;
+      }
+
+      console.log(
+        `[Check & Finalize] Checking ${uploading.length} pending uploads for CID...`
+      );
 
       for (const pm of uploading) {
         try {
+          console.log(
+            `[Check & Finalize] Checking CID for mint ID: ${pm.id}, Pinata file ID: ${pm.pinataFileId}`
+          );
           const filenameParam = pm.pinataFilename ? `&filename=${encodeURIComponent(pm.pinataFilename)}` : "";
           const res = await fetch(`/api/pinata/file-info?id=${pm.pinataFileId}${filenameParam}`);
-          if (!res.ok) continue;
+          if (!res.ok) {
+            console.warn(
+              `[Check & Finalize] HTTP ${res.status} for file-info, will retry next poll`
+            );
+            continue;
+          }
           const { cid } = (await res.json()) as { cid?: string };
-          if (!cid) continue;
+          if (!cid) {
+            console.log(
+              `[Check & Finalize] CID not ready yet for mint ${pm.id}, will retry next poll`
+            );
+            continue;
+          }
 
+          console.log(
+            `[Check & Finalize] CID resolved! ${pm.id} -> ${cid}. Finalizing mint...`
+          );
           finalizedIds.current.add(pm.id);
           const mediaUrl = `ipfs://${cid}`;
 
@@ -67,11 +98,19 @@ export function usePendingMints(wallet: string | undefined) {
           });
 
           if (finalizeRes.ok) {
+            console.log(`[Check & Finalize] SUCCESS! Mint ${pm.id} finalized`);
             fetchPendingMints();
           } else {
+            console.error(
+              `[Check & Finalize] FAILED to finalize mint ${pm.id}: HTTP ${finalizeRes.status}`
+            );
             finalizedIds.current.delete(pm.id);
           }
-        } catch {
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          console.error(
+            `[Check & Finalize] Exception checking mint ${pm.id}: ${errMsg}`
+          );
           // will retry on next poll
         }
       }
@@ -82,9 +121,16 @@ export function usePendingMints(wallet: string | undefined) {
 
   // Poll every 15s while there are active pending mints
   useEffect(() => {
+    console.log(`[Pending Mints Polling] Starting 15s poll interval`);
     fetchPendingMints();
-    const interval = setInterval(fetchPendingMints, 15_000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      console.log(`[Pending Mints Polling] Polling cycle...`);
+      fetchPendingMints();
+    }, 15_000);
+    return () => {
+      console.log(`[Pending Mints Polling] Cleaning up poll interval`);
+      clearInterval(interval);
+    };
   }, [fetchPendingMints]);
 
   return { pendingMints, refreshPendingMints: fetchPendingMints };

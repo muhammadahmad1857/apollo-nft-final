@@ -7,9 +7,11 @@ export async function GET(req: NextRequest) {
   const fileId = req.nextUrl.searchParams.get("id");
   const filename = req.nextUrl.searchParams.get("filename") ?? undefined;
 
+  console.log(`[file-info] ===== REQUEST START =====`);
   console.log(`[file-info] id=${fileId} filename=${filename ?? "(none)"}`);
 
   if (!fileId) {
+    console.error(`[file-info] FAILED: id required`);
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }
 
@@ -126,12 +128,17 @@ export async function GET(req: NextRequest) {
     if (searchRes.ok) {
       const searchData = await searchRes.json();
       const cid = searchData?.data?.files?.[0]?.cid;
-      if (cid) return NextResponse.json({ cid });
+      if (cid) {
+        console.log(`[file-info] SUCCESS! CID resolved via name search: ${cid}`);
+        return NextResponse.json({ cid });
+      }
     }
 
+    console.warn(`[file-info] FAILED: CID not available yet for fileId=${fileId}`);
     return NextResponse.json({ error: "CID not available yet" }, { status: 404 });
   } catch (err) {
-    console.error("[file-info] Exception:", err);
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error(`[file-info] EXCEPTION: ${errMsg}`, err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
