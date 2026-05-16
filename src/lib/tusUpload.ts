@@ -1,6 +1,9 @@
 import * as tus from "tus-js-client";
 import { toast } from "sonner";
 
+// Pinata max file size limit (adjust based on your plan)
+const MAX_FILE_SIZE = 15 * 1024 * 1024 * 1024; // 2 GB
+
 export interface TusUploadOptions {
   file: File;
   /** TUS endpoint URL from /api/pinata/signed-upload-url */
@@ -23,6 +26,22 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
     `[TUS Upload] Starting upload for file: ${options.file.name} (${options.file.size} bytes, type: ${options.file.type})`
   );
   console.log(`[TUS Upload] Endpoint: ${options.endpoint}`);
+
+  // Validate file size
+  if (options.file.size > MAX_FILE_SIZE) {
+    const maxSizeGB = (MAX_FILE_SIZE / (1024 * 1024 * 1024)).toFixed(1);
+    const fileSizeGB = (options.file.size / (1024 * 1024 * 1024)).toFixed(2);
+    const errMsg = `File size (${fileSizeGB} GB) exceeds maximum allowed size (${maxSizeGB} GB)`;
+    console.error(`[TUS Upload] VALIDATION FAILED: ${errMsg}`);
+    const uploadToastId = toast.error(`File too large`, {
+      description: errMsg,
+    });
+    const err = new Error(errMsg);
+    options.onError(err);
+    return {
+      abort: () => Promise.resolve(),
+    };
+  }
 
   let isConnectionError = false;
   let uploadToastId: string | number | undefined;
@@ -97,6 +116,23 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
       const errMsg = err instanceof Error ? err.message : String(err);
       console.error(`[TUS Upload] UPLOAD ERROR: ${errMsg}`);
 
+      // Detect file too large error (413)
+      const isFileTooLarge =
+        errMsg.includes("response code: 413") ||
+        errMsg.includes("413") ||
+        errMsg.includes("exceeds maximum upload size") ||
+        errMsg.includes("Payload Too Large");
+
+      if (isFileTooLarge) {
+        console.error(`[TUS Upload] File size exceeds Pinata's limit`);
+        toast.error(`File too large`, {
+          id: uploadToastId,
+          description: `This file exceeds Pinata's maximum upload size limit. Try a smaller file or split into multiple uploads.`,
+        });
+        options.onError(err instanceof Error ? err : new Error(String(err)));
+        return;
+      }
+
       // Detect connection errors
       const isNetworkError =
         errMsg.includes("NetworkError") ||
@@ -134,8 +170,20 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
           } catch {
             // Still disconnected
           }
-        }, 3000); // Check every 3 seconds\n      } else {\n        // Non-network error\n        toast.error(`Upload failed`, {\n          id: uploadToastId,\n          description: errMsg,\n        });\n      }\n\n      options.onError(err instanceof Error ? err : new Error(String(err)));\n    },\n    storeFingerprintForResuming: true, // Enable resumable uploads
+        }, 3000); // Check every 3 seconds
+      } else {
+        // Non-network error
+        toast.error(`Upload failed`, {
+          id: uploadToastId,
+          description: errMsg,
+        });
+      }
+
+      options.onError(err instanceof Error ? err : new Error(String(err)));
+    },
+    storeFingerprintForResuming: true, // Enable resumable uploads
   });
+;
 
   upload.start();
   uploadToastId = toast.loading(`Uploading ${options.file.name}...`, {
