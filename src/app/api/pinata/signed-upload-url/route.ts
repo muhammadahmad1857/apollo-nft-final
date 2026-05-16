@@ -35,7 +35,7 @@ export async function POST() {
     return NextResponse.json({
       data: {
         url: "https://uploads.pinata.cloud/v3/files",
-        token: jwtData.JWT,
+        token: process.env.PINATA_JWT,
       },
     });
   } catch (error) {
