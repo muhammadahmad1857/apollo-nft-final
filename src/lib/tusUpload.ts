@@ -51,7 +51,7 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
     endpoint: options.endpoint,
     // Always send Authorization header when token is provided (direct-to-Pinata mode)
     headers: options.token ? { Authorization: `Bearer ${options.token}` } : {},
-    chunkSize: 10 * 1024 * 1024, // 10 MB — direct to Pinata, no Vercel proxy limit
+    chunkSize: 2 * 1024 * 1024, // 2 MB — direct to Pinata, no Vercel proxy limit
     retryDelays: [0, 1000, 3000, 5000, 10000],
     metadata: {
       filename: options.file.name,
