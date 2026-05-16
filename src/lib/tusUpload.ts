@@ -25,8 +25,8 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
   console.log(
     `[TUS Upload] Starting upload for file: ${options.file.name} (${options.file.size} bytes, type: ${options.file.type})`
   );
-  console.log(`[TUS Upload] Endpoint: ${options.endpoint}`);
-  console.log(`[TUS Upload] Token: ${options.token ? `${options.token.slice(0, 20)}...` : "none"} (${options.token?.length || 0} chars)`);
+  console.log(`[TUS Upload] Using server-side TUS proxy: /api/pinata/tus-proxy`);
+  console.log(`[TUS Upload] Chunk size: 10 MB (for better performance on large files)`);
 
   // Validate file size
   if (options.file.size > MAX_FILE_SIZE) {
@@ -49,10 +49,10 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
   let connectionCheckInterval: NodeJS.Timeout | null = null;
 
   const upload = new tus.Upload(options.file, {
-    endpoint: options.endpoint,
-    // Always send Authorization header when token is provided (direct-to-Pinata mode)
-    headers: options.token ? { Authorization: `Bearer ${options.token}` } : {},
-    chunkSize: 5 * 1024 * 1024, // 5 MB — Pinata TUS max chunk size per PATCH request
+    // Use our server-side TUS proxy to handle large files and avoid HTTP/2 protocol errors
+    endpoint: "/api/pinata/tus-proxy",
+    headers: {}, // No need for Authorization — proxy will handle it server-side
+    chunkSize: 3 * 1024 * 1024, // 10 MB chunks for better performance
     retryDelays: [0, 1000, 3000, 5000, 10000],
     metadata: {
       filename: options.file.name,
@@ -126,6 +126,24 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           console.error(`[TUS Upload]   ${key}:`, (err as Record<string, any>)[key]);
         });
+      }
+
+      // Detect HTTP/2 protocol errors (usually size-related on direct uploads)
+      const isHttp2Error =
+        errMsg.includes("ERR_HTTP2_PROTOCOL_ERROR") ||
+        errMsg.includes("invalid or missing length value") ||
+        errMsg.includes("HTTP/2");
+
+      if (isHttp2Error) {
+        console.error(
+          `[TUS Upload] HTTP/2 protocol error detected — this usually means the upload was too large or interrupted`
+        );
+        toast.error(`Upload protocol error`, {
+          id: uploadToastId,
+          description: `HTTP/2 protocol error. This sometimes happens with large files. Try again or split into smaller uploads.`,
+        });
+        options.onError(err instanceof Error ? err : new Error(String(err)));
+        return;
       }
 
       // Detect file too large error (413)
