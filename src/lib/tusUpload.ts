@@ -1,4 +1,5 @@
 import * as tus from "tus-js-client";
+import { toast } from "sonner";
 
 export interface TusUploadOptions {
   file: File;
@@ -23,6 +24,10 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
   );
   console.log(`[TUS Upload] Endpoint: ${options.endpoint}`);
 
+  let isConnectionError = false;
+  let uploadToastId: string | number | undefined;
+  let connectionCheckInterval: NodeJS.Timeout | null = null;
+
   const upload = new tus.Upload(options.file, {
     endpoint: options.endpoint,
     // Always send Authorization header when token is provided (direct-to-Pinata mode)
@@ -41,6 +46,15 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
       options.onProgress(bytesSent, bytesTotal);
     },
     onChunkComplete: (_chunkSize, _bytesAccepted, _bytesTotal) => {
+      // Clear connection error state on successful chunk
+      if (isConnectionError) {
+        isConnectionError = false;
+        console.log(`[TUS Upload] Connection recovered! Resuming upload...`);
+        toast.success(`Upload resumed`, {
+          description: `Connection restored, continuing upload...`,
+        });
+      }
+
       // Fire once as soon as the first chunk lands — upload.url is now set and contains the Pinata file UUID
       if (options.onFileCreated && upload.url) {
         const segments = upload.url.split("/").filter(Boolean);
@@ -56,26 +70,77 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
       }
     },
     onSuccess: async () => {
+      if (connectionCheckInterval) clearInterval(connectionCheckInterval);
       console.log(`[TUS Upload] TUS upload complete, extracting CID...`);
+      toast.loading(`Resolving IPFS CID...`, { id: uploadToastId });
       try {
         const cid = await extractCid(upload.url ?? "", options.file.name);
         console.log(`[TUS Upload] SUCCESS! CID resolved: ${cid}`);
+        toast.success(`Upload complete!`, {
+          id: uploadToastId,
+          description: `File successfully uploaded to IPFS`,
+        });
         options.onSuccess(cid);
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         console.error(`[TUS Upload] FAILED to extract CID: ${errMsg}`);
+        toast.error(`CID resolution failed`, {
+          id: uploadToastId,
+          description: errMsg,
+        });
         options.onError(err instanceof Error ? err : new Error(String(err)));
       }
     },
     onError: (err) => {
+      if (connectionCheckInterval) clearInterval(connectionCheckInterval);
+
       const errMsg = err instanceof Error ? err.message : String(err);
       console.error(`[TUS Upload] UPLOAD ERROR: ${errMsg}`);
-      options.onError(err instanceof Error ? err : new Error(String(err)));
-    },
-    storeFingerprintForResuming: false,
+
+      // Detect connection errors
+      const isNetworkError =
+        errMsg.includes("NetworkError") ||
+        errMsg.includes("Failed to fetch") ||
+        errMsg.includes("timeout") ||
+        errMsg.includes("ERR_INTERNET_DISCONNECTED") ||
+        errMsg.includes("ECONNREFUSED") ||
+        errMsg.includes("ENOTFOUND");
+
+      if (isNetworkError) {
+        isConnectionError = true;
+        console.log(
+          `[TUS Upload] Connection error detected. Resuming when connection recovers...`
+        );
+
+        toast.error(`Connection lost`, {
+          id: uploadToastId,
+          description: `Upload paused. Will resume automatically when connection is restored...`,
+        });
+        uploadToastId = undefined;
+
+        // Monitor connection recovery
+        connectionCheckInterval = setInterval(async () => {
+          try {
+            const check = await fetch("/ping", { method: "HEAD" }).catch(
+              () => null
+            );
+            if (check) {
+              console.log(`[TUS Upload] Connection restored! Resuming...`);
+              clearInterval(connectionCheckInterval!);
+              connectionCheckInterval = null;
+              isConnectionError = false;
+              upload.start(); // Resume upload
+            }
+          } catch {
+            // Still disconnected
+          }
+        }, 3000); // Check every 3 seconds\n      } else {\n        // Non-network error\n        toast.error(`Upload failed`, {\n          id: uploadToastId,\n          description: errMsg,\n        });\n      }\n\n      options.onError(err instanceof Error ? err : new Error(String(err)));\n    },\n    storeFingerprintForResuming: true, // Enable resumable uploads
   });
 
   upload.start();
+  uploadToastId = toast.loading(`Uploading ${options.file.name}...`, {
+    description: `Preparing upload...`,
+  });
   console.log(`[TUS Upload] Upload session started`);
 
   return {
