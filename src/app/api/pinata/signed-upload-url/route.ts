@@ -38,12 +38,14 @@ export async function POST() {
       );
     }
 
-    // Return the direct Pinata TUS endpoint URL with the scoped key
-    console.log(`[Signed Upload URL] SUCCESS! Returning TUS endpoint and scoped token`);
+    // Return a proxied TUS endpoint on our domain to avoid client-side CORS
+    console.log(`[Signed Upload URL] SUCCESS! Returning proxied TUS endpoint`);
     return NextResponse.json({
       data: {
-        url: "https://uploads.pinata.cloud/v3/files",
-        token: jwtData.JWT, // Use the scoped JWT, not the main one
+        // Client will POST/patch to this proxy; the proxy will forward to Pinata
+        url: `${baseUrl}/api/pinata/proxy/v3/files`,
+        // Token is intentionally not returned — proxy will add Authorization server-side
+        token: "",
       },
     });
   } catch (error) {
