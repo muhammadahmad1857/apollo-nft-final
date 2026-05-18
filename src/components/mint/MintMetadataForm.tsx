@@ -217,7 +217,7 @@ export function MintMetadataForm({
         // Detect fileType immediately so Queue Mint has it before upload finishes
         const earlyFileType = getFileType(file);
         onChange((prev) => ({ ...prev, fileType: earlyFileType }));
-
+        console.log("Detected file type:", earlyFileType);
         const signedRes = await fetch("/api/pinata/signed-upload-url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -227,10 +227,12 @@ export function MintMetadataForm({
           }),
         });
 
+
         if (!signedRes.ok) throw new Error("Failed to get signed upload URL");
 
         const signedData = await signedRes.json() as { data?: { url?: string; token?: string }; url?: string };
         const tusEndpoint = signedData?.data?.url ?? signedData?.url;
+        console.log("Received TUS endpoint:", tusEndpoint);
         const tusToken = signedData?.data?.token ?? "";
         if (!tusEndpoint) throw new Error("No TUS endpoint in signed URL response");
 
@@ -241,6 +243,7 @@ export function MintMetadataForm({
             token: tusToken,
             onFileCreated,
             onProgress: (bytesSent, bytesTotal) => {
+
               setFileUpload((prev) => ({
                 ...prev,
                 uploadedBytes: bytesSent,
@@ -262,7 +265,10 @@ export function MintMetadataForm({
               });
               resolve();
             },
-            onError: (err) => reject(err),
+            onError: (err) => {
+              console.log("Error uploading to pinata",err)
+              reject(err)
+            },
           });
         });
       } catch (error) {
