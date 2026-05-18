@@ -5,7 +5,7 @@ export async function POST() {
   try {
     // Call the JWT endpoint internally to get a scoped key
     const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
+      ? `https://apollo-nft-final.vercel.app`
       : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     console.log(`[Signed Upload URL] Fetching JWT from: ${baseUrl}/api/pinata/jwt`);
