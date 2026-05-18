@@ -49,13 +49,36 @@ async function forwardRequest(req: NextRequest) {
       redirect: "manual",
     });
 
-    // Build response headers to send back to client
+    // Build response headers to send back to client and add CORS + Location rewriting
     const responseHeaders: Record<string, string> = {};
     res.headers.forEach((value, key) => {
       const k = key.toLowerCase();
       if (HOP_BY_HOP.includes(k)) return;
       responseHeaders[key] = value;
     });
+
+    // Ensure CORS headers so browser can access proxied responses
+    const origin = req.headers.get("origin") || "*";
+    responseHeaders["Access-Control-Allow-Origin"] = origin;
+    responseHeaders["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS";
+    responseHeaders["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Tus-Resumable, Upload-Offset, Upload-Length, Upload-Metadata";
+    responseHeaders["Access-Control-Expose-Headers"] = "Location, Upload-Offset, Upload-Length, Tus-Resumable";
+
+    // Rewrite Location header returned by Pinata to point back to our proxy
+    const locationHeader = res.headers.get("location");
+    if (locationHeader) {
+      try {
+        const base = req.nextUrl.origin; // e.g. http://localhost:3000 or https://yourdomain
+        // Replace pinata host with our proxy prefix
+        const rewritten = locationHeader.replace(
+          /https?:\/\/(uploads\.pinata\.cloud)\/(.*)/i,
+          `${base}/api/pinata/proxy/$2`
+        );
+        responseHeaders["Location"] = rewritten;
+      } catch {
+        // ignore rewrite errors
+      }
+    }
 
     const arrayBuffer = await res.arrayBuffer();
     return new NextResponse(Buffer.from(arrayBuffer), {
