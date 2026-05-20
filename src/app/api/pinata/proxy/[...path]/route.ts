@@ -71,10 +71,11 @@ async function forwardRequest(req: NextRequest) {
         const base = req.nextUrl.origin; // e.g. http://localhost:3000 or https://yourdomain
         // Replace pinata host with our proxy prefix
         const rewritten = locationHeader.replace(
-          /https?:\/\/(uploads\.pinata\.cloud)\/(.*)/i,
-          `${base}/api/pinata/proxy/$2`
+          /https?:\/\/uploads\.pinata\.cloud\//i,
+          `${base}/api/pinata/proxy/`
         );
         responseHeaders["Location"] = rewritten;
+        console.log(`[Pinata Proxy] Location header rewritten: ${locationHeader} -> ${rewritten}`);
       } catch {
         // ignore rewrite errors
       }
@@ -114,11 +115,15 @@ export async function DELETE(req: NextRequest) {
 
 export async function OPTIONS(req: NextRequest) {
   // Respond with 200 OK for any preflight made to our proxy
+  const origin = req.headers.get("origin") || "*";
   return new NextResponse(null, {
     status: 200,
     headers: {
+      "Access-Control-Allow-Origin": origin,
       "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Tus-Resumable, Upload-Offset, Upload-Length, Upload-Metadata",
+      "Access-Control-Expose-Headers": "Location, Upload-Offset, Upload-Length, Tus-Resumable",
+      "Access-Control-Max-Age": "86400",
     },
   });
 }
