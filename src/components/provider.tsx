@@ -1,34 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 import React from 'react'
+import { installPreferredMusesProvider } from "@/lib/wagmi/muses-provider";
 
 // Run provider selection at module-load time so it executes before
 // RainbowKit/Wagmi initialize (ensures injected Muses provider is
 // preferred when multiple injected providers are present).
 if (typeof window !== "undefined") {
   try {
-    const win = window as any;
-    const musesProvider =
-      (win?.muses?.ethereum && typeof win.muses.ethereum.request === "function" && win.muses.ethereum) ||
-      (win?.muses && typeof win.muses.request === "function" && win.muses) ||
-      null;
-
-    if (win?.ethereum?.providers && Array.isArray(win.ethereum.providers)) {
-      const providers = win.ethereum.providers;
-      const muses = providers.find((p: any) => p.isMuses === true || p.isMusesWallet === true || p.isMusesProvider === true);
-      if (muses) {
-        win.ethereum = muses;
-      }
-    }
-    // Some wallets expose themselves on a global like `window.muses`.
-    if (!win.ethereum && musesProvider) {
-      win.ethereum = musesProvider;
-    }
-    // If there is a global `muses` alongside an injected ethereum provider,
-    // prefer the muses provider when it appears to be a provider object.
-    if (musesProvider) {
-      win.ethereum = musesProvider;
-    }
+    installPreferredMusesProvider();
   } catch (e) {
     // ignore client-side detection errors
   }
@@ -51,6 +31,20 @@ export function ThemeProvider({
 }
 
 const Provider = ({children}:{children:React.ReactNode}) => {
+  React.useEffect(() => {
+    // Retry briefly in case extension injects after initial module evaluation.
+    let tries = 0;
+    const timer = window.setInterval(() => {
+      tries += 1;
+      const ok = installPreferredMusesProvider();
+      if (ok || tries >= 20) {
+        window.clearInterval(timer);
+      }
+    }, 250);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <WagmiProvider config={config}>

@@ -3,6 +3,7 @@ import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { apolloMainnet } from "./apollo-chain";
 import { createConnector } from "wagmi";
 import { injected } from "wagmi/connectors";
+import { getMusesProvider } from "./muses-provider";
 import {
   coinbaseWallet,
   injectedWallet,
@@ -12,28 +13,6 @@ import {
 } from "@rainbow-me/rainbowkit/wallets";
 
 const projectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "nft-studio";
-
-const getMusesProvider = () => {
-  if (typeof window === "undefined") return undefined;
-  const win = window as any;
-
-  // Prefer an explicit EVM provider exposed under `window.muses.ethereum`.
-  if (win?.muses?.ethereum && typeof win.muses.ethereum.request === "function") {
-    return win.muses.ethereum;
-  }
-
-  if (win?.muses && typeof win.muses.request === "function") {
-    return win.muses;
-  }
-
-  if (win?.ethereum?.providers && Array.isArray(win.ethereum.providers)) {
-    return win.ethereum.providers.find(
-      (p: any) => p?.isMuses || p?.isMusesWallet || p?.isMusesProvider
-    );
-  }
-
-  return undefined;
-};
 
 const musesWallet = () => ({
   id: "muses",
