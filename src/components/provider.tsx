@@ -27,6 +27,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { MarketplaceStreamBridge } from "@/components/marketplace-stream-bridge";
 const queryClient = new QueryClient();
+import ProvidersDebug from "@/components/ProvidersDebug";
 
 
 
@@ -51,6 +52,11 @@ const Provider = ({children}:{children:React.ReactNode}) => {
         >
         <MarketplaceStreamBridge />
         <Toaster richColors closeButton />
+
+        {/* Show provider debug UI when URL contains ?showProviders=1 */}
+        {typeof window !== "undefined" && window.location.search.includes("showProviders=1") && (
+          <ProvidersDebug />
+        )}
 
           {children}
         </ThemeProvider>
