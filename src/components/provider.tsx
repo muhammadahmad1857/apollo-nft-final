@@ -28,8 +28,7 @@ if (typeof window !== "undefined") {
     // ignore client-side detection errors
   }
 }
-// `config` is client-only (imports wagmi/rainbowkit). Import it dynamically
-// inside the client component to avoid Next trying to load it during SSR.
+import { config } from "@/lib/wagmi";
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 import { WagmiProvider } from "wagmi";
 import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
@@ -47,25 +46,6 @@ export function ThemeProvider({
 }
 
 const Provider = ({children}:{children:React.ReactNode}) => {
-  const [config, setConfig] = React.useState<any>(null);
-
-  React.useEffect(() => {
-    let mounted = true;
-    import("@/lib/wagmi")
-      .then((mod) => {
-        if (mounted) setConfig(mod.config);
-      })
-      .catch(() => {});
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  if (!config) {
-    // Render nothing until the client-only config is available.
-    return null;
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <WagmiProvider config={config}>
