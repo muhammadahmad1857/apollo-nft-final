@@ -9,7 +9,7 @@ import {
   useBalance,
   useConnect,
 } from 'wagmi'
-import { InjectedConnector } from 'wagmi/connectors/injected'
+import { injected } from 'wagmi/connectors'
 import { marketplaceApi } from '@/lib/marketplaceApi'
 import { Loader2 } from 'lucide-react'
 import { formatUnits } from 'viem'
@@ -134,8 +134,7 @@ const formattedBalance =
 
                       // Tell Wagmi to connect using the injected connector so state is updated.
                       try {
-                        const injected = new InjectedConnector({});
-                        await connect({ connector: injected });
+                        await connect({ connector: injected() });
                       } catch (e) {
                         // If programmatic connect fails, fall back to reload.
                         setTimeout(() => window.location.reload(), 500);
