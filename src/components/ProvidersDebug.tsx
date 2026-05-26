@@ -22,7 +22,9 @@ export default function ProvidersDebug() {
       const ethereum = win.ethereum;
       const providers = ethereum?.providers || null;
       const keys = Object.keys(win).filter((k) => /muse/i.test(k));
-      setInfo({ ethereum, providers, keys });
+      const muses = win.muses;
+      const musesKeys = muses && typeof muses === "object" ? Object.keys(muses) : [];
+      setInfo({ ethereum, providers, keys, musesKeys });
     } catch (e) {
       setInfo({ error: String(e) });
     }

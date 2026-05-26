@@ -18,6 +18,30 @@ function normalizeAccounts(value: any) {
   return [];
 }
 
+function looksLikeProvider(value: any) {
+  if (!value || typeof value !== "object") return false;
+  return (
+    typeof value.request === "function" ||
+    typeof value.requestAccounts === "function" ||
+    typeof value.getAccounts === "function" ||
+    typeof value.connect === "function"
+  );
+}
+
+function pickBestProvider(candidates: any[]) {
+  const valid = candidates.filter(Boolean).filter(looksLikeProvider);
+  if (valid.length === 0) return undefined;
+
+  // Prefer explicit EVM/provider-like entries first.
+  const preferred = valid.find((p: any) => p?.isMuses || p?.isMusesWallet || p?.isMusesProvider);
+  if (preferred) return preferred;
+
+  const withRequest = valid.find((p: any) => typeof p.request === "function");
+  if (withRequest) return withRequest;
+
+  return valid[0];
+}
+
 function toEip1193Provider(raw: any) {
   if (!raw) return undefined;
   if (typeof raw.request === "function") return raw;
@@ -89,15 +113,22 @@ export function getMusesProvider() {
   if (typeof window === "undefined") return undefined;
   const win = window as any;
 
-  const raw =
-    (win?.muses?.ethereum && win.muses.ethereum) ||
-    (win?.muses && win.muses) ||
-    (win?.ethereum?.providers &&
+  const muses = win?.muses;
+  const raw = pickBestProvider([
+    muses?.ethereum,
+    muses?.evm,
+    muses?.provider,
+    muses?.ethereumProvider,
+    muses?.providers?.ethereum,
+    muses?.providers?.evm,
+    muses?.wallet,
+    muses,
+    win?.ethereum?.providers &&
       Array.isArray(win.ethereum.providers) &&
       win.ethereum.providers.find(
         (p: any) => p?.isMuses || p?.isMusesWallet || p?.isMusesProvider
-      )) ||
-    undefined;
+      ),
+  ]);
 
   return toEip1193Provider(raw);
 }

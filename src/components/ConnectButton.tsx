@@ -34,8 +34,6 @@ const formattedBalance =
     ? Number(formatUnits(balance.value, balance.decimals)).toFixed(4)
     : null
 
-    console.log(balance)
-
   useEffect(() => {
     const registerUser = async () => {
       if (!address) return
