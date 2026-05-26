@@ -7,13 +7,16 @@ import {
   useEnsName,
   useEnsAvatar,
   useBalance,
+  useConnect,
 } from 'wagmi'
+import { InjectedConnector } from 'wagmi/connectors/injected'
 import { marketplaceApi } from '@/lib/marketplaceApi'
 import { Loader2 } from 'lucide-react'
 import { formatUnits } from 'viem'
 
 export const CustomConnectButton = () => {
   const { address, isConnected, isConnecting, isReconnecting } = useAccount()
+  const { connect } = useConnect()
 
   // ✅ Fetch ENS name (only works on Ethereum mainnet)
   const { data: ensName } = useEnsName({
@@ -129,8 +132,14 @@ const formattedBalance =
                         console.warn('Provider does not support request/connect');
                       }
 
-                      // Give the provider a moment to update state then reload so Wagmi/RainbowKit picks up the change.
-                      setTimeout(() => window.location.reload(), 500);
+                      // Tell Wagmi to connect using the injected connector so state is updated.
+                      try {
+                        const injected = new InjectedConnector({});
+                        await connect({ connector: injected });
+                      } catch (e) {
+                        // If programmatic connect fails, fall back to reload.
+                        setTimeout(() => window.location.reload(), 500);
+                      }
                     } catch (err) {
                       console.error('Failed to connect Muses provider', err);
                     }

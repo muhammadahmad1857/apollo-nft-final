@@ -38,8 +38,6 @@ import { MarketplaceStreamBridge } from "@/components/marketplace-stream-bridge"
 const queryClient = new QueryClient();
 import ProvidersDebug from "@/components/ProvidersDebug";
 
-
-
 export function ThemeProvider({
   children,
   ...props
