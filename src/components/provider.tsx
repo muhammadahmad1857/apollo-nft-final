@@ -15,6 +15,15 @@ if (typeof window !== "undefined") {
         win.ethereum = muses;
       }
     }
+    // Some wallets expose themselves on a global like `window.muses`.
+    if (!win.ethereum && win.muses) {
+      win.ethereum = win.muses;
+    }
+    // If there is a global `muses` alongside an injected ethereum provider,
+    // prefer the muses provider when it appears to be a provider object.
+    if (win.muses && typeof win.muses.request === "function") {
+      win.ethereum = win.muses;
+    }
   } catch (e) {
     // ignore client-side detection errors
   }
