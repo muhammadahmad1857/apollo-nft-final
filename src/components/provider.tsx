@@ -1,6 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
-import React, { useEffect } from 'react'
+import React from 'react'
+
+// Run provider selection at module-load time so it executes before
+// RainbowKit/Wagmi initialize (ensures injected Muses provider is
+// preferred when multiple injected providers are present).
+if (typeof window !== "undefined") {
+  try {
+    const win = window as any;
+    if (win?.ethereum?.providers && Array.isArray(win.ethereum.providers)) {
+      const providers = win.ethereum.providers;
+      const muses = providers.find((p: any) => p.isMuses === true || p.isMusesWallet === true || p.isMusesProvider === true);
+      if (muses) {
+        win.ethereum = muses;
+      }
+    }
+  } catch (e) {
+    // ignore client-side detection errors
+  }
+}
 import { config } from "@/lib/wagmi";
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 import { WagmiProvider } from "wagmi";
@@ -20,23 +38,6 @@ export function ThemeProvider({
 }
 
 const Provider = ({children}:{children:React.ReactNode}) => {
-  // Detect if multiple injected providers exist and pick Muses provider if present.
-  // Some wallets (like Muses) inject into `window.ethereum.providers` alongside MetaMask.
-  useEffect(() => {
-    try {
-      const win = window as any;
-      if (win?.ethereum?.providers && Array.isArray(win.ethereum.providers)) {
-        const providers = win.ethereum.providers;
-        const muses = providers.find((p: any) => p.isMuses === true || p.isMusesWallet === true || p.isMusesWallet === true);
-        if (muses) {
-          // Prefer the Muses provider as the primary `window.ethereum` so RainbowKit/Wagmi sees it.
-          win.ethereum = muses;
-        }
-      }
-    } catch (e) {
-      // ignore client-side detection errors
-    }
-  }, []);
   return (
     <QueryClientProvider client={queryClient}>
     <WagmiProvider config={config}>
