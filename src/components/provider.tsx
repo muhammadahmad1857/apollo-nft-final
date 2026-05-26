@@ -8,6 +8,11 @@ import React from 'react'
 if (typeof window !== "undefined") {
   try {
     const win = window as any;
+    const musesProvider =
+      (win?.muses?.ethereum && typeof win.muses.ethereum.request === "function" && win.muses.ethereum) ||
+      (win?.muses && typeof win.muses.request === "function" && win.muses) ||
+      null;
+
     if (win?.ethereum?.providers && Array.isArray(win.ethereum.providers)) {
       const providers = win.ethereum.providers;
       const muses = providers.find((p: any) => p.isMuses === true || p.isMusesWallet === true || p.isMusesProvider === true);
@@ -16,13 +21,13 @@ if (typeof window !== "undefined") {
       }
     }
     // Some wallets expose themselves on a global like `window.muses`.
-    if (!win.ethereum && win.muses) {
-      win.ethereum = win.muses;
+    if (!win.ethereum && musesProvider) {
+      win.ethereum = musesProvider;
     }
     // If there is a global `muses` alongside an injected ethereum provider,
     // prefer the muses provider when it appears to be a provider object.
-    if (win.muses && typeof win.muses.request === "function") {
-      win.ethereum = win.muses;
+    if (musesProvider) {
+      win.ethereum = musesProvider;
     }
   } catch (e) {
     // ignore client-side detection errors

@@ -7,16 +7,13 @@ import {
   useEnsName,
   useEnsAvatar,
   useBalance,
-  useConnect,
 } from 'wagmi'
-import { injected } from 'wagmi/connectors'
 import { marketplaceApi } from '@/lib/marketplaceApi'
 import { Loader2 } from 'lucide-react'
 import { formatUnits } from 'viem'
 
 export const CustomConnectButton = () => {
   const { address, isConnected, isConnecting, isReconnecting } = useAccount()
-  const { connect } = useConnect()
 
   // ✅ Fetch ENS name (only works on Ethereum mainnet)
   const { data: ensName } = useEnsName({
@@ -107,47 +104,9 @@ const formattedBalance =
             })}
           >
             {!connected ? (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={openConnectModal} type="button">
-                  Connect Wallet
-                </button>
-                <button
-                  onClick={async () => {
-                    try {
-                      const win = window as any;
-                      const muses = win.muses || (win.ethereum && win.ethereum.isMuses ? win.ethereum : null);
-                      const provider = muses || win.ethereum;
-                      if (!provider) {
-                        console.warn('No injected provider found');
-                        return;
-                      }
-
-                      if (typeof provider.request === 'function') {
-                        await provider.request({ method: 'eth_requestAccounts' });
-                      } else if (typeof provider.requestAccounts === 'function') {
-                        await provider.requestAccounts();
-                      } else if (typeof provider.connect === 'function') {
-                        await provider.connect();
-                      } else {
-                        console.warn('Provider does not support request/connect');
-                      }
-
-                      // Tell Wagmi to connect using the injected connector so state is updated.
-                      try {
-                        await connect({ connector: injected() });
-                      } catch (e) {
-                        // If programmatic connect fails, fall back to reload.
-                        setTimeout(() => window.location.reload(), 500);
-                      }
-                    } catch (err) {
-                      console.error('Failed to connect Muses provider', err);
-                    }
-                  }}
-                  type="button"
-                >
-                  Connect Muses
-                </button>
-              </div>
+              <button onClick={openConnectModal} type="button">
+                Connect Wallet
+              </button>
             ) : chain.unsupported ? (
               <button onClick={openChainModal} type="button">
                 Wrong network
