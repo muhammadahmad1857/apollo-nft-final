@@ -11,6 +11,13 @@ function toHexChainId(chainId: any) {
   return "0x1";
 }
 
+function normalizeAccounts(value: any) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string" && value.length > 0) return [value];
+  if (value && Array.isArray(value.accounts)) return value.accounts;
+  return [];
+}
+
 function toEip1193Provider(raw: any) {
   if (!raw) return undefined;
   if (typeof raw.request === "function") return raw;
@@ -21,14 +28,24 @@ function toEip1193Provider(raw: any) {
     async request({ method, params }: { method: string; params?: any[] }) {
       switch (method) {
         case "eth_requestAccounts": {
-          if (typeof raw.requestAccounts === "function") return raw.requestAccounts();
-          if (typeof raw.connect === "function") return raw.connect();
-          if (typeof raw.getAccounts === "function") return raw.getAccounts();
+          if (typeof raw.requestAccounts === "function") {
+            return normalizeAccounts(await raw.requestAccounts());
+          }
+          if (typeof raw.connect === "function") {
+            return normalizeAccounts(await raw.connect());
+          }
+          if (typeof raw.getAccounts === "function") {
+            return normalizeAccounts(await raw.getAccounts());
+          }
           throw new Error("Muses provider does not support account requests");
         }
         case "eth_accounts": {
-          if (typeof raw.getAccounts === "function") return raw.getAccounts();
-          if (typeof raw.requestAccounts === "function") return raw.requestAccounts();
+          if (typeof raw.getAccounts === "function") {
+            return normalizeAccounts(await raw.getAccounts());
+          }
+          if (typeof raw.requestAccounts === "function") {
+            return normalizeAccounts(await raw.requestAccounts());
+          }
           return [];
         }
         case "eth_chainId": {
@@ -46,15 +63,25 @@ function toEip1193Provider(raw: any) {
           throw new Error("Muses provider does not support chain switching");
         }
         default: {
+          // Best-effort fallback for provider-specific request methods.
+          if (typeof raw._request === "function") {
+            return raw._request({ method, params });
+          }
+          if (typeof raw.request === "function") {
+            return raw.request({ method, params });
+          }
           throw new Error(`Unsupported method on Muses adapter: ${method}`);
         }
       }
     },
-    on: typeof raw.on === "function" ? raw.on.bind(raw) : undefined,
+    on:
+      typeof raw.on === "function"
+        ? raw.on.bind(raw)
+        : () => undefined,
     removeListener:
       typeof raw.removeListener === "function"
         ? raw.removeListener.bind(raw)
-        : undefined,
+        : () => undefined,
   };
 }
 
