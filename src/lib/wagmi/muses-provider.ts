@@ -132,11 +132,10 @@ function toEip1193Provider(raw: any) {
             console.debug('muses-provider: error filtering accounts', e);
           }
         }
-        // If the method was eth_requestAccounts and result contains accounts, try to emit accountsChanged on raw/adapter
+        // If the method was eth_requestAccounts and result contains accounts, try to emit accountsChanged/connect events
         try {
           const accounts = normalizeAccounts(result);
-          if (method === "eth_requestAccounts" && accounts.length && typeof adapter.on === "function") {
-            // emit accountsChanged so listeners (like wagmi) can react
+          if (method === "eth_requestAccounts" && accounts.length) {
             try {
               if (typeof adapter.emit === 'function') {
                 adapter.emit('accountsChanged', accounts);
@@ -145,6 +144,32 @@ function toEip1193Provider(raw: any) {
               }
             } catch (e) {
               // ignore emit failures
+            }
+
+            // Emit a connect event with chainId so Wagmi/RainbowKit can register the connection
+            try {
+              let chainIdHex = '0x1';
+              try {
+                if (typeof raw.getChain === 'function') {
+                  chainIdHex = toHexChainId(await raw.getChain());
+                } else if (typeof raw.getNetwork === 'function') {
+                  chainIdHex = toHexChainId(await raw.getNetwork());
+                } else if (typeof raw.getChainId === 'function') {
+                  chainIdHex = toHexChainId(await raw.getChainId());
+                }
+              } catch (e) {
+                // fallback to 0x1
+              }
+
+              if (typeof adapter.emit === 'function') {
+                adapter.emit('connect', { chainId: chainIdHex });
+                adapter.emit('chainChanged', chainIdHex);
+              } else if (typeof raw.on === 'function' && typeof raw.emit === 'function') {
+                raw.emit('connect', { chainId: chainIdHex });
+                raw.emit('chainChanged', chainIdHex);
+              }
+            } catch (e) {
+              // ignore
             }
           }
         } catch (e) {

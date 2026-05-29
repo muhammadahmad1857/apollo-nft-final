@@ -14,6 +14,7 @@ import { formatUnits } from 'viem'
 
 export const CustomConnectButton = () => {
   const { address, isConnected, isConnecting, isReconnecting } = useAccount()
+  console.debug('useAccount hook ->', { address, isConnected, isConnecting, isReconnecting });
 
   // ✅ Fetch ENS name (only works on Ethereum mainnet)
   const { data: ensName } = useEnsName({
@@ -82,6 +83,7 @@ const formattedBalance =
         authenticationStatus,
         mounted,
       }) => {
+        console.debug('ConnectButton.Custom render ->', { account, chain, authenticationStatus, mounted });
         const ready = mounted && authenticationStatus !== 'loading'
         const connected =
           ready &&
