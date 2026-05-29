@@ -53,6 +53,8 @@ function toEip1193Provider(raw: any) {
       console.debug("muses-provider.request -> method:", method, "params:", params);
       try {
         let result: any;
+        const isEthAddress = (a: any) => typeof a === 'string' && /^0x[a-fA-F0-9]{40}$/.test(a);
+
         switch (method) {
           case "eth_requestAccounts": {
             if (typeof raw.requestAccounts === "function") {
@@ -67,6 +69,7 @@ function toEip1193Provider(raw: any) {
               result = normalizeAccounts(await raw.getAccounts());
               break;
             }
+
             throw new Error("Muses provider does not support account requests");
           }
           case "eth_accounts": {
@@ -115,7 +118,20 @@ function toEip1193Provider(raw: any) {
             throw new Error(`Unsupported method on Muses adapter: ${method}`);
           }
         }
-        console.debug("muses-provider.request <- result for", method, result);
+        console.debug("muses-provider.request <- raw result for", method, result);
+        // Filter returned accounts to only valid EVM hex addresses (0x-prefixed 40 hex chars)
+        if (method === 'eth_requestAccounts' || method === 'eth_accounts') {
+          try {
+            const rawAccounts = normalizeAccounts(result);
+            const ethAccounts = rawAccounts.filter(isEthAddress);
+            if (ethAccounts.length !== rawAccounts.length) {
+              console.debug('muses-provider: filtered non-EVM accounts out:', rawAccounts.filter((a: any) => !isEthAddress(a)));
+            }
+            result = ethAccounts;
+          } catch (e) {
+            console.debug('muses-provider: error filtering accounts', e);
+          }
+        }
         // If the method was eth_requestAccounts and result contains accounts, try to emit accountsChanged on raw/adapter
         try {
           const accounts = normalizeAccounts(result);
