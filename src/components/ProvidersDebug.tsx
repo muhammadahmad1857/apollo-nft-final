@@ -17,17 +17,50 @@ export default function ProvidersDebug() {
   const [info, setInfo] = useState<any>(null);
 
   useEffect(() => {
-    try {
-      const win = window as any;
-      const ethereum = win.ethereum;
-      const providers = ethereum?.providers || null;
-      const keys = Object.keys(win).filter((k) => /muse/i.test(k));
-      const muses = win.muses;
-      const musesKeys = muses && typeof muses === "object" ? Object.keys(muses) : [];
-      setInfo({ ethereum, providers, keys, musesKeys });
-    } catch (e) {
-      setInfo({ error: String(e) });
-    }
+    let alive = true;
+
+    const load = async () => {
+      try {
+        const win = window as any;
+        const ethereum = win.ethereum;
+        const providers = ethereum?.providers || null;
+        const keys = Object.keys(win).filter((k) => /muse/i.test(k));
+        const muses = win.muses;
+        const musesKeys = muses && typeof muses === "object" ? Object.keys(muses) : [];
+
+        const ethAccounts = ethereum?.request ? await ethereum.request({ method: "eth_accounts" }) : null;
+        const ethChainId = ethereum?.request ? await ethereum.request({ method: "eth_chainId" }) : null;
+
+        const musesAccounts =
+          muses?.requestAccounts ? await muses.requestAccounts().catch((e: any) => `error: ${String(e)}`) : null;
+        const musesChain = muses?.getChain ? await muses.getChain().catch((e: any) => `error: ${String(e)}`) : null;
+
+        const nextInfo = {
+          ethereum,
+          providers,
+          keys,
+          musesKeys,
+          samples: {
+            ethAccounts,
+            ethChainId,
+            musesAccounts,
+            musesChain,
+          },
+        };
+
+        if (alive) setInfo(nextInfo);
+      } catch (e) {
+        if (alive) setInfo({ error: String(e) });
+      }
+    };
+
+    load();
+
+    const timer = window.setInterval(load, 2000);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   if (!info) return null;
