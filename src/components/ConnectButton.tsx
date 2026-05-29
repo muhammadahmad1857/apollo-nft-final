@@ -174,7 +174,9 @@ const formattedBalance =
                   Muses Testnet
                 </button>
                 <button type="button" onClick={openAccountModal}>
-                  {(musesSession.account.slice(0, 6) + '...' + musesSession.account.slice(-4))}
+                  {musesSession.account
+                    ? `${musesSession.account.slice(0, 6)}...${musesSession.account.slice(-4)}`
+                    : 'Muses account'}
                 </button>
                 <span style={{ fontSize: 12, color: '#fbbf24' }}>
                   Testnet mode
