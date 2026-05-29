@@ -8,7 +8,13 @@ import { installPreferredMusesProvider } from "@/lib/wagmi/muses-provider";
 // preferred when multiple injected providers are present).
 if (typeof window !== "undefined") {
   try {
-    installPreferredMusesProvider();
+    const ok = installPreferredMusesProvider();
+    console.debug("provider bootstrap: installPreferredMusesProvider ->", ok);
+    try {
+      console.debug("provider bootstrap: window.ethereum present?", !!(window as any).ethereum, (window as any).ethereum && Object.keys((window as any).ethereum).slice(0,20));
+    } catch (e) {
+      console.debug("provider bootstrap: error inspecting window.ethereum", e);
+    }
   } catch (e) {
     // ignore client-side detection errors
   }
@@ -37,6 +43,19 @@ const Provider = ({children}:{children:React.ReactNode}) => {
     const timer = window.setInterval(() => {
       tries += 1;
       const ok = installPreferredMusesProvider();
+      if (ok) {
+        console.debug('provider effect: installed preferred muses provider on try', tries);
+        try {
+          const eth: any = (window as any).ethereum;
+          if (eth && typeof eth.on === 'function') {
+            ['accountsChanged', 'chainChanged', 'connect', 'disconnect', 'message'].forEach((evt) => {
+              eth.on(evt, (...args: any[]) => console.debug('window.ethereum.event', evt, args));
+            });
+          }
+        } catch (e) {
+          console.debug('provider effect: error attaching listeners', e);
+        }
+      }
       if (ok || tries >= 20) {
         window.clearInterval(timer);
       }

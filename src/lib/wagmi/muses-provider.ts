@@ -47,55 +47,97 @@ function toEip1193Provider(raw: any) {
   if (typeof raw.request === "function") return raw;
 
   // Adapter for non-standard providers that expose requestAccounts/getAccounts/getChain APIs.
-  return {
+  const adapter: any = {
     ...raw,
     async request({ method, params }: { method: string; params?: any[] }) {
-      switch (method) {
-        case "eth_requestAccounts": {
-          if (typeof raw.requestAccounts === "function") {
-            return normalizeAccounts(await raw.requestAccounts());
+      console.debug("muses-provider.request -> method:", method, "params:", params);
+      try {
+        let result: any;
+        switch (method) {
+          case "eth_requestAccounts": {
+            if (typeof raw.requestAccounts === "function") {
+              result = normalizeAccounts(await raw.requestAccounts());
+              break;
+            }
+            if (typeof raw.connect === "function") {
+              result = normalizeAccounts(await raw.connect());
+              break;
+            }
+            if (typeof raw.getAccounts === "function") {
+              result = normalizeAccounts(await raw.getAccounts());
+              break;
+            }
+            throw new Error("Muses provider does not support account requests");
           }
-          if (typeof raw.connect === "function") {
-            return normalizeAccounts(await raw.connect());
+          case "eth_accounts": {
+            if (typeof raw.getAccounts === "function") {
+              result = normalizeAccounts(await raw.getAccounts());
+              break;
+            }
+            if (typeof raw.requestAccounts === "function") {
+              result = normalizeAccounts(await raw.requestAccounts());
+              break;
+            }
+            result = [];
+            break;
           }
-          if (typeof raw.getAccounts === "function") {
-            return normalizeAccounts(await raw.getAccounts());
+          case "eth_chainId": {
+            if (typeof raw.getChain === "function") result = toHexChainId(await raw.getChain());
+            else if (typeof raw.getNetwork === "function") result = toHexChainId(await raw.getNetwork());
+            else result = "0x1";
+            break;
           }
-          throw new Error("Muses provider does not support account requests");
+          case "wallet_switchEthereumChain": {
+            const target = params?.[0]?.chainId;
+            const normalized = typeof target === "string" && target.startsWith("0x")
+              ? parseInt(target, 16)
+              : Number(target);
+            if (typeof raw.switchChain === "function") {
+              result = await raw.switchChain(normalized);
+              break;
+            }
+            if (typeof raw.switchNetwork === "function") {
+              result = await raw.switchNetwork(normalized);
+              break;
+            }
+            throw new Error("Muses provider does not support chain switching");
+          }
+          default: {
+            // Best-effort fallback for provider-specific request methods.
+            if (typeof raw._request === "function") {
+              result = await raw._request({ method, params });
+              break;
+            }
+            if (typeof raw.request === "function") {
+              result = await raw.request({ method, params });
+              break;
+            }
+            throw new Error(`Unsupported method on Muses adapter: ${method}`);
+          }
         }
-        case "eth_accounts": {
-          if (typeof raw.getAccounts === "function") {
-            return normalizeAccounts(await raw.getAccounts());
+        console.debug("muses-provider.request <- result for", method, result);
+        // If the method was eth_requestAccounts and result contains accounts, try to emit accountsChanged on raw/adapter
+        try {
+          const accounts = normalizeAccounts(result);
+          if (method === "eth_requestAccounts" && accounts.length && typeof adapter.on === "function") {
+            // emit accountsChanged so listeners (like wagmi) can react
+            try {
+              if (typeof adapter.emit === 'function') {
+                adapter.emit('accountsChanged', accounts);
+              } else if (typeof raw.on === 'function' && typeof raw.emit === 'function') {
+                raw.emit('accountsChanged', accounts);
+              }
+            } catch (e) {
+              // ignore emit failures
+            }
           }
-          if (typeof raw.requestAccounts === "function") {
-            return normalizeAccounts(await raw.requestAccounts());
-          }
-          return [];
+        } catch (e) {
+          // ignore
         }
-        case "eth_chainId": {
-          if (typeof raw.getChain === "function") return toHexChainId(await raw.getChain());
-          if (typeof raw.getNetwork === "function") return toHexChainId(await raw.getNetwork());
-          return "0x1";
-        }
-        case "wallet_switchEthereumChain": {
-          const target = params?.[0]?.chainId;
-          const normalized = typeof target === "string" && target.startsWith("0x")
-            ? parseInt(target, 16)
-            : Number(target);
-          if (typeof raw.switchChain === "function") return raw.switchChain(normalized);
-          if (typeof raw.switchNetwork === "function") return raw.switchNetwork(normalized);
-          throw new Error("Muses provider does not support chain switching");
-        }
-        default: {
-          // Best-effort fallback for provider-specific request methods.
-          if (typeof raw._request === "function") {
-            return raw._request({ method, params });
-          }
-          if (typeof raw.request === "function") {
-            return raw.request({ method, params });
-          }
-          throw new Error(`Unsupported method on Muses adapter: ${method}`);
-        }
+        return result;
+      } catch (err) {
+        console.debug("muses-provider.request <- error for", method, err);
+        throw err;
       }
     },
     on:
@@ -107,6 +149,26 @@ function toEip1193Provider(raw: any) {
         ? raw.removeListener.bind(raw)
         : () => undefined,
   };
+
+  // Attach passive listeners to the raw provider so we log events from the extension.
+  try {
+    const tryOn = (evt: string) => {
+      try {
+        if (typeof raw.on === 'function') {
+          raw.on(evt, (...args: any[]) => {
+            console.debug(`muses-provider.event -> ${evt}`, args);
+          });
+        }
+      } catch (e) {
+        console.debug('muses-provider: failed to attach listener', evt, e);
+      }
+    };
+    ['accountsChanged', 'chainChanged', 'connect', 'disconnect', 'message'].forEach(tryOn);
+  } catch (e) {
+    console.debug('muses-provider: attach listeners error', e);
+  }
+
+  return adapter;
 }
 
 export function getMusesProvider() {
@@ -114,7 +176,7 @@ export function getMusesProvider() {
   const win = window as any;
 
   const muses = win?.muses;
-  const raw = pickBestProvider([
+  const candidates = [
     muses?.ethereum,
     muses?.evm,
     muses?.provider,
@@ -128,7 +190,17 @@ export function getMusesProvider() {
       win.ethereum.providers.find(
         (p: any) => p?.isMuses || p?.isMusesWallet || p?.isMusesProvider
       ),
-  ]);
+  ];
+
+  // Debug: list candidate shapes
+  try {
+    console.debug("muses-provider: candidates keys:", candidates.map((c) => (c && typeof c === 'object') ? Object.keys(c).slice(0,10) : c));
+  } catch (e) {
+    console.debug("muses-provider: error listing candidates", e);
+  }
+
+  const raw = pickBestProvider(candidates);
+  console.debug("muses-provider: picked raw provider:", raw && (typeof raw === 'object' ? Object.keys(raw).slice(0,20) : raw));
 
   return toEip1193Provider(raw);
 }

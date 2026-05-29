@@ -102,7 +102,25 @@ const formattedBalance =
             })}
           >
             {!connected ? (
-              <button onClick={openConnectModal} type="button">
+              <button
+                onClick={() => {
+                  try {
+                    console.debug('ConnectButton: openConnectModal clicked', {
+                      account,
+                      chain,
+                      windowEthereum: typeof window !== 'undefined' ? (window as any).ethereum : undefined,
+                    })
+                  } catch (e) {
+                    console.debug('ConnectButton: error inspecting before open', e)
+                  }
+                  try {
+                    openConnectModal()
+                  } catch (e) {
+                    console.debug('ConnectButton: openConnectModal threw', e)
+                  }
+                }}
+                type="button"
+              >
                 Connect Wallet
               </button>
             ) : chain.unsupported ? (
