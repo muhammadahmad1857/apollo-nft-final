@@ -164,7 +164,7 @@ const formattedBalance =
               >
                 Connect Wallet
               </button>
-            ) : !hasMusesTestnetSession && chain.unsupported ? (
+            ) : !hasMusesTestnetSession && !!chain?.unsupported ? (
               <button onClick={openChainModal} type="button">
                 Wrong network
               </button>
