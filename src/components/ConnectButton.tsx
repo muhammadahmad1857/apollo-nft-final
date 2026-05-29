@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import {
   useAccount,
@@ -14,6 +14,7 @@ import { formatUnits } from 'viem'
 
 export const CustomConnectButton = () => {
   const { address, isConnected, isConnecting, isReconnecting } = useAccount()
+  const [musesAccountHint, setMusesAccountHint] = useState<string | null>(null)
   console.debug('useAccount hook ->', { address, isConnected, isConnecting, isReconnecting });
 
   // ✅ Fetch ENS name (only works on Ethereum mainnet)
@@ -36,6 +37,26 @@ const formattedBalance =
     : null
 
   useEffect(() => {
+    const checkMusesAccounts = async () => {
+      try {
+        const eth = (window as any).ethereum
+        if (!eth?.request) return
+        const accounts = await eth.request({ method: 'eth_accounts' })
+        if (Array.isArray(accounts) && accounts.length > 0) {
+          const hasHexAccount = accounts.some((acc) => typeof acc === 'string' && /^0x[a-fA-F0-9]{40}$/.test(acc))
+          if (!hasHexAccount) {
+            setMusesAccountHint('Muses returned a non-EVM account, so Wagmi cannot mark it as connected.')
+          } else {
+            setMusesAccountHint(null)
+          }
+        }
+      } catch (e) {
+        console.debug('checkMusesAccounts error', e)
+      }
+    }
+
+    checkMusesAccounts()
+
     const registerUser = async () => {
       if (!address) return
 
@@ -169,6 +190,11 @@ const formattedBalance =
                 </button>
               </div>
             )}
+            {musesAccountHint ? (
+              <p style={{ marginTop: 8, fontSize: 12, color: '#fbbf24' }}>
+                {musesAccountHint}
+              </p>
+            ) : null}
           </div>
         )
       }}

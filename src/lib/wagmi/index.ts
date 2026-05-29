@@ -6,7 +6,6 @@ import { injected } from "wagmi/connectors";
 import { getMusesProvider } from "./muses-provider";
 import {
   coinbaseWallet,
-  injectedWallet,
   metaMaskWallet,
   rainbowWallet,
   walletConnectWallet,
@@ -22,8 +21,8 @@ const musesWallet = () => ({
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%237c3aed'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect rx='24' width='96' height='96' fill='url(%23g)'/%3E%3Cpath d='M26 68V28h10l12 18 12-18h10v40h-10V46L48 62 36 46v22z' fill='white'/%3E%3C/svg%3E",
   iconBackground: "#111827",
   // Keep this true so RainbowKit always attempts to connect via connector
-  // instead of switching to install/download flow on transient injection races.
-  installed: true,
+  // only show the wallet when a Muses provider is actually present.
+  installed: typeof window !== "undefined" && !!getMusesProvider(),
   downloadUrls: {
     browserExtension: "https://museswallet.io/",
   },
@@ -52,7 +51,6 @@ export const config = getDefaultConfig({
       groupName: "Popular",
       wallets: [
         musesWallet,
-        injectedWallet,
         metaMaskWallet,
         rainbowWallet,
         coinbaseWallet,
