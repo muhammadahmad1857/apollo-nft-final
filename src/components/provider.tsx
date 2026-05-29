@@ -5,6 +5,7 @@ import { installPreferredMusesProvider } from "@/lib/wagmi/muses-provider";
 
 // Run provider selection at module-load time so it executes before
 // RainbowKit/Wagmi initialize (ensures injected Muses provider is
+
 // preferred when multiple injected providers are present).
 if (typeof window !== "undefined") {
   try {
