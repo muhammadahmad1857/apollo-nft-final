@@ -31,9 +31,10 @@ export default function ProvidersDebug() {
         const ethAccounts = ethereum?.request ? await ethereum.request({ method: "eth_accounts" }) : null;
         const ethChainId = ethereum?.request ? await ethereum.request({ method: "eth_chainId" }) : null;
 
-        const musesAccounts =
-          muses?.requestAccounts ? await muses.requestAccounts().catch((e: any) => `error: ${String(e)}`) : null;
-        const musesChain = muses?.getChain ? await muses.getChain().catch((e: any) => `error: ${String(e)}`) : null;
+        // Keep this panel passive so it never opens the wallet by itself.
+        // Only read non-prompting values here.
+        const musesAccounts = muses?.getAccounts ? await muses.getAccounts().catch((e: any) => `error: ${String(e)}`) : null;
+        const musesChain = muses?.getNetwork ? await muses.getNetwork().catch((e: any) => `error: ${String(e)}`) : null;
 
         const nextInfo = {
           ethereum,
