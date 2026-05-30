@@ -3,7 +3,8 @@
 import { apolloMainnet } from "./apollo-chain";
 
 const APOLLO_CHAIN_HEX = `0x${apolloMainnet.id.toString(16)}`;
-const CONNECT_TIMEOUT_MS = 120_000;
+const ACCOUNTS_CHANGED_TIMEOUT_MS = 15_000;
+const APOLLO_WRAPPED = Symbol.for("apollo.wallet.wrapped");
 
 export const APOLLO_WALLET_CHROME_STORE_URL =
   "https://chromewebstore.google.com/detail/apollo-wallet/mnpnahmgchhkjphkkemhbnjedajbcbll";
@@ -44,11 +45,22 @@ function rememberAnnouncement(info: any, provider: any) {
   if (info?.name) eip6963ApolloName = info.name;
 }
 
+function isWrapped(provider: any) {
+  return Boolean(provider?.[APOLLO_WRAPPED]);
+}
+
 if (typeof window !== "undefined") {
-  window.addEventListener("eip6963:announceProvider", (event: Event) => {
-    const detail = (event as CustomEvent).detail;
-    rememberAnnouncement(detail?.info, detail?.provider);
-  });
+  window.addEventListener(
+    "eip6963:announceProvider",
+    (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (!detail?.provider || !isApolloAnnouncement(detail.info)) return;
+
+      detail.provider = wrapProvider(detail.provider);
+      rememberAnnouncement(detail.info, detail.provider);
+    },
+    true
+  );
   window.dispatchEvent(new Event("eip6963:requestProvider"));
 }
 
@@ -59,17 +71,8 @@ export function requestApolloWalletProviders() {
 
 export function initApolloWalletDiscovery() {
   if (typeof window === "undefined") return () => undefined;
-
   requestApolloWalletProviders();
-
-  let tries = 0;
-  const timer = window.setInterval(() => {
-    tries += 1;
-    requestApolloWalletProviders();
-    if (tries >= 24) window.clearInterval(timer);
-  }, 250);
-
-  return () => window.clearInterval(timer);
+  return () => undefined;
 }
 
 export function getApolloWalletRdns() {
@@ -91,13 +94,14 @@ function toHexChainId(chainId: any) {
     if (/apollo|mainnet/i.test(chainId)) return APOLLO_CHAIN_HEX;
     const asNum = Number(chainId);
     if (!Number.isNaN(asNum)) return `0x${asNum.toString(16)}`;
-    return APOLLO_CHAIN_HEX;
+    throw new Error(`Apollo Wallet returned an invalid chainId: ${chainId}`);
   }
   if (typeof chainId === "number") return `0x${chainId.toString(16)}`;
-  return APOLLO_CHAIN_HEX;
+  throw new Error(`Apollo Wallet returned an invalid chainId: ${String(chainId)}`);
 }
 
 function normalizeAccounts(value: any) {
+  if (value == null) return [];
   if (Array.isArray(value)) return value;
   if (typeof value === "string" && value.length > 0) return [value];
   if (value && Array.isArray(value.accounts)) return value.accounts;
@@ -125,31 +129,29 @@ function isApolloLikeProvider(provider: any) {
   return label.includes("apollo") || label.includes("muses");
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number, message: string) {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => {
-      window.setTimeout(() => reject(new Error(message)), ms);
-    }),
-  ]);
-}
-
 async function resolveChainId(raw: any) {
-  try {
-    if (typeof raw.request === "function") {
-      const chainId = await raw.request({ method: "eth_chainId" });
-      if (chainId) return toHexChainId(chainId);
-    }
-    if (typeof raw.getChain === "function") return toHexChainId(await raw.getChain());
-    if (typeof raw.getNetwork === "function") return toHexChainId(await raw.getNetwork());
-    if (typeof raw.getChainId === "function") return toHexChainId(await raw.getChainId());
-  } catch {
-    // fall through
+  if (typeof raw.request === "function") {
+    const chainId = await raw.request({ method: "eth_chainId" });
+    if (chainId != null && chainId !== "") return toHexChainId(chainId);
   }
-  return APOLLO_CHAIN_HEX;
+  if (typeof raw.getChain === "function") return toHexChainId(await raw.getChain());
+  if (typeof raw.getNetwork === "function") return toHexChainId(await raw.getNetwork());
+  if (typeof raw.getChainId === "function") return toHexChainId(await raw.getChainId());
+  throw new Error("Apollo Wallet did not return a chainId");
 }
 
-/** Apollo/Muses often use requestAccounts/connect instead of eth_requestAccounts. */
+async function requestPermissions(raw: any) {
+  if (typeof raw.request !== "function") return;
+  try {
+    await raw.request({
+      method: "wallet_requestPermissions",
+      params: [{ eth_accounts: {} }],
+    });
+  } catch {
+    // Already authorized or wallet does not support permissions RPC
+  }
+}
+
 async function promptForAccounts(raw: any) {
   if (typeof raw.requestAccounts === "function") {
     return normalizeAccounts(await raw.requestAccounts());
@@ -163,7 +165,7 @@ async function promptForAccounts(raw: any) {
   if (typeof raw.getAccounts === "function") {
     return normalizeAccounts(await raw.getAccounts());
   }
-  throw new Error("Apollo Wallet does not support account requests");
+  return [];
 }
 
 function pickEvmAccounts(rawAccounts: unknown[]) {
@@ -181,9 +183,16 @@ function pickEvmAccounts(rawAccounts: unknown[]) {
   throw new Error("Apollo Wallet returned no accounts. Approve the connection in the extension.");
 }
 
-async function waitForEvmAccounts(raw: any) {
+async function waitForAccountsChanged(raw: any, timeoutMs: number) {
   return new Promise<string[]>((resolve, reject) => {
     let settled = false;
+
+    const cleanup = () => {
+      window.clearTimeout(timer);
+      if (typeof raw.removeListener === "function") {
+        raw.removeListener("accountsChanged", onAccountsChanged);
+      }
+    };
 
     const finish = (accounts: unknown[]) => {
       if (settled) return;
@@ -203,29 +212,45 @@ async function waitForEvmAccounts(raw: any) {
       finish(normalizeAccounts(accounts));
     };
 
-    const cleanup = () => {
-      if (typeof raw.removeListener === "function") {
-        raw.removeListener("accountsChanged", onAccountsChanged);
-      }
-    };
+    const timer = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(
+        new Error(
+          "Apollo Wallet connection timed out. Open the extension popup and approve the connection."
+        )
+      );
+    }, timeoutMs);
 
-    if (typeof raw.on === "function") {
-      raw.on("accountsChanged", onAccountsChanged);
+    if (typeof raw.on !== "function") {
+      settled = true;
+      cleanup();
+      reject(new Error("Apollo Wallet returned no accounts. Approve the connection in the extension."));
+      return;
     }
 
-    void promptForAccounts(raw)
-      .then((accounts) => finish(accounts))
-      .catch((err) => {
-        // Popup flows may resolve via accountsChanged instead of the initial promise.
-        if (!settled) {
-          console.debug("apollo-wallet: promptForAccounts rejected, waiting for accountsChanged", err);
-        }
-      });
+    raw.on("accountsChanged", onAccountsChanged);
   });
+}
+
+async function requestEvmAccounts(raw: any) {
+  await requestPermissions(raw);
+
+  try {
+    const immediate = pickEvmAccounts(await promptForAccounts(raw));
+    return immediate;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (!message.includes("no accounts")) throw err;
+  }
+
+  return waitForAccountsChanged(raw, ACCOUNTS_CHANGED_TIMEOUT_MS);
 }
 
 function wrapProvider(raw: any) {
   if (!raw) return undefined;
+  if (isWrapped(raw)) return raw;
 
   const listeners = new Map<string, Set<(...args: any[]) => void>>();
 
@@ -250,7 +275,6 @@ function wrapProvider(raw: any) {
     });
   };
 
-  // Bridge extension-native events into the adapter wagmi listens on
   if (typeof raw.on === "function") {
     for (const event of ["accountsChanged", "chainChanged", "connect", "disconnect"] as const) {
       raw.on(event, (...args: any[]) => emit(event, ...args));
@@ -270,11 +294,7 @@ function wrapProvider(raw: any) {
 
     switch (method) {
       case "eth_requestAccounts": {
-        result = await withTimeout(
-          waitForEvmAccounts(raw),
-          CONNECT_TIMEOUT_MS,
-          "Apollo Wallet connection timed out. Open the extension popup and approve the connection."
-        );
+        result = await requestEvmAccounts(raw);
         await notifyConnected(result);
         return result;
       }
@@ -332,13 +352,16 @@ function wrapProvider(raw: any) {
     return result;
   };
 
-  return {
+  const wrapped = {
     ...raw,
     request,
     on,
     removeListener,
     emit,
+    [APOLLO_WRAPPED]: true,
   };
+
+  return wrapped;
 }
 
 function findRawApolloProvider() {
@@ -377,7 +400,6 @@ function findRawApolloProvider() {
     muses,
   ].filter(Boolean);
 
-  // EIP-6963 provider is pre-validated in rememberAnnouncement (name/rdns on info, not provider)
   if (eip6963ApolloProvider && looksLikeProvider(eip6963ApolloProvider)) {
     return eip6963ApolloProvider;
   }
@@ -389,7 +411,8 @@ export function getApolloWalletProvider() {
   if (typeof window === "undefined") return undefined;
 
   requestApolloWalletProviders();
-  return wrapProvider(findRawApolloProvider());
+  const provider = findRawApolloProvider();
+  return provider ? wrapProvider(provider) : undefined;
 }
 
 export function isApolloWalletInstalled() {

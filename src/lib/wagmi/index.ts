@@ -21,9 +21,8 @@ import {
 const projectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "nft-studio";
 
 /**
- * Apollo Wallet — uses EIP-6963 rdns + icon from the extension so RainbowKit
- * shows it under Installed (not a duplicate generic browser wallet).
- * Connection goes through our adapter (fixes infinite loading).
+ * Apollo Wallet — Popular entry with Chrome install CTA when missing.
+ * When installed, EIP-6963 auto-discovery shows it under Installed (deduped by rdns).
  */
 const apolloWallet = () => ({
   id: "apollo",
@@ -66,16 +65,12 @@ export const config = getDefaultConfig({
   projectId,
   chains: [apolloMainnet],
   ssr: false,
-  // EIP-6963 Installed section + our rdns-matched connector (dedupes raw Apollo)
   multiInjectedProviderDiscovery: true,
   wallets: [
     {
-      groupName: "Installed",
-      wallets: [apolloWallet],
-    },
-    {
       groupName: "Popular",
       wallets: [
+        apolloWallet,
         metaMaskWallet,
         rainbowWallet,
         coinbaseWallet,

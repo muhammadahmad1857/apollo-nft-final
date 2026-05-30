@@ -1,16 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 import React from 'react'
-// Muses Wallet — disabled for now
-// import { installPreferredMusesProvider } from "@/lib/wagmi/muses-provider";
-// if (typeof window !== "undefined") {
-//   try {
-//     const ok = installPreferredMusesProvider();
-//     console.debug("provider bootstrap: installPreferredMusesProvider ->", ok);
-//   } catch (e) {
-//     // ignore client-side detection errors
-//   }
-// }
+// Side-effect import: EIP-6963 capture listener must register before wagmi config loads
+import "@/lib/wagmi/apollo-wallet-provider";
 import { config } from "@/lib/wagmi";
 import { initApolloWalletDiscovery } from "@/lib/wagmi/apollo-wallet-provider";
 import { ThemeProvider as NextThemesProvider } from "next-themes"
