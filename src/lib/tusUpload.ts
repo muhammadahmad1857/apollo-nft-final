@@ -17,16 +17,24 @@ export interface TusUploadHandle {
   abort: () => Promise<void>;
 }
 
+function isVercelTusProxy(endpoint: string): boolean {
+  return endpoint.startsWith("/") || endpoint.includes("/api/pinata/tus");
+}
+
 export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
+  const viaProxy = isVercelTusProxy(options.endpoint);
+
   const upload = new tus.Upload(options.file, {
     endpoint: options.endpoint,
-    // Only send Authorization if a token is provided (proxy mode needs no header)
+    // Signed URL mode needs no header; legacy proxy mode also omits client JWT
     headers: options.token ? { Authorization: `Bearer ${options.token}` } : {},
-    chunkSize: 4 * 1024 * 1024, // 4 MB — Vercel serverless payload limit is 4.5 MB
+    // Direct Pinata uploads can use 50 MB chunks; proxy must stay under Vercel's 4.5 MB limit
+    chunkSize: viaProxy ? 2 * 1024 * 1024 : 50 * 1024 * 1024,
     retryDelays: [0, 1000, 3000, 5000, 10000],
     metadata: {
       filename: options.file.name,
       filetype: options.file.type || "application/octet-stream",
+      network: "public",
     },
     onProgress: options.onProgress,
     onChunkComplete: (_chunkSize, _bytesAccepted, _bytesTotal) => {
