@@ -8,6 +8,7 @@ const APOLLO_RAW_PROVIDER = Symbol.for("apollo.wallet.raw");
 const wrappedProviderCache = new WeakMap<object, any>();
 const MAX_DEBUG_LOGS = 150;
 const CONNECT_ACCOUNTS_TIMEOUT_MS = 60_000;
+const LOG_PREFIX = "[Apollo Wallet]";
 
 /** Canonical brand icon — same in Popular (not installed) and after EIP-6963 discovery. */
 export const APOLLO_WALLET_BRAND_ICON = "/icons/apollo-wallet.png";
@@ -24,18 +25,8 @@ export type ApolloWalletDebugLog = {
 const debugLogs: ApolloWalletDebugLog[] = [];
 const debugSubscribers = new Set<() => void>();
 
-function isDebugPanelOpen() {
-  return (
-    typeof window !== "undefined" &&
-    window.location.search.includes("showProviders=1")
-  );
-}
-
-export function pushApolloWalletDebugLog(
-  message: string,
-  data?: unknown,
-  level: ApolloDebugLogLevel = "info"
-) {
+/** Always logs to console so you can debug without ?showProviders=1 */
+function logApollo(level: ApolloDebugLogLevel, message: string, data?: unknown) {
   const entry: ApolloWalletDebugLog = {
     ts: new Date().toISOString(),
     level,
@@ -46,11 +37,18 @@ export function pushApolloWalletDebugLog(
   if (debugLogs.length > MAX_DEBUG_LOGS) debugLogs.pop();
   debugSubscribers.forEach((fn) => fn());
 
-  if (isDebugPanelOpen()) {
-    const prefix = `[apollo-wallet:${level}]`;
-    if (data !== undefined) console.log(prefix, message, data);
-    else console.log(prefix, message);
-  }
+  const line = data !== undefined ? `${LOG_PREFIX} ${message}` : `${LOG_PREFIX} ${message}`;
+  if (level === "error") console.error(line, data ?? "");
+  else if (level === "warn") console.warn(line, data ?? "");
+  else console.info(line, data ?? "");
+}
+
+export function pushApolloWalletDebugLog(
+  message: string,
+  data?: unknown,
+  level: ApolloDebugLogLevel = "info"
+) {
+  logApollo(level, message, data);
 }
 
 export function getApolloWalletDebugLogs() {
@@ -75,16 +73,9 @@ export function getApolloWalletDebugState() {
     name: getApolloWalletName(),
     icon: getApolloWalletIcon(),
     installed: isApolloWalletInstalled(),
-    providerWrapped: Boolean(eip6963ApolloProvider && isWrapped(eip6963ApolloProvider)),
-    expectedChainHex: APOLLO_CHAIN_HEX,
-    sdk: sdk
-      ? {
-          keys: Object.keys(sdk).slice(0, 24),
-          hasConnect: typeof sdk.connect === "function",
-          hasRequestAccounts: typeof sdk.requestAccounts === "function",
-        }
-      : null,
+    sdk: inspectApolloSdk(sdk),
     connectProviderSource: describeProviderSource(provider),
+    expectedChainHex: APOLLO_CHAIN_HEX,
   };
 }
 
@@ -161,19 +152,40 @@ function filterEvmAccounts(value: any) {
   return normalizeAccounts(value).filter(isEthAddress);
 }
 
-/** window.apolloWallet SDK — inject.js logs show this is separate from the passive inject RPC stub. */
 export function getApolloWalletSdk() {
   if (typeof window === "undefined") return undefined;
   const win = window as any;
   return win.apolloWallet ?? win.apollo ?? win.muses;
 }
 
+function inspectApolloSdk(sdk: any) {
+  if (!sdk || typeof sdk !== "object") return null;
+
+  const fnKeys = Object.keys(sdk).filter((k) => typeof sdk[k] === "function");
+  const nested: Record<string, string[]> = {};
+
+  for (const key of ["ethereum", "provider", "evm", "wallet"]) {
+    const child = sdk[key];
+    if (child && typeof child === "object") {
+      nested[key] = Object.keys(child).filter((k) => typeof child[k] === "function");
+    }
+  }
+
+  return {
+    fnKeys,
+    nested,
+    hasConnect: typeof sdk.connect === "function",
+    hasRequestAccounts: typeof sdk.requestAccounts === "function",
+    sameAsEthereum: typeof window !== "undefined" && sdk.ethereum === (window as any).ethereum,
+  };
+}
+
 function describeProviderSource(provider: any) {
   if (!provider || typeof window === "undefined") return "none";
   const win = window as any;
   const sdk = getApolloWalletSdk();
-  if (provider === sdk) return "window.apolloWallet (sdk)";
-  if (provider === sdk?.ethereum) return "window.apolloWallet.ethereum";
+  if (provider === sdk) return "window.apolloWallet (sdk root)";
+  if (provider === sdk?.ethereum) return "window.apolloWallet.ethereum (= inject stub if same as window.ethereum)";
   if (provider === sdk?.provider) return "window.apolloWallet.provider";
   if (provider === sdk?.evm) return "window.apolloWallet.evm";
   if (provider === eip6963InjectProvider) return "eip6963 inject stub";
@@ -181,104 +193,77 @@ function describeProviderSource(provider: any) {
   return "other";
 }
 
-/**
- * The EIP-6963 / window.ethereum inject handles read-only RPC (chainId, eth_accounts)
- * but Apollo opens the approval UI via window.apolloWallet.connect().
- */
+function isInjectStub(provider: any) {
+  if (typeof window === "undefined") return false;
+  const win = window as any;
+  return provider === win.ethereum || provider === eip6963InjectProvider;
+}
+
 export function resolveApolloConnectProvider() {
   if (typeof window === "undefined") return undefined;
-
   const sdk = getApolloWalletSdk();
   if (sdk) {
-    const sdkCandidates = [sdk.ethereum, sdk.provider, sdk.evm, sdk].filter(Boolean);
+    const sdkCandidates = [sdk, sdk.provider, sdk.evm, sdk.ethereum].filter(Boolean);
     const sdkProvider = sdkCandidates.find(looksLikeProvider);
     if (sdkProvider) return sdkProvider;
   }
-
   if (eip6963InjectProvider && looksLikeProvider(eip6963InjectProvider)) {
     return eip6963InjectProvider;
   }
-
-  if (eip6963ApolloProvider) {
-    return getUnwrappedProvider(eip6963ApolloProvider);
-  }
-
+  if (eip6963ApolloProvider) return getUnwrappedProvider(eip6963ApolloProvider);
   return findFlaggedInjectedApolloProvider();
 }
 
-async function trySdkMethod(label: string, fn: () => Promise<unknown>) {
-  try {
-    pushApolloWalletDebugLog(`SDK → ${label}`);
-    const result = await fn();
-    const accounts = filterEvmAccounts(result);
-    pushApolloWalletDebugLog(`SDK ← ${label}`, { result, accounts });
-    return accounts;
-  } catch (err) {
-    pushApolloWalletDebugLog(
-      `SDK ✗ ${label}`,
-      { error: err instanceof Error ? err.message : String(err) },
-      "warn"
-    );
-    return [];
-  }
-}
+type ConnectAttempt = { label: string; run: () => Promise<unknown> };
 
-/**
- * Opens the Apollo approval popup via the SDK — NOT via eth_requestAccounts on the inject stub.
- */
-async function requestAccountsViaApolloSdk() {
-  const sdk = getApolloWalletSdk();
-  if (!sdk || typeof sdk !== "object") return [];
-
-  pushApolloWalletDebugLog("requestAccountsViaApolloSdk", {
-    keys: Object.keys(sdk).slice(0, 24),
-    hasConnect: typeof sdk.connect === "function",
-    hasRequestAccounts: typeof sdk.requestAccounts === "function",
-    hasEnable: typeof sdk.enable === "function",
-  });
+function buildConnectAttempts(sdk: any): ConnectAttempt[] {
+  const attempts: ConnectAttempt[] = [];
+  const add = (label: string, run: () => Promise<unknown>) => attempts.push({ label, run });
 
   if (typeof sdk.connect === "function") {
-    const accounts = await trySdkMethod("apolloWallet.connect()", () => sdk.connect());
-    if (accounts.length) return accounts;
-
-    const withChain = await trySdkMethod("apolloWallet.connect({ chainId })", () =>
-      sdk.connect({ chainId: apolloMainnet.id })
-    );
-    if (withChain.length) return withChain;
+    add("apolloWallet.connect()", () => sdk.connect());
+    add("apolloWallet.connect({ chainId: 62606 })", () => sdk.connect({ chainId: apolloMainnet.id }));
+    add("apolloWallet.connect({ chainId: '0xf48e' })", () => sdk.connect({ chainId: APOLLO_CHAIN_HEX }));
   }
-
   if (typeof sdk.requestAccounts === "function") {
-    const accounts = await trySdkMethod("apolloWallet.requestAccounts()", () =>
-      sdk.requestAccounts()
-    );
-    if (accounts.length) return accounts;
+    add("apolloWallet.requestAccounts()", () => sdk.requestAccounts());
   }
-
   if (typeof sdk.enable === "function") {
-    const accounts = await trySdkMethod("apolloWallet.enable()", () => sdk.enable());
-    if (accounts.length) return accounts;
+    add("apolloWallet.enable()", () => sdk.enable());
   }
-
   if (typeof sdk.openConnectModal === "function") {
-    await trySdkMethod("apolloWallet.openConnectModal()", () => sdk.openConnectModal());
+    add("apolloWallet.openConnectModal()", () => sdk.openConnectModal());
+  }
+  if (typeof sdk.requestConnection === "function") {
+    add("apolloWallet.requestConnection()", () => sdk.requestConnection());
   }
 
-  return [];
+  for (const nestedKey of ["wallet", "evm", "ethereum", "provider"] as const) {
+    const nested = sdk[nestedKey];
+    if (!nested || typeof nested !== "object") continue;
+    if (typeof nested.connect === "function") {
+      add(`apolloWallet.${nestedKey}.connect()`, () => nested.connect());
+    }
+    if (typeof nested.requestAccounts === "function") {
+      add(`apolloWallet.${nestedKey}.requestAccounts()`, () => nested.requestAccounts());
+    }
+  }
+
+  return attempts;
 }
 
-function waitForNonEmptyAccountsChanged(raw: any, timeoutMs: number) {
+function waitForNonEmptyAccountsChanged(target: any, timeoutMs: number, label: string) {
   return new Promise<string[]>((resolve, reject) => {
-    if (typeof raw.on !== "function") {
-      reject(new Error("Apollo Wallet does not emit accountsChanged"));
+    if (typeof target?.on !== "function") {
+      reject(new Error(`${label} does not support accountsChanged events`));
       return;
     }
 
     let settled = false;
-
     const cleanup = () => {
       window.clearTimeout(timer);
-      if (typeof raw.removeListener === "function") {
-        raw.removeListener("accountsChanged", onAccountsChanged);
+      if (typeof target.removeListener === "function") {
+        target.removeListener("accountsChanged", onAccountsChanged);
       }
     };
 
@@ -288,7 +273,7 @@ function waitForNonEmptyAccountsChanged(raw: any, timeoutMs: number) {
       if (settled) return;
       settled = true;
       cleanup();
-      pushApolloWalletDebugLog("connect resolved via accountsChanged", { accounts: evm });
+      logApollo("info", `Got accounts from ${label}`, evm);
       resolve(evm);
     };
 
@@ -296,74 +281,89 @@ function waitForNonEmptyAccountsChanged(raw: any, timeoutMs: number) {
       if (settled) return;
       settled = true;
       cleanup();
-      reject(new Error("Apollo Wallet connection timed out waiting for account approval."));
+      reject(new Error(`Timed out waiting for approval (${label})`));
     }, timeoutMs);
 
-    raw.on("accountsChanged", onAccountsChanged);
+    target.on("accountsChanged", onAccountsChanged);
   });
 }
 
-async function requestAccountsFromProvider(raw: any, params?: any[]) {
-  const eventTargets = [raw, getApolloWalletSdk()].filter(Boolean);
-  const accountsChangedPromise = Promise.race(
-    eventTargets.map((target) => waitForNonEmptyAccountsChanged(target, CONNECT_ACCOUNTS_TIMEOUT_MS))
+/**
+ * Connect via window.apolloWallet SDK — this is what opens the approval popup.
+ * The inject stub (eth_requestAccounts on window.ethereum) does NOT open the popup.
+ */
+export async function connectApolloWallet(): Promise<string[]> {
+  logApollo("info", "─── CONNECT START ───");
+
+  const sdk = getApolloWalletSdk();
+  if (!sdk) {
+    logApollo("error", "window.apolloWallet not found. Install the Apollo Wallet extension.");
+    throw new Error("Apollo Wallet extension not found.");
+  }
+
+  const inspection = inspectApolloSdk(sdk);
+  logApollo("info", "SDK inspection", inspection);
+
+  if (inspection?.sameAsEthereum) {
+    logApollo(
+      "warn",
+      "apolloWallet.ethereum IS window.ethereum — inject RPC alone will NOT open the popup. Using SDK methods only."
+    );
+  }
+
+  const attempts = buildConnectAttempts(sdk);
+  if (!attempts.length) {
+    logApollo("error", "No connect methods found on window.apolloWallet", { keys: Object.keys(sdk) });
+    throw new Error("Apollo Wallet SDK has no connect() method. Update the extension.");
+  }
+
+  logApollo("info", `Trying ${attempts.length} SDK method(s) to open approval popup…`);
+
+  const sdkEventTarget = sdk.ethereum ?? sdk.provider ?? sdk.evm ?? sdk;
+  const accountsChangedPromise = waitForNonEmptyAccountsChanged(
+    sdkEventTarget,
+    CONNECT_ACCOUNTS_TIMEOUT_MS,
+    "SDK accountsChanged"
   );
 
-  const promptPromise = (async () => {
-    // 1. SDK popup path — must run before eth_requestAccounts on inject stub
-    const sdkAccounts = await requestAccountsViaApolloSdk();
-    if (sdkAccounts.length) return sdkAccounts;
-
-    // 2. Provider-native methods on the connect provider (not inject stub)
-    if (typeof raw.connect === "function") {
-      const accounts = filterEvmAccounts(await raw.connect());
-      if (accounts.length) {
-        pushApolloWalletDebugLog("provider.connect() returned accounts", { accounts });
-        return accounts;
+  const tryAllAttempts = (async () => {
+    for (const { label, run } of attempts) {
+      logApollo("info", `→ Calling ${label} …`);
+      try {
+        const result = await run();
+        const accounts = filterEvmAccounts(result);
+        if (accounts.length) {
+          logApollo("info", `✓ SUCCESS: ${label}`, accounts);
+          return accounts;
+        }
+        logApollo("warn", `✗ ${label} returned no accounts`, { result });
+      } catch (err) {
+        logApollo("warn", `✗ ${label} threw an error`, {
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
-
-    if (typeof raw.requestAccounts === "function") {
-      const accounts = filterEvmAccounts(await raw.requestAccounts());
-      if (accounts.length) {
-        pushApolloWalletDebugLog("provider.requestAccounts() returned accounts", { accounts });
-        return accounts;
-      }
-    }
-
-    if (typeof raw.enable === "function") {
-      const accounts = filterEvmAccounts(await raw.enable());
-      if (accounts.length) return accounts;
-    }
-
-    // 3. Last resort — eth_requestAccounts on inject (does NOT open popup on Apollo)
-    if (typeof raw.request === "function") {
-      pushApolloWalletDebugLog(
-        "fallback eth_requestAccounts on inject provider (may not open popup)",
-        undefined,
-        "warn"
-      );
-      const accounts = filterEvmAccounts(
-        await raw.request({ method: "eth_requestAccounts", params })
-      );
-      if (accounts.length) {
-        pushApolloWalletDebugLog("eth_requestAccounts returned accounts", { accounts });
-        return accounts;
-      }
-    }
-
-    throw new Error("Apollo Wallet returned no accounts. Approve the connection in the extension.");
+    throw new Error(
+      "Apollo Wallet did not return an account. Open the extension, unlock it, approve the connection, then try again."
+    );
   })();
 
   try {
-    return await Promise.race([accountsChangedPromise, promptPromise]);
+    const accounts = await Promise.race([accountsChangedPromise, tryAllAttempts]);
+    logApollo("info", "─── CONNECT SUCCESS ───", accounts);
+    return accounts;
   } catch (err) {
-    const settled = await Promise.allSettled([accountsChangedPromise, promptPromise]);
+    const settled = await Promise.allSettled([accountsChangedPromise, tryAllAttempts]);
     for (const result of settled) {
       if (result.status === "fulfilled" && result.value.length > 0) {
+        logApollo("info", "─── CONNECT SUCCESS (late) ───", result.value);
         return result.value;
       }
     }
+    logApollo("error", "─── CONNECT FAILED ───", {
+      error: err instanceof Error ? err.message : String(err),
+      hint: "If no popup appeared, the extension may not be handling connect() — check inject.js / background script.",
+    });
     throw err instanceof Error ? err : new Error(String(err));
   }
 }
@@ -382,22 +382,32 @@ function wrapProvider(raw: any) {
   const resetConnectionState = (reason: string) => {
     hasConnectedAccounts = false;
     connectInProgress = false;
-    pushApolloWalletDebugLog(`connection state reset (${reason})`);
+    logApollo("info", `Session reset: ${reason}`);
   };
 
   if (typeof raw.on === "function") {
-    raw.on("disconnect", () => resetConnectionState("provider disconnect event"));
+    raw.on("disconnect", () => resetConnectionState("extension disconnect event"));
   }
 
   const request = async ({ method, params }: { method: string; params?: any[] }) => {
-    pushApolloWalletDebugLog(`RPC → ${method}`, { params, source: describeProviderSource(raw) });
+    logApollo("info", `RPC request: ${method}`, {
+      via: describeProviderSource(raw),
+      isInjectStub: isInjectStub(raw),
+    });
 
     if (method === "eth_requestAccounts") connectInProgress = true;
 
     try {
+      // wagmi calls this before eth_requestAccounts — do NOT forward to inject (no popup)
+      if (method === "wallet_requestPermissions") {
+        logApollo("info", "Skipping wallet_requestPermissions (Apollo uses SDK connect, not inject permissions)");
+        return [{ caveats: [{ value: [] }] }];
+      }
+
+      // NEVER use inject eth_requestAccounts — it does not open the approval popup
       if (method === "eth_requestAccounts") {
-        const accounts = await requestAccountsFromProvider(raw, params);
-        pushApolloWalletDebugLog(`RPC ← ${method}`, { result: accounts });
+        logApollo("info", "Using SDK connect (NOT inject eth_requestAccounts)");
+        const accounts = await connectApolloWallet();
         if (accounts.length > 0) hasConnectedAccounts = true;
         return accounts;
       }
@@ -406,11 +416,9 @@ function wrapProvider(raw: any) {
         resetConnectionState("wallet_revokePermissions");
         const sdk = getApolloWalletSdk();
         try {
-          if (typeof sdk?.disconnect === "function") {
-            await sdk.disconnect();
-          }
+          if (typeof sdk?.disconnect === "function") await sdk.disconnect();
         } catch {
-          // Best-effort SDK disconnect for EIP-6963 / Installed path.
+          // best effort
         }
       }
 
@@ -419,14 +427,12 @@ function wrapProvider(raw: any) {
       }
 
       const result = await raw.request({ method, params });
-      pushApolloWalletDebugLog(`RPC ← ${method}`, { result });
+      logApollo("info", `RPC response: ${method}`, { result });
       return result;
     } catch (err) {
-      pushApolloWalletDebugLog(
-        `RPC ✗ ${method}`,
-        { error: err instanceof Error ? err.message : String(err) },
-        "error"
-      );
+      logApollo("error", `RPC failed: ${method}`, {
+        error: err instanceof Error ? err.message : String(err),
+      });
       throw err;
     } finally {
       if (method === "eth_requestAccounts") connectInProgress = false;
@@ -442,33 +448,22 @@ function wrapProvider(raw: any) {
             const normalized = normalizeAccounts(accounts);
             if (normalized.length === 0) {
               if (connectInProgress) {
-                pushApolloWalletDebugLog(
-                  "ignored empty accountsChanged during connect handshake",
-                  { connectInProgress, hasConnectedAccounts },
-                  "warn"
-                );
+                logApollo("warn", "Ignored empty accountsChanged during connect (normal for Apollo inject)");
                 return;
               }
               if (hasConnectedAccounts) {
-                resetConnectionState("accountsChanged empty (disconnect)");
-                pushApolloWalletDebugLog(`provider event: accountsChanged`, normalized);
+                resetConnectionState("accountsChanged cleared");
                 listener(accounts);
                 return;
               }
-              pushApolloWalletDebugLog(
-                "ignored empty accountsChanged before first connect",
-                undefined,
-                "warn"
-              );
               return;
             }
-
             hasConnectedAccounts = true;
-            pushApolloWalletDebugLog(`provider event: accountsChanged`, normalized);
+            logApollo("info", "accountsChanged", normalized);
             listener(accounts);
           }
         : (...args: any[]) => {
-            pushApolloWalletDebugLog(`provider event: ${event}`, args);
+            logApollo("info", `Event: ${event}`, args);
             listener(...args);
           };
 
@@ -509,19 +504,28 @@ if (typeof window !== "undefined") {
 
       if (detail.info) detail.info.icon = APOLLO_WALLET_BRAND_ICON;
 
-      const connectProvider = resolveApolloConnectProvider() ?? detail.provider;
-      pushApolloWalletDebugLog("EIP-6963 Apollo announced — routing connect provider", {
+      // Wrap the inject provider so ALL wagmi RPC goes through our adapter
+      logApollo("info", "Extension detected (EIP-6963)", {
+        name: detail.info?.name,
         rdns: detail.info?.rdns,
         injectSource: describeProviderSource(detail.provider),
-        connectSource: describeProviderSource(connectProvider),
+        sdk: inspectApolloSdk(getApolloWalletSdk()),
       });
 
-      detail.provider = wrapProvider(connectProvider);
+      detail.provider = wrapProvider(detail.provider);
       rememberAnnouncement(detail.info, detail.provider);
     },
     true
   );
+
   window.dispatchEvent(new Event("eip6963:requestProvider"));
+
+  queueMicrotask(() => {
+    const sdk = getApolloWalletSdk();
+    if (sdk) {
+      logApollo("info", "Extension ready on page load", inspectApolloSdk(sdk));
+    }
+  });
 }
 
 export function requestApolloWalletProviders() {
@@ -549,11 +553,9 @@ export function getApolloWalletName() {
 
 function findFlaggedInjectedApolloProvider() {
   if (typeof window === "undefined") return undefined;
-
   const win = window as any;
   const providers = [win.ethereum, ...(Array.isArray(win.ethereum?.providers) ? win.ethereum.providers : [])]
     .filter(Boolean);
-
   return providers.find(
     (provider) =>
       looksLikeProvider(provider) &&
@@ -570,20 +572,17 @@ export function isApolloWalletInstalled() {
 
 export function getApolloWalletProvider() {
   if (typeof window === "undefined") return undefined;
-
   requestApolloWalletProviders();
-  const provider = resolveApolloConnectProvider();
-  return provider ? wrapProvider(provider) : undefined;
+  const inject = eip6963InjectProvider ?? resolveApolloConnectProvider();
+  return inject ? wrapProvider(inject) : undefined;
 }
 
 export async function waitForApolloWalletProvider(timeoutMs = 6000) {
   const started = Date.now();
-
   while (Date.now() - started < timeoutMs) {
     const provider = getApolloWalletProvider();
     if (provider) return provider;
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
-
   return undefined;
 }
