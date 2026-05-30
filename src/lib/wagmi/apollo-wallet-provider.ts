@@ -15,14 +15,16 @@ function debugIngest(
   location: string,
   message: string,
   data: Record<string, unknown>,
-  hypothesisId: string
+  hypothesisId: string,
+  runId = "pre-fix"
 ) {
+  logApollo("info", `[debug ${hypothesisId}] ${message}`, data);
   fetch("http://127.0.0.1:7865/ingest/1c0546f0-2a95-4ee7-8716-a30c25e6140e", {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "9102ba" },
     body: JSON.stringify({
       sessionId: "9102ba",
-      runId: "pre-fix",
+      runId,
       hypothesisId,
       location,
       message,
@@ -390,12 +392,27 @@ function getProviderIdentityDiagnostic(raw: any) {
   };
 }
 
-/** Diagnostic probe — tests whether chain switch/add unblocks eth_requestAccounts (hypothesis B). */
-async function probeChainBeforeConnect(raw: any) {
+function isRpcUrlInjectError(err: unknown) {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes("rpcUrl");
+}
+
+function getApolloAddChainParams() {
+  return {
+    chainId: APOLLO_CHAIN_HEX,
+    chainName: apolloMainnet.name,
+    nativeCurrency: apolloMainnet.nativeCurrency,
+    rpcUrls: [apolloMainnet.rpcUrls.default.http[0]],
+    blockExplorerUrls: [apolloMainnet.blockExplorers.default.url],
+  };
+}
+
+/** Register + switch to Apollo Mainnet before account requests (inject crashes on null rpcUrl when chain missing). */
+async function ensureApolloChainBeforeConnect(raw: any) {
   const identity = getProviderIdentityDiagnostic(raw);
   // #region agent log
   debugIngest(
-    "apollo-wallet-provider.ts:probeChainBeforeConnect:entry",
+    "apollo-wallet-provider.ts:ensureApolloChain:entry",
     "provider identity at connect",
     identity,
     "D"
@@ -408,33 +425,56 @@ async function probeChainBeforeConnect(raw: any) {
   } catch (err) {
     // #region agent log
     debugIngest(
-      "apollo-wallet-provider.ts:probeChainBeforeConnect:chainIdError",
-      "eth_chainId failed during probe",
+      "apollo-wallet-provider.ts:ensureApolloChain:chainIdError",
+      "eth_chainId failed",
       { error: err instanceof Error ? err.message : String(err) },
       "A"
     );
     // #endregion
   }
 
-  const chainMismatch = currentChain != null && currentChain.toLowerCase() !== APOLLO_CHAIN_HEX.toLowerCase();
+  const alreadyApollo =
+    currentChain != null && currentChain.toLowerCase() === APOLLO_CHAIN_HEX.toLowerCase();
   // #region agent log
   debugIngest(
-    "apollo-wallet-provider.ts:probeChainBeforeConnect:chainState",
-    "chain state before connect",
-    { currentChain, expectedChain: APOLLO_CHAIN_HEX, chainMismatch },
+    "apollo-wallet-provider.ts:ensureApolloChain:chainState",
+    "chain state before prep",
+    { currentChain, expectedChain: APOLLO_CHAIN_HEX, alreadyApollo },
     "A"
   );
   // #endregion
 
-  if (!chainMismatch) return { currentChain, chainPrepared: true, prepMethod: "already-apollo" };
+  if (alreadyApollo) {
+    return { currentChain, chainPrepared: true, prepMethod: "already-apollo" as const };
+  }
 
-  const apolloChainParams = {
-    chainId: APOLLO_CHAIN_HEX,
-    chainName: apolloMainnet.name,
-    nativeCurrency: apolloMainnet.nativeCurrency,
-    rpcUrls: [apolloMainnet.rpcUrls.default.http[0]],
-    blockExplorerUrls: [apolloMainnet.blockExplorers.default.url],
-  };
+  const apolloChainParams = getApolloAddChainParams();
+
+  // Add chain first — registers rpcUrl in extension before switch/account RPC.
+  try {
+    await raw.request({ method: "wallet_addEthereumChain", params: [apolloChainParams] });
+    const afterAdd = (await raw.request({ method: "eth_chainId" })) as string;
+    // #region agent log
+    debugIngest(
+      "apollo-wallet-provider.ts:ensureApolloChain:addOk",
+      "wallet_addEthereumChain succeeded",
+      { afterAdd },
+      "B"
+    );
+    // #endregion
+    if (afterAdd.toLowerCase() === APOLLO_CHAIN_HEX.toLowerCase()) {
+      return { currentChain, chainPrepared: true, prepMethod: "add" as const, afterChain: afterAdd };
+    }
+  } catch (addErr) {
+    // #region agent log
+    debugIngest(
+      "apollo-wallet-provider.ts:ensureApolloChain:addFail",
+      "wallet_addEthereumChain failed",
+      { error: addErr instanceof Error ? addErr.message : String(addErr) },
+      "B"
+    );
+    // #endregion
+  }
 
   try {
     await raw.request({
@@ -444,17 +484,19 @@ async function probeChainBeforeConnect(raw: any) {
     const afterSwitch = (await raw.request({ method: "eth_chainId" })) as string;
     // #region agent log
     debugIngest(
-      "apollo-wallet-provider.ts:probeChainBeforeConnect:switchOk",
+      "apollo-wallet-provider.ts:ensureApolloChain:switchOk",
       "wallet_switchEthereumChain succeeded",
       { afterSwitch },
       "B"
     );
     // #endregion
-    return { currentChain, chainPrepared: true, prepMethod: "switch", afterChain: afterSwitch };
+    if (afterSwitch.toLowerCase() === APOLLO_CHAIN_HEX.toLowerCase()) {
+      return { currentChain, chainPrepared: true, prepMethod: "switch" as const, afterChain: afterSwitch };
+    }
   } catch (switchErr) {
     // #region agent log
     debugIngest(
-      "apollo-wallet-provider.ts:probeChainBeforeConnect:switchFail",
+      "apollo-wallet-provider.ts:ensureApolloChain:switchFail",
       "wallet_switchEthereumChain failed",
       { error: switchErr instanceof Error ? switchErr.message : String(switchErr) },
       "B"
@@ -462,33 +504,93 @@ async function probeChainBeforeConnect(raw: any) {
     // #endregion
   }
 
-  try {
-    await raw.request({
-      method: "wallet_addEthereumChain",
-      params: [apolloChainParams],
-    });
-    const afterAdd = (await raw.request({ method: "eth_chainId" })) as string;
-    // #region agent log
-    debugIngest(
-      "apollo-wallet-provider.ts:probeChainBeforeConnect:addOk",
-      "wallet_addEthereumChain succeeded",
-      { afterAdd },
-      "B"
-    );
-    // #endregion
-    return { currentChain, chainPrepared: true, prepMethod: "add", afterChain: afterAdd };
-  } catch (addErr) {
-    // #region agent log
-    debugIngest(
-      "apollo-wallet-provider.ts:probeChainBeforeConnect:addFail",
-      "wallet_addEthereumChain failed",
-      { error: addErr instanceof Error ? addErr.message : String(addErr) },
-      "B"
-    );
-    // #endregion
-  }
+  return { currentChain, chainPrepared: false, prepMethod: "none" as const };
+}
 
-  return { currentChain, chainPrepared: false, prepMethod: "none" };
+/** eth_accounts works when eth_requestAccounts crashes — poll after user connects via extension UI. */
+async function waitForManualApolloConnection(raw: any, timeoutMs: number): Promise<string[]> {
+  logApollo(
+    "warn",
+    "Extension RPC crashed — open Apollo Wallet extension, unlock, switch to Apollo Mainnet, connect this site"
+  );
+  // #region agent log
+  debugIngest(
+    "apollo-wallet-provider.ts:waitForManualApolloConnection",
+    "starting manual connect poll",
+    { timeoutMs },
+    "F",
+    "post-fix"
+  );
+  // #endregion
+
+  const readAccounts = async () => {
+    const fromState = readAddressesFromProviderState(raw);
+    if (fromState.length) return fromState;
+    try {
+      return filterEvmAccounts(await raw.request({ method: "eth_accounts" }));
+    } catch {
+      return [] as string[];
+    }
+  };
+
+  return new Promise<string[]>((resolve, reject) => {
+    let settled = false;
+    let pollTimer: number | undefined;
+
+    const finish = (accounts: string[], source: string) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(hardTimeout);
+      if (pollTimer) window.clearTimeout(pollTimer);
+      if (typeof raw.removeListener === "function") {
+        raw.removeListener("accountsChanged", onAccountsChanged);
+      }
+      // #region agent log
+      debugIngest(
+        "apollo-wallet-provider.ts:waitForManualApolloConnection:success",
+        "manual connect detected",
+        { accounts, source },
+        "F",
+        "post-fix"
+      );
+      // #endregion
+      resolve(accounts);
+    };
+
+    const onAccountsChanged = (accounts: unknown) => {
+      const evm = filterEvmAccounts(accounts);
+      if (evm.length) finish(evm, "accountsChanged");
+    };
+
+    const poll = async () => {
+      if (settled) return;
+      const accounts = await readAccounts();
+      if (accounts.length) {
+        finish(accounts, "poll");
+        return;
+      }
+      pollTimer = window.setTimeout(poll, 2000);
+    };
+
+    const hardTimeout = window.setTimeout(async () => {
+      if (settled) return;
+      settled = true;
+      if (pollTimer) window.clearTimeout(pollTimer);
+      if (typeof raw.removeListener === "function") {
+        raw.removeListener("accountsChanged", onAccountsChanged);
+      }
+      reject(
+        new Error(
+          "Apollo Wallet extension did not connect. Open the extension, switch to Apollo Mainnet (chain 62606), approve this site, then retry."
+        )
+      );
+    }, timeoutMs);
+
+    if (typeof raw.on === "function") {
+      raw.on("accountsChanged", onAccountsChanged);
+    }
+    poll();
+  });
 }
 
 /**
@@ -502,11 +604,11 @@ async function connectViaProviderRpc(raw: any): Promise<string[]> {
     throw new Error("Apollo provider has no request() method.");
   }
 
-  logApollo("info", "Connect path: eth_requestAccounts → extension (skipping wallet_requestPermissions — broken in inject)");
+  logApollo("info", "Connect path: ensure Apollo chain → eth_requestAccounts");
   logApollo("info", "Provider state before connect", inspectApolloProvider(raw));
 
-  const chainProbe = await probeChainBeforeConnect(raw);
-  logApollo("info", "Chain probe before connect", chainProbe);
+  const chainPrep = await ensureApolloChainBeforeConnect(raw);
+  logApollo("info", "Chain prep before connect", chainPrep);
 
   const accountsChangedPromise = waitForNonEmptyAccountsChanged(
     raw,
@@ -527,8 +629,9 @@ async function connectViaProviderRpc(raw: any): Promise<string[]> {
       debugIngest(
         "apollo-wallet-provider.ts:connectViaProviderRpc:accountsOk",
         "eth_requestAccounts succeeded",
-        { result, chainProbe },
-        "C"
+        { result, chainPrep },
+        "C",
+        "post-fix"
       );
       // #endregion
 
@@ -548,10 +651,16 @@ async function connectViaProviderRpc(raw: any): Promise<string[]> {
       debugIngest(
         "apollo-wallet-provider.ts:connectViaProviderRpc:accountsFail",
         "eth_requestAccounts failed",
-        { error: errMsg, chainProbe, hasRpcUrlError: errMsg.includes("rpcUrl") },
-        "C"
+        { error: errMsg, chainPrep, hasRpcUrlError: isRpcUrlInjectError(err) },
+        "C",
+        "post-fix"
       );
       // #endregion
+
+      if (isRpcUrlInjectError(err)) {
+        logApollo("warn", "eth_requestAccounts rpcUrl crash — trying manual extension connect fallback");
+        return waitForManualApolloConnection(raw, CONNECT_ACCOUNTS_TIMEOUT_MS);
+      }
       throw err;
     }
   })();
