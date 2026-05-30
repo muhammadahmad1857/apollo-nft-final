@@ -16,8 +16,14 @@ const APOLLO_PROVIDER_FLAGS = [
   "isMusesProvider",
 ] as const;
 
+/** Fallback golden mark until EIP-6963 icon arrives from the extension */
+const APOLLO_ICON_FALLBACK =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='24' fill='%231a1408'/%3E%3Ccircle cx='48' cy='48' r='28' fill='none' stroke='%23d4af37' stroke-width='4'/%3E%3Cpath d='M48 28 L62 52 L54 52 L58 68 L48 58 L38 68 L42 52 L34 52 Z' fill='%23d4af37'/%3E%3C/svg%3E";
+
 let eip6963ApolloProvider: any;
 let eip6963ApolloRdns: string | undefined;
+let eip6963ApolloIcon: string | undefined;
+let eip6963ApolloName: string | undefined;
 
 function isApolloAnnouncement(info: { name?: string; rdns?: string } | undefined) {
   const name = String(info?.name ?? "").toLowerCase();
@@ -34,6 +40,8 @@ function rememberAnnouncement(info: any, provider: any) {
   if (!isApolloAnnouncement(info) || !provider) return;
   eip6963ApolloProvider = provider;
   if (info?.rdns) eip6963ApolloRdns = info.rdns;
+  if (info?.icon) eip6963ApolloIcon = info.icon;
+  if (info?.name) eip6963ApolloName = info.name;
 }
 
 if (typeof window !== "undefined") {
@@ -41,6 +49,7 @@ if (typeof window !== "undefined") {
     const detail = (event as CustomEvent).detail;
     rememberAnnouncement(detail?.info, detail?.provider);
   });
+  window.dispatchEvent(new Event("eip6963:requestProvider"));
 }
 
 export function requestApolloWalletProviders() {
@@ -65,6 +74,15 @@ export function initApolloWalletDiscovery() {
 
 export function getApolloWalletRdns() {
   return eip6963ApolloRdns ?? "io.apollowallet";
+}
+
+/** Golden logo from the extension's EIP-6963 announcement (data URL). */
+export function getApolloWalletIcon() {
+  return eip6963ApolloIcon ?? APOLLO_ICON_FALLBACK;
+}
+
+export function getApolloWalletName() {
+  return eip6963ApolloName ?? "Apollo Wallet";
 }
 
 function toHexChainId(chainId: any) {

@@ -5,8 +5,11 @@ import { createConnector } from "wagmi";
 import { injected } from "wagmi/connectors";
 import {
   APOLLO_WALLET_CHROME_STORE_URL,
+  getApolloWalletIcon,
+  getApolloWalletName,
   getApolloWalletProvider,
   getApolloWalletRdns,
+  isApolloWalletInstalled,
 } from "./apollo-wallet-provider";
 import {
   coinbaseWallet,
@@ -17,15 +20,21 @@ import {
 
 const projectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "nft-studio";
 
+/**
+ * Apollo Wallet — uses EIP-6963 rdns + icon from the extension so RainbowKit
+ * shows it under Installed (not a duplicate generic browser wallet).
+ * Connection goes through our adapter (fixes infinite loading).
+ */
 const apolloWallet = () => ({
   id: "apollo",
-  name: "Apollo Wallet",
+  name: getApolloWalletName(),
   rdns: getApolloWalletRdns(),
-  iconUrl: async () =>
-    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%237c3aed'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect rx='24' width='96' height='96' fill='url(%23g)'/%3E%3Cpath d='M48 22l18 10v22L48 64 30 54V32z' fill='white'/%3E%3C/svg%3E",
-  iconBackground: "#111827",
-  // Always show on client; skip SSR so build/prerender never touches the extension
-  installed: typeof window !== "undefined" ? true : undefined,
+  iconUrl: async () => getApolloWalletIcon(),
+  iconBackground: "#1a1408",
+  installed:
+    typeof window !== "undefined"
+      ? isApolloWalletInstalled() || undefined
+      : undefined,
   downloadUrls: {
     browserExtension: APOLLO_WALLET_CHROME_STORE_URL,
     chrome: APOLLO_WALLET_CHROME_STORE_URL,
@@ -41,7 +50,7 @@ const apolloWallet = () => ({
 
           return {
             id: "apollo",
-            name: "Apollo Wallet",
+            name: getApolloWalletName(),
             provider,
           };
         },
@@ -57,13 +66,16 @@ export const config = getDefaultConfig({
   projectId,
   chains: [apolloMainnet],
   ssr: false,
-  // Raw EIP-6963 Apollo entry bypasses our adapter and hangs — use our connector only
-  multiInjectedProviderDiscovery: false,
+  // EIP-6963 Installed section + our rdns-matched connector (dedupes raw Apollo)
+  multiInjectedProviderDiscovery: true,
   wallets: [
+    {
+      groupName: "Installed",
+      wallets: [apolloWallet],
+    },
     {
       groupName: "Popular",
       wallets: [
-        apolloWallet,
         metaMaskWallet,
         rainbowWallet,
         coinbaseWallet,
