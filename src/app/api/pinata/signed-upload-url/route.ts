@@ -1,65 +1,72 @@
 import { NextResponse } from "next/server";
 
+const PINATA_TUS_ENDPOINT = "https://uploads.pinata.cloud/v3/files";
+const DEFAULT_MAX_BYTES = 15 * 1024 * 1024 * 1024;
+
 /**
- * Returns a Pinata presigned TUS upload URL so the browser uploads directly
- * to uploads.pinata.cloud — avoids Vercel's ~4.5 MB serverless body limit.
+ * Returns credentials for direct browser → Pinata TUS uploads.
+ * Uses a short-lived scoped JWT (Pinata's recommended TUS pattern) instead of
+ * presigned URLs, which can reject uploads when Upload-Length != signed max.
  */
 export async function POST(req: Request) {
   try {
     const body = (await req.json().catch(() => ({}))) as {
       filename?: string;
+      fileSize?: number;
       maxFileSize?: number;
     };
 
-    const maxFileSize =
-      typeof body.maxFileSize === "number"
-        ? body.maxFileSize
-        : 15 * 1024 * 1024 * 1024;
+    const fileSize = body.fileSize ?? body.maxFileSize;
+    const maxAllowed = Number(process.env.PINATA_MAX_UPLOAD_BYTES) || DEFAULT_MAX_BYTES;
 
-    const signPayload: Record<string, unknown> = {
-      network: "public",
-      date: Math.floor(Date.now() / 1000),
-      // Large videos may take a while — allow 4 hours to finish uploading
-      expires: 14400,
-      max_file_size: maxFileSize,
-    };
-
-    if (body.filename) {
-      signPayload.filename = body.filename;
+    if (typeof fileSize === "number" && fileSize > maxAllowed) {
+      return NextResponse.json(
+        {
+          error: "File exceeds upload limit",
+          maxBytes: maxAllowed,
+        },
+        { status: 400 }
+      );
     }
 
-    const signRes = await fetch("https://uploads.pinata.cloud/v3/files/sign", {
+    const jwtRes = await fetch("https://api.pinata.cloud/v3/api_keys", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.PINATA_JWT}`,
       },
-      body: JSON.stringify(signPayload),
+      body: JSON.stringify({
+        keyname: `TUS-Upload-${Date.now()}${body.filename ? `-${body.filename}` : ""}`,
+        permissions: {
+          admin: true,
+        },
+        maxUses: 10,
+      }),
     });
 
-    if (!signRes.ok) {
-      const errText = await signRes.text();
-      console.error("[signed-upload-url] Pinata sign error:", signRes.status, errText);
+    if (!jwtRes.ok) {
+      const errText = await jwtRes.text();
+      console.error("[signed-upload-url] JWT creation error:", jwtRes.status, errText);
       return NextResponse.json(
-        { error: "Failed to create signed upload URL", details: errText },
-        { status: signRes.status }
+        { error: "Failed to create upload token", details: errText },
+        { status: jwtRes.status }
       );
     }
 
-    const signData = (await signRes.json()) as { data?: string };
-    const signedUrl = signData.data;
+    const jwtData = (await jwtRes.json()) as { JWT?: string; token?: string };
+    const uploadToken = jwtData.JWT ?? jwtData.token;
 
-    if (!signedUrl) {
+    if (!uploadToken) {
       return NextResponse.json(
-        { error: "No signed URL in Pinata response" },
+        { error: "No upload token in Pinata response" },
         { status: 502 }
       );
     }
 
     return NextResponse.json({
       data: {
-        url: signedUrl,
-        token: "",
+        url: PINATA_TUS_ENDPOINT,
+        token: uploadToken,
       },
     });
   } catch (err) {

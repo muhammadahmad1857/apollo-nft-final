@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { startTusUpload, type TusUploadHandle } from "@/lib/tusUpload";
 import { formatUploadProgress } from "@/lib/formatBytes";
+import { formatPinataUploadError } from "@/lib/pinataUploadErrors";
 
 interface FileUploadProps {
   onUploadComplete: (
@@ -73,7 +74,7 @@ export function FileUpload({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             filename: file.name,
-            maxFileSize: 5 * 1024 * 1024 * 1024,
+            fileSize: file.size,
           }),
         });
 
@@ -108,9 +109,7 @@ export function FileUpload({
           });
         });
       } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to upload file"
-        );
+        toast.error(formatPinataUploadError(error));
       } finally {
         setIsUploading(false);
         setUploadProgress(0);

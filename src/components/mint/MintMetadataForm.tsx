@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import { startTusUpload, type TusUploadHandle } from "@/lib/tusUpload";
 import { formatUploadProgress } from "@/lib/formatBytes";
+import { formatPinataUploadError } from "@/lib/pinataUploadErrors";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 
@@ -225,7 +226,7 @@ export function MintMetadataForm({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             filename: file.name,
-            maxFileSize: 15 * 1024 * 1024 * 1024,
+            fileSize: file.size,
           }),
         });
 
@@ -267,7 +268,7 @@ export function MintMetadataForm({
       } catch (error) {
         console.error("Upload error:", error);
         toast.error("Failed to upload file", {
-          description: error instanceof Error ? error.message : "Please try again",
+          description: formatPinataUploadError(error),
         });
       } finally {
         setIsUploadingFile(false);
@@ -355,7 +356,7 @@ export function MintMetadataForm({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             filename: file.name,
-            maxFileSize: 15 * 1024 * 1024 * 1024,
+            fileSize: file.size,
           }),
         });
 
@@ -396,7 +397,7 @@ export function MintMetadataForm({
       } catch (error) {
         console.error("Trailer upload error:", error);
         toast.error("Failed to upload trailer", {
-          description: error instanceof Error ? error.message : "Please try again",
+          description: formatPinataUploadError(error),
         });
       } finally {
         setIsUploadingTrailer(false);
