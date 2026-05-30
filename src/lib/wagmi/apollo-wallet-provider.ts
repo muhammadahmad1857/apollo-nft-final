@@ -347,8 +347,10 @@ function getApolloAddChainParams() {
 async function tryApolloSetChainId(raw: any) {
   const chainParams = getApolloAddChainParams();
   const candidates: unknown[] = [
-    chainParams,
+    // Apollo inject reads a flat `rpcUrl` key — must come first or the object-without-rpcUrl
+    // variant "succeeds" silently without actually registering the rpcUrl, causing the crash.
     { ...chainParams, rpcUrl: chainParams.rpcUrls[0] },
+    chainParams,
     APOLLO_CHAIN_HEX,
     apolloMainnet.id,
   ];
@@ -533,9 +535,11 @@ async function recoverApolloAccountsAfterRpcUrlCrash(
   logApollo("warn", "eth_requestAccounts rpcUrl crash — registering chain then retrying");
 
   try {
+    const chainParams = getApolloAddChainParams();
     await raw.request({
       method: "wallet_addEthereumChain",
-      params: [getApolloAddChainParams()],
+      // Apollo inject requires flat `rpcUrl` key — standard `rpcUrls` array crashes it.
+      params: [{ ...chainParams, rpcUrl: chainParams.rpcUrls[0] }],
     });
     logApollo("info", "wallet_addEthereumChain succeeded — retrying eth_requestAccounts");
   } catch (addErr) {
@@ -544,7 +548,6 @@ async function recoverApolloAccountsAfterRpcUrlCrash(
     });
     await tryApolloSetChainId(raw);
   }
-
   try {
     return await requestApolloAccounts(raw, Math.min(timeoutMs, 30_000));
   } catch (retryErr) {
