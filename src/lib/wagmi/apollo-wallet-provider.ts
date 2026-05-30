@@ -314,16 +314,55 @@ function waitForNonEmptyAccountsChanged(target: any, timeoutMs: number, label: s
   });
 }
 
+function stubApolloWalletPermissions(params?: unknown[]) {
+  const requested =
+    params?.[0] && typeof params[0] === "object" && !Array.isArray(params[0])
+      ? (params[0] as Record<string, unknown>)
+      : { eth_accounts: {} };
+
+  const capabilities = Object.keys(requested);
+  const list =
+    capabilities.length > 0 ? capabilities : ["eth_accounts"];
+
+  return list.map((parentCapability) => ({
+    parentCapability,
+    caveats: [{ type: "restrictReturnedAccounts", value: [] as string[] }],
+  }));
+}
+
+function requestProviderWithTimeout(
+  raw: any,
+  payload: { method: string; params?: unknown[] },
+  timeoutMs: number
+) {
+  return Promise.race([
+    raw.request(payload),
+    new Promise<never>((_, reject) => {
+      window.setTimeout(
+        () =>
+          reject(
+            new Error(
+              `Timed out after ${timeoutMs / 1000}s waiting for ${payload.method}. Open Apollo Wallet, unlock it, approve this site, then retry.`
+            )
+          ),
+        timeoutMs
+      );
+    }),
+  ]);
+}
+
 /**
  * Apollo Wallet (io.zeusx.apollowallet) exposes window.apolloWallet as an EIP-1193
  * provider with request() on the prototype — NOT a separate connect() SDK.
+ *
+ * wallet_requestPermissions is broken in current Apollo inject (rpcUrl null) — skip it.
  */
 async function connectViaProviderRpc(raw: any): Promise<string[]> {
   if (typeof raw?.request !== "function") {
     throw new Error("Apollo provider has no request() method.");
   }
 
-  logApollo("info", "Connect path: provider.request() → extension background/popup");
+  logApollo("info", "Connect path: eth_requestAccounts → extension (skipping wallet_requestPermissions — broken in inject)");
   logApollo("info", "Provider state before connect", inspectApolloProvider(raw));
 
   const accountsChangedPromise = waitForNonEmptyAccountsChanged(
@@ -333,22 +372,13 @@ async function connectViaProviderRpc(raw: any): Promise<string[]> {
   ).catch(() => [] as string[]);
 
   const rpcPromise = (async () => {
-    try {
-      logApollo("info", "Step 1/2: wallet_requestPermissions (asks extension to allow this site)");
-      await raw.request({
-        method: "wallet_requestPermissions",
-        params: [{ eth_accounts: {} }],
-      });
-      logApollo("info", "Step 1/2: wallet_requestPermissions OK");
-    } catch (err) {
-      logApollo("warn", "Step 1/2: wallet_requestPermissions rejected — continuing anyway", {
-        error: err instanceof Error ? err.message : String(err),
-      });
-    }
-
-    logApollo("info", "Step 2/2: eth_requestAccounts (extension should open approval popup NOW)");
-    const result = await raw.request({ method: "eth_requestAccounts" });
-    logApollo("info", "Step 2/2: eth_requestAccounts response", { result });
+    logApollo("info", "eth_requestAccounts (extension should open approval popup NOW)");
+    const result = await requestProviderWithTimeout(
+      raw,
+      { method: "eth_requestAccounts" },
+      CONNECT_ACCOUNTS_TIMEOUT_MS
+    );
+    logApollo("info", "eth_requestAccounts response", { result });
 
     const accounts = filterEvmAccounts(result);
     if (accounts.length) return accounts;
@@ -451,13 +481,9 @@ function wrapProvider(raw: any) {
 
     try {
       if (method === "wallet_requestPermissions") {
-        if (typeof raw.request !== "function") {
-          return [{ caveats: [{ value: [] }] }];
-        }
-        logApollo("info", "Forwarding wallet_requestPermissions to extension");
-        const result = await raw.request({ method, params });
-        logApollo("info", "wallet_requestPermissions response", { result });
-        return result;
+        // Apollo inject throws "Cannot read properties of null (reading 'rpcUrl')" — stub success for wagmi.
+        logApollo("info", "Stubbing wallet_requestPermissions (Apollo inject bug — rpcUrl null)");
+        return stubApolloWalletPermissions(params);
       }
 
       if (method === "eth_requestAccounts") {
