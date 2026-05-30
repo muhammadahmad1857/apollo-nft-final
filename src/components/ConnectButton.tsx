@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import {
   useAccount,
@@ -14,65 +14,25 @@ import { formatUnits } from 'viem'
 
 export const CustomConnectButton = () => {
   const { address, isConnected, isConnecting, isReconnecting } = useAccount()
-  const [musesSession, setMusesSession] = useState<{
-    account: string | null
-    network: string | null
-    isTestnet: boolean
-    isEvmAccount: boolean
-  } | null>(null)
   console.debug('useAccount hook ->', { address, isConnected, isConnecting, isReconnecting });
 
-  // ✅ Fetch ENS name (only works on Ethereum mainnet)
   const { data: ensName } = useEnsName({
     address,
   })
 
-  // ✅ Fetch ENS avatar using ENS name (NOT wallet address)
   const { data: ensAvatar } = useEnsAvatar({
     name: String(ensName),
   })
 
-  // ✅ Fetch wallet balance
   const { data: balance } = useBalance({
     address,
   })
-const formattedBalance =
-  balance
-    ? Number(formatUnits(balance.value, balance.decimals)).toFixed(4)
-    : null
+  const formattedBalance =
+    balance
+      ? Number(formatUnits(balance.value, balance.decimals)).toFixed(4)
+      : null
 
   useEffect(() => {
-    const checkMusesAccounts = async () => {
-      try {
-        const eth = (window as any).ethereum
-        const muses = (window as any).muses
-        if (!eth?.request) return
-        const accounts = await eth.request({ method: 'eth_accounts' })
-        const musesAccounts = muses?.getAccounts ? await muses.getAccounts().catch(() => []) : []
-        const musesNetwork = muses?.getNetwork ? await muses.getNetwork().catch(() => null) : null
-
-        const allAccounts = Array.isArray(accounts) ? accounts : []
-        const evmAccount = allAccounts.find((acc) => typeof acc === 'string' && /^0x[a-fA-F0-9]{40}$/.test(acc)) ?? null
-        const musesAccount = Array.isArray(musesAccounts) && musesAccounts.length > 0 ? String(musesAccounts[0]) : null
-        const isTestnet = typeof musesNetwork === 'string' ? /testnet|test/i.test(musesNetwork) : false
-
-        if (musesAccount) {
-          setMusesSession({
-            account: musesAccount,
-            network: typeof musesNetwork === 'string' ? musesNetwork : null,
-            isTestnet,
-            isEvmAccount: !!evmAccount,
-          })
-        } else {
-          setMusesSession(null)
-        }
-      } catch (e) {
-        console.debug('checkMusesAccounts error', e)
-      }
-    }
-
-    checkMusesAccounts()
-
     const registerUser = async () => {
       if (!address) return
 
@@ -99,7 +59,6 @@ const formattedBalance =
     }
   }, [isConnected, address, ensName, ensAvatar])
 
-  // 🔄 Show loader when connecting
   if (isConnecting || isReconnecting) {
     return (
       <p className="flex items-center gap-2">
@@ -129,8 +88,6 @@ const formattedBalance =
           (!authenticationStatus ||
             authenticationStatus === 'authenticated')
 
-        const hasMusesTestnetSession = !!musesSession && musesSession.isTestnet && !musesSession.isEvmAccount
-
         return (
           <div
             {...(!ready && {
@@ -142,7 +99,7 @@ const formattedBalance =
               },
             })}
           >
-            {!connected && !hasMusesTestnetSession ? (
+            {!connected ? (
               <button
                 onClick={() => {
                   try {
@@ -164,33 +121,18 @@ const formattedBalance =
               >
                 Connect Wallet
               </button>
-            ) : !hasMusesTestnetSession && !!chain?.unsupported ? (
+            ) : chain?.unsupported ? (
               <button onClick={openChainModal} type="button">
                 Wrong network
               </button>
-            ) : hasMusesTestnetSession ? (
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <button type="button" style={{ display: 'flex', alignItems: 'center' }}>
-                  Muses Testnet
-                </button>
-                <button type="button" onClick={openAccountModal}>
-                  {musesSession.account
-                    ? `${musesSession.account.slice(0, 6)}...${musesSession.account.slice(-4)}`
-                    : 'Muses account'}
-                </button>
-                <span style={{ fontSize: 12, color: '#fbbf24' }}>
-                  Testnet mode
-                </span>
-              </div>
             ) : (
               <div style={{ display: 'flex', gap: 12 }}>
-                {/* Chain Button */}
                 <button
                   onClick={openChainModal}
                   style={{ display: 'flex', alignItems: 'center' }}
                   type="button"
                 >
-                  {chain.hasIcon && (
+                  {chain?.hasIcon && (
                     <div
                       style={{
                         background: chain.iconBackground,
@@ -210,10 +152,9 @@ const formattedBalance =
                       )}
                     </div>
                   )}
-                  {chain.name}
+                  {chain?.name}
                 </button>
 
-                {/* Account Button */}
                 <button onClick={openAccountModal} type="button">
                   {ensName || account.displayName}
                   {balance
@@ -222,16 +163,6 @@ const formattedBalance =
                 </button>
               </div>
             )}
-            {hasMusesTestnetSession ? (
-              <p style={{ marginTop: 8, fontSize: 12, color: '#fbbf24' }}>
-                Muses is connected in testnet mode. EVM actions may still be unavailable here.
-              </p>
-            ) : null}
-            {musesSession && !musesSession.isTestnet && !musesSession.isEvmAccount ? (
-              <p style={{ marginTop: 8, fontSize: 12, color: '#fbbf24' }}>
-                Muses returned a non-EVM account, so Wagmi cannot mark it as connected.
-              </p>
-            ) : null}
           </div>
         )
       }}

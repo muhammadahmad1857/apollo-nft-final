@@ -1,25 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 import React from 'react'
-import { installPreferredMusesProvider } from "@/lib/wagmi/muses-provider";
-
-// Run provider selection at module-load time so it executes before
-// RainbowKit/Wagmi initialize (ensures injected Muses provider is
-
-// preferred when multiple injected providers are present).
-if (typeof window !== "undefined") {
-  try {
-    const ok = installPreferredMusesProvider();
-    console.debug("provider bootstrap: installPreferredMusesProvider ->", ok);
-    try {
-      console.debug("provider bootstrap: window.ethereum present?", !!(window as any).ethereum, (window as any).ethereum && Object.keys((window as any).ethereum).slice(0,20));
-    } catch (e) {
-      console.debug("provider bootstrap: error inspecting window.ethereum", e);
-    }
-  } catch (e) {
-    // ignore client-side detection errors
-  }
-}
+// Muses Wallet — disabled for now
+// import { installPreferredMusesProvider } from "@/lib/wagmi/muses-provider";
+// if (typeof window !== "undefined") {
+//   try {
+//     const ok = installPreferredMusesProvider();
+//     console.debug("provider bootstrap: installPreferredMusesProvider ->", ok);
+//   } catch (e) {
+//     // ignore client-side detection errors
+//   }
+// }
 import { config } from "@/lib/wagmi";
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 import { WagmiProvider } from "wagmi";
@@ -38,33 +29,6 @@ export function ThemeProvider({
 }
 
 const Provider = ({children}:{children:React.ReactNode}) => {
-  React.useEffect(() => {
-    // Retry briefly in case extension injects after initial module evaluation.
-    let tries = 0;
-    const timer = window.setInterval(() => {
-      tries += 1;
-      const ok = installPreferredMusesProvider();
-      if (ok) {
-        console.debug('provider effect: installed preferred muses provider on try', tries);
-        try {
-          const eth: any = (window as any).ethereum;
-          if (eth && typeof eth.on === 'function') {
-            ['accountsChanged', 'chainChanged', 'connect', 'disconnect', 'message'].forEach((evt) => {
-              eth.on(evt, (...args: any[]) => console.debug('window.ethereum.event', evt, args));
-            });
-          }
-        } catch (e) {
-          console.debug('provider effect: error attaching listeners', e);
-        }
-      }
-      if (ok || tries >= 20) {
-        window.clearInterval(timer);
-      }
-    }, 250);
-
-    return () => window.clearInterval(timer);
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <WagmiProvider config={config}>
