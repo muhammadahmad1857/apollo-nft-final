@@ -10,6 +10,29 @@ const MAX_DEBUG_LOGS = 150;
 const CONNECT_ACCOUNTS_TIMEOUT_MS = 60_000;
 const LOG_PREFIX = "[Apollo Wallet]";
 
+// #region agent log
+function debugIngest(
+  location: string,
+  message: string,
+  data: Record<string, unknown>,
+  hypothesisId: string
+) {
+  fetch("http://127.0.0.1:7865/ingest/1c0546f0-2a95-4ee7-8716-a30c25e6140e", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "9102ba" },
+    body: JSON.stringify({
+      sessionId: "9102ba",
+      runId: "pre-fix",
+      hypothesisId,
+      location,
+      message,
+      data,
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+}
+// #endregion
+
 /** Canonical brand icon — same in Popular (not installed) and after EIP-6963 discovery. */
 export const APOLLO_WALLET_BRAND_ICON = "/icons/apollo-wallet.png";
 
@@ -351,6 +374,123 @@ function requestProviderWithTimeout(
   ]);
 }
 
+function getProviderIdentityDiagnostic(raw: any) {
+  const win = typeof window !== "undefined" ? (window as any) : {};
+  const sdk = getApolloWalletSdk();
+  const inspection = inspectApolloProvider(raw);
+  return {
+    rawIsSdk: raw === sdk,
+    rawIsEip6963Inject: raw === eip6963InjectProvider,
+    rawIsWindowEthereum: raw === win.ethereum,
+    sdkIsWindowEthereum: sdk === win.ethereum,
+    sdkChainIdProp: sdk?.chainId ?? null,
+    rawChainIdProp: raw?.chainId ?? null,
+    expectedChainHex: APOLLO_CHAIN_HEX,
+    protoMethods: inspection?.protoMethods ?? [],
+  };
+}
+
+/** Diagnostic probe — tests whether chain switch/add unblocks eth_requestAccounts (hypothesis B). */
+async function probeChainBeforeConnect(raw: any) {
+  const identity = getProviderIdentityDiagnostic(raw);
+  // #region agent log
+  debugIngest(
+    "apollo-wallet-provider.ts:probeChainBeforeConnect:entry",
+    "provider identity at connect",
+    identity,
+    "D"
+  );
+  // #endregion
+
+  let currentChain: string | null = null;
+  try {
+    currentChain = (await raw.request({ method: "eth_chainId" })) as string;
+  } catch (err) {
+    // #region agent log
+    debugIngest(
+      "apollo-wallet-provider.ts:probeChainBeforeConnect:chainIdError",
+      "eth_chainId failed during probe",
+      { error: err instanceof Error ? err.message : String(err) },
+      "A"
+    );
+    // #endregion
+  }
+
+  const chainMismatch = currentChain != null && currentChain.toLowerCase() !== APOLLO_CHAIN_HEX.toLowerCase();
+  // #region agent log
+  debugIngest(
+    "apollo-wallet-provider.ts:probeChainBeforeConnect:chainState",
+    "chain state before connect",
+    { currentChain, expectedChain: APOLLO_CHAIN_HEX, chainMismatch },
+    "A"
+  );
+  // #endregion
+
+  if (!chainMismatch) return { currentChain, chainPrepared: true, prepMethod: "already-apollo" };
+
+  const apolloChainParams = {
+    chainId: APOLLO_CHAIN_HEX,
+    chainName: apolloMainnet.name,
+    nativeCurrency: apolloMainnet.nativeCurrency,
+    rpcUrls: [apolloMainnet.rpcUrls.default.http[0]],
+    blockExplorerUrls: [apolloMainnet.blockExplorers.default.url],
+  };
+
+  try {
+    await raw.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: APOLLO_CHAIN_HEX }],
+    });
+    const afterSwitch = (await raw.request({ method: "eth_chainId" })) as string;
+    // #region agent log
+    debugIngest(
+      "apollo-wallet-provider.ts:probeChainBeforeConnect:switchOk",
+      "wallet_switchEthereumChain succeeded",
+      { afterSwitch },
+      "B"
+    );
+    // #endregion
+    return { currentChain, chainPrepared: true, prepMethod: "switch", afterChain: afterSwitch };
+  } catch (switchErr) {
+    // #region agent log
+    debugIngest(
+      "apollo-wallet-provider.ts:probeChainBeforeConnect:switchFail",
+      "wallet_switchEthereumChain failed",
+      { error: switchErr instanceof Error ? switchErr.message : String(switchErr) },
+      "B"
+    );
+    // #endregion
+  }
+
+  try {
+    await raw.request({
+      method: "wallet_addEthereumChain",
+      params: [apolloChainParams],
+    });
+    const afterAdd = (await raw.request({ method: "eth_chainId" })) as string;
+    // #region agent log
+    debugIngest(
+      "apollo-wallet-provider.ts:probeChainBeforeConnect:addOk",
+      "wallet_addEthereumChain succeeded",
+      { afterAdd },
+      "B"
+    );
+    // #endregion
+    return { currentChain, chainPrepared: true, prepMethod: "add", afterChain: afterAdd };
+  } catch (addErr) {
+    // #region agent log
+    debugIngest(
+      "apollo-wallet-provider.ts:probeChainBeforeConnect:addFail",
+      "wallet_addEthereumChain failed",
+      { error: addErr instanceof Error ? addErr.message : String(addErr) },
+      "B"
+    );
+    // #endregion
+  }
+
+  return { currentChain, chainPrepared: false, prepMethod: "none" };
+}
+
 /**
  * Apollo Wallet (io.zeusx.apollowallet) exposes window.apolloWallet as an EIP-1193
  * provider with request() on the prototype — NOT a separate connect() SDK.
@@ -365,6 +505,9 @@ async function connectViaProviderRpc(raw: any): Promise<string[]> {
   logApollo("info", "Connect path: eth_requestAccounts → extension (skipping wallet_requestPermissions — broken in inject)");
   logApollo("info", "Provider state before connect", inspectApolloProvider(raw));
 
+  const chainProbe = await probeChainBeforeConnect(raw);
+  logApollo("info", "Chain probe before connect", chainProbe);
+
   const accountsChangedPromise = waitForNonEmptyAccountsChanged(
     raw,
     CONNECT_ACCOUNTS_TIMEOUT_MS,
@@ -373,23 +516,44 @@ async function connectViaProviderRpc(raw: any): Promise<string[]> {
 
   const rpcPromise = (async () => {
     logApollo("info", "eth_requestAccounts (extension should open approval popup NOW)");
-    const result = await requestProviderWithTimeout(
-      raw,
-      { method: "eth_requestAccounts" },
-      CONNECT_ACCOUNTS_TIMEOUT_MS
-    );
-    logApollo("info", "eth_requestAccounts response", { result });
+    try {
+      const result = await requestProviderWithTimeout(
+        raw,
+        { method: "eth_requestAccounts" },
+        CONNECT_ACCOUNTS_TIMEOUT_MS
+      );
+      logApollo("info", "eth_requestAccounts response", { result });
+      // #region agent log
+      debugIngest(
+        "apollo-wallet-provider.ts:connectViaProviderRpc:accountsOk",
+        "eth_requestAccounts succeeded",
+        { result, chainProbe },
+        "C"
+      );
+      // #endregion
 
-    const accounts = filterEvmAccounts(result);
-    if (accounts.length) return accounts;
+      const accounts = filterEvmAccounts(result);
+      if (accounts.length) return accounts;
 
-    const fromState = readAddressesFromProviderState(raw);
-    if (fromState.length) {
-      logApollo("info", "Using selectedAddress/activeAddress from provider", fromState);
-      return fromState;
+      const fromState = readAddressesFromProviderState(raw);
+      if (fromState.length) {
+        logApollo("info", "Using selectedAddress/activeAddress from provider", fromState);
+        return fromState;
+      }
+
+      throw new Error("No account returned — approve the connection in the Apollo Wallet extension popup.");
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      // #region agent log
+      debugIngest(
+        "apollo-wallet-provider.ts:connectViaProviderRpc:accountsFail",
+        "eth_requestAccounts failed",
+        { error: errMsg, chainProbe, hasRpcUrlError: errMsg.includes("rpcUrl") },
+        "C"
+      );
+      // #endregion
+      throw err;
     }
-
-    throw new Error("No account returned — approve the connection in the Apollo Wallet extension popup.");
   })();
 
   const results = await Promise.allSettled([accountsChangedPromise, rpcPromise]);
@@ -418,6 +582,17 @@ export async function connectApolloWallet(): Promise<string[]> {
 
   // Optional connect()/requestAccounts() for other Apollo builds
   const attempts = buildConnectAttempts(sdk);
+  // #region agent log
+  debugIngest(
+    "apollo-wallet-provider.ts:connectApolloWallet:attempts",
+    "SDK connect attempts available",
+    {
+      attemptLabels: attempts.map((a) => a.label),
+      protoMethods: inspectApolloProvider(sdk)?.protoMethods ?? [],
+    },
+    "E"
+  );
+  // #endregion
   for (const { label, run } of attempts) {
     logApollo("info", `→ Trying ${label}`);
     try {
