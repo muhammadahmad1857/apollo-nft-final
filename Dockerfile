@@ -12,13 +12,13 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # ─────────────────────────────
 FROM base AS deps
 
-RUN apt-get update && apt-get install -y \
-    openssl \
-    ca-certificates \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+# RUN apt-get update && apt-get install -y \
+#     openssl \
+#     ca-certificates \
+#     python3 \
+#     make \
+#     g++ \
+#     && rm -rf /var/lib/apt/lists/*
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
