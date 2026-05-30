@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { MarketplaceStreamBridge } from "@/components/marketplace-stream-bridge";
 const queryClient = new QueryClient();
 import ProvidersDebug from "@/components/ProvidersDebug";
+import { ApolloWalletSessionBridge } from "@/components/apollo-wallet-session-bridge";
 
 export function ThemeProvider({
   children,
@@ -51,6 +52,7 @@ const Provider = ({children}:{children:React.ReactNode}) => {
             disableTransitionOnChange
           >
             <MarketplaceStreamBridge />
+            <ApolloWalletSessionBridge />
             <Toaster richColors closeButton />
 
             {/* Show provider debug UI when URL contains ?showProviders=1 */}

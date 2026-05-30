@@ -903,6 +903,26 @@ const MAX_DEBUG_LOGS = 150;
 const CONNECT_ACCOUNTS_TIMEOUT_MS = 60_000;
 const LOG_PREFIX = "[Apollo Wallet]";
 let suppressEmptyAccountsChangedWarn = false;
+/** When true, eth_accounts returns [] so wagmi stays disconnected after shimDisconnect */
+let apolloSessionDisconnected = false;
+
+export function markApolloSessionDisconnected() {
+  apolloSessionDisconnected = true;
+}
+
+export function clearApolloSessionDisconnected() {
+  apolloSessionDisconnected = false;
+}
+
+export function isApolloSessionDisconnected() {
+  return apolloSessionDisconnected;
+}
+
+export function isApolloConnector(connector: { id?: string; name?: string } | undefined) {
+  if (!connector) return false;
+  const haystack = `${connector.id ?? ""} ${connector.name ?? ""}`.toLowerCase();
+  return haystack.includes("apollo") || haystack.includes("muses");
+}
 
 const QUIET_RPC_METHODS = new Set([
   "eth_chainId",
@@ -1441,11 +1461,14 @@ function wrapProvider(raw: any) {
   const resetConnectionState = (reason: string) => {
     hasConnectedAccounts = false;
     connectInProgress = false;
-    logApollo("info", `Session reset: ${reason}`);
+    if (isApolloDebugEnabled()) logApollo("info", `Session reset: ${reason}`);
   };
 
   if (typeof raw.on === "function") {
-    raw.on("disconnect", () => resetConnectionState("extension disconnect event"));
+    raw.on("disconnect", () => {
+      markApolloSessionDisconnected();
+      resetConnectionState("extension disconnect event");
+    });
   }
 
   const request = async ({ method, params }: { method: string; params?: any[] }) => {
@@ -1453,7 +1476,15 @@ function wrapProvider(raw: any) {
       logApollo("info", `RPC → ${method}`, { via: describeProviderSource(raw) });
     }
 
-    if (method === "eth_requestAccounts") connectInProgress = true;
+    // Critical: wagmi polls eth_accounts after disconnect — return [] or it instantly reconnects
+    if (method === "eth_accounts" && apolloSessionDisconnected) {
+      return [];
+    }
+
+    if (method === "eth_requestAccounts") {
+      clearApolloSessionDisconnected();
+      connectInProgress = true;
+    }
 
     try {
       if (method === "wallet_requestPermissions") {
@@ -1507,9 +1538,22 @@ function wrapProvider(raw: any) {
       }
 
       if (method === "wallet_revokePermissions") {
+        markApolloSessionDisconnected();
         resetConnectionState("wallet_revokePermissions");
         const sdk = getApolloWalletSdk();
-        try { if (typeof sdk?.disconnect === "function") await sdk.disconnect(); } catch { /* best effort */ }
+        try {
+          if (typeof sdk?.disconnect === "function") await sdk.disconnect();
+        } catch {
+          /* best effort */
+        }
+        try {
+          if (typeof raw.request === "function") {
+            return await raw.request({ method, params });
+          }
+        } catch {
+          /* extension may not support revoke */
+        }
+        return null;
       }
 
       if (typeof raw.request !== "function") throw new Error(`Apollo Wallet does not support ${method}`);
@@ -1538,7 +1582,12 @@ function wrapProvider(raw: any) {
                 if (!suppressEmptyAccountsChangedWarn) logApollo("warn", "Ignored empty accountsChanged during connect");
                 return;
               }
-              if (hasConnectedAccounts) { resetConnectionState("accountsChanged cleared"); listener(accounts); return; }
+              if (hasConnectedAccounts) {
+                markApolloSessionDisconnected();
+                resetConnectionState("accountsChanged cleared");
+                listener(accounts);
+                return;
+              }
               return;
             }
             hasConnectedAccounts = true;
@@ -1563,7 +1612,45 @@ function wrapProvider(raw: any) {
     listenerMap.get(event)?.delete(listener);
   };
 
-  const wrapped = { ...raw, request, on, removeListener, [APOLLO_WRAPPED]: true, [APOLLO_RAW_PROVIDER]: raw };
+  const disconnect = async () => {
+    markApolloSessionDisconnected();
+    hasConnectedAccounts = false;
+    connectInProgress = false;
+
+    const sdk = getApolloWalletSdk();
+    for (const method of ["disconnect", "logout", "clearSession"] as const) {
+      try {
+        if (typeof sdk?.[method] === "function") await sdk[method]();
+      } catch {
+        /* best effort */
+      }
+    }
+
+    try {
+      if (typeof raw.disconnect === "function") await raw.disconnect();
+    } catch {
+      /* best effort */
+    }
+
+    // Notify wagmi listeners that accounts are cleared
+    if (typeof raw.emit === "function") {
+      try {
+        raw.emit("accountsChanged", []);
+      } catch {
+        /* ignore */
+      }
+    }
+  };
+
+  const wrapped = {
+    ...raw,
+    request,
+    on,
+    removeListener,
+    disconnect,
+    [APOLLO_WRAPPED]: true,
+    [APOLLO_RAW_PROVIDER]: raw,
+  };
   wrappedProviderCache.set(raw, wrapped);
   return wrapped;
 }
@@ -1661,8 +1748,27 @@ export function getApolloWalletProvider() {
 
 /** Fully disconnect from Apollo Wallet — revokes site permissions and clears SDK session */
 export async function disconnectApolloWallet() {
+  // Must happen synchronously before wagmi polls eth_accounts again
+  markApolloSessionDisconnected();
+
   const provider = getApolloWalletProvider();
   const sdk = getApolloWalletSdk();
+  const raw = eip6963InjectProvider ?? resolveApolloConnectProvider();
+
+  for (const method of ["disconnect", "logout", "clearSession", "removeConnectedSite"] as const) {
+    try {
+      const fn = sdk?.[method] ?? raw?.[method];
+      if (typeof fn === "function") await fn.call(sdk ?? raw);
+    } catch {
+      /* best effort */
+    }
+  }
+
+  try {
+    if (typeof raw?.emit === "function") raw.emit("accountsChanged", []);
+  } catch {
+    /* ignore */
+  }
 
   try {
     if (provider?.request) {
@@ -1672,15 +1778,15 @@ export async function disconnectApolloWallet() {
       });
     }
   } catch {
-    // Extension may not support revoke — continue with SDK disconnect
+    /* Extension may not support revoke — session flag still blocks eth_accounts */
   }
 
   try {
-    if (typeof sdk?.disconnect === "function") {
-      await sdk.disconnect();
+    if (typeof provider?.disconnect === "function") {
+      await provider.disconnect();
     }
   } catch {
-    // best effort
+    /* best effort */
   }
 }
 

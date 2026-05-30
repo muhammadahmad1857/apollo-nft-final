@@ -12,6 +12,7 @@ import {
   getApolloWalletProvider,
   getApolloWalletRdns,
   isApolloWalletInstalled,
+  markApolloSessionDisconnected,
 } from "./apollo-wallet-provider";
 import {
   coinbaseWallet,
@@ -75,13 +76,14 @@ const apolloWallet = () => ({
             provider: provider ?? undefined,
           };
         },
-        shimDisconnect: true,
+        shimDisconnect: false,
       })(config);
 
       return {
         ...connector,
         ...walletDetails,
         async disconnect() {
+          markApolloSessionDisconnected();
           try {
             await disconnectApolloWallet();
           } catch {
@@ -99,7 +101,8 @@ export const config = getDefaultConfig({
   projectId,
   chains: [apolloMainnet],
   ssr: false,
-  multiInjectedProviderDiscovery: true,
+  // Avoid duplicate EIP-6963 connectors that bypass our Apollo disconnect handler
+  multiInjectedProviderDiscovery: false,
   wallets: [
     {
       groupName: "Popular",
