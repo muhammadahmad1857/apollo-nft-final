@@ -326,9 +326,8 @@ async function connectViaProviderRpc(raw: any): Promise<string[]> {
   logApollo("info", "Connect path: provider.request() → extension background/popup");
   logApollo("info", "Provider state before connect", inspectApolloProvider(raw));
 
-  const eventTarget = raw._events ? raw : raw;
   const accountsChangedPromise = waitForNonEmptyAccountsChanged(
-    eventTarget,
+    raw,
     CONNECT_ACCOUNTS_TIMEOUT_MS,
     "accountsChanged"
   ).catch(() => [] as string[]);
