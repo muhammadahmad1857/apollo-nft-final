@@ -5,6 +5,7 @@ import { apolloMainnet } from "./apollo-chain";
 const APOLLO_CHAIN_HEX = `0x${apolloMainnet.id.toString(16)}`;
 const APOLLO_WRAPPED = Symbol.for("apollo.wallet.wrapped");
 const MAX_DEBUG_LOGS = 150;
+const CONNECT_ACCOUNTS_TIMEOUT_MS = 60_000;
 
 /** Canonical brand icon — same in Popular (not installed) and after EIP-6963 discovery. */
 export const APOLLO_WALLET_BRAND_ICON = "/icons/apollo-wallet.png";
@@ -138,25 +139,104 @@ function getUnwrappedProvider(provider: any) {
   return provider?.[APOLLO_RAW_PROVIDER] ?? provider;
 }
 
+function isEthAddress(value: unknown) {
+  return typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value);
+}
+
+function filterEvmAccounts(value: any) {
+  return normalizeAccounts(value).filter(isEthAddress);
+}
+
+function waitForNonEmptyAccountsChanged(raw: any, timeoutMs: number) {
+  return new Promise<string[]>((resolve, reject) => {
+    if (typeof raw.on !== "function") {
+      reject(new Error("Apollo Wallet does not emit accountsChanged"));
+      return;
+    }
+
+    let settled = false;
+
+    const cleanup = () => {
+      window.clearTimeout(timer);
+      if (typeof raw.removeListener === "function") {
+        raw.removeListener("accountsChanged", onAccountsChanged);
+      }
+    };
+
+    const onAccountsChanged = (accounts: unknown) => {
+      const evm = filterEvmAccounts(accounts);
+      if (!evm.length) return;
+      if (settled) return;
+      settled = true;
+      cleanup();
+      pushApolloWalletDebugLog("connect resolved via accountsChanged", { accounts: evm });
+      resolve(evm);
+    };
+
+    const timer = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error("Apollo Wallet connection timed out waiting for account approval."));
+    }, timeoutMs);
+
+    raw.on("accountsChanged", onAccountsChanged);
+  });
+}
+
+/**
+ * Apollo/Muses wallets often resolve connect() or requestAccounts() while
+ * eth_requestAccounts hangs until the user approves in the extension popup.
+ */
 async function requestAccountsFromProvider(raw: any, params?: any[]) {
-  if (typeof raw.request === "function") {
-    const viaEth = normalizeAccounts(
-      await raw.request({ method: "eth_requestAccounts", params })
-    );
-    if (viaEth.length) return viaEth;
+  const accountsChangedPromise = waitForNonEmptyAccountsChanged(raw, CONNECT_ACCOUNTS_TIMEOUT_MS);
+
+  const promptPromise = (async () => {
+    if (typeof raw.connect === "function") {
+      const accounts = filterEvmAccounts(await raw.connect());
+      if (accounts.length) {
+        pushApolloWalletDebugLog("connect() returned accounts", { accounts });
+        return accounts;
+      }
+    }
+
+    if (typeof raw.requestAccounts === "function") {
+      const accounts = filterEvmAccounts(await raw.requestAccounts());
+      if (accounts.length) {
+        pushApolloWalletDebugLog("requestAccounts() returned accounts", { accounts });
+        return accounts;
+      }
+    }
+
+    if (typeof raw.enable === "function") {
+      const accounts = filterEvmAccounts(await raw.enable());
+      if (accounts.length) return accounts;
+    }
+
+    if (typeof raw.request === "function") {
+      const accounts = filterEvmAccounts(
+        await raw.request({ method: "eth_requestAccounts", params })
+      );
+      if (accounts.length) {
+        pushApolloWalletDebugLog("eth_requestAccounts returned accounts", { accounts });
+        return accounts;
+      }
+    }
+
+    throw new Error("Apollo Wallet returned no accounts. Approve the connection in the extension.");
+  })();
+
+  try {
+    return await Promise.race([accountsChangedPromise, promptPromise]);
+  } catch (err) {
+    const settled = await Promise.allSettled([accountsChangedPromise, promptPromise]);
+    for (const result of settled) {
+      if (result.status === "fulfilled" && result.value.length > 0) {
+        return result.value;
+      }
+    }
+    throw err instanceof Error ? err : new Error(String(err));
   }
-  if (typeof raw.requestAccounts === "function") {
-    const viaNative = normalizeAccounts(await raw.requestAccounts());
-    if (viaNative.length) return viaNative;
-  }
-  if (typeof raw.connect === "function") {
-    const viaConnect = normalizeAccounts(await raw.connect());
-    if (viaConnect.length) return viaConnect;
-  }
-  if (typeof raw.enable === "function") {
-    return normalizeAccounts(await raw.enable());
-  }
-  return [];
 }
 
 /**
@@ -172,24 +252,28 @@ function wrapProvider(raw: any) {
   let connectInProgress = false;
   const listenerMap = new Map<string, Map<(...args: any[]) => void, (...args: any[]) => void>>();
 
+  const notifyConnected = async (accounts: string[]) => {
+    if (!accounts.length || typeof raw.request !== "function") return;
+    const chainId = await raw.request({ method: "eth_chainId" });
+    if (typeof raw.emit === "function") {
+      raw.emit("accountsChanged", accounts);
+      raw.emit("connect", { chainId });
+    }
+  };
+
   const request = async ({ method, params }: { method: string; params?: any[] }) => {
     pushApolloWalletDebugLog(`RPC → ${method}`, { params });
 
     if (method === "eth_requestAccounts") connectInProgress = true;
 
     try {
-      if (method === "wallet_requestPermissions") {
-        // wagmi calls this before eth_requestAccounts when shimDisconnect is on.
-        // Apollo Wallet handles authorization via eth_requestAccounts; an extra
-        // permissions prompt can prevent the extension popup from opening.
-        pushApolloWalletDebugLog("skip wallet_requestPermissions (Apollo uses eth_requestAccounts)");
-        return [{ caveats: [{ value: [] }] }];
-      }
-
       if (method === "eth_requestAccounts") {
         const accounts = await requestAccountsFromProvider(raw, params);
         pushApolloWalletDebugLog(`RPC ← ${method}`, { result: accounts });
-        if (accounts.length > 0) hasConnectedAccounts = true;
+        if (accounts.length > 0) {
+          hasConnectedAccounts = true;
+          await notifyConnected(accounts);
+        }
         return accounts;
       }
 
