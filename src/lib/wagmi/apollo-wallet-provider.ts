@@ -7,7 +7,7 @@ const APOLLO_WRAPPED = Symbol.for("apollo.wallet.wrapped");
 const MAX_DEBUG_LOGS = 150;
 
 /** Canonical brand icon — same in Popular (not installed) and after EIP-6963 discovery. */
-export const APOLLO_WALLET_BRAND_ICON = "/icons/apollo-wallet.svg";
+export const APOLLO_WALLET_BRAND_ICON = "/icons/apollo-wallet.png";
 
 type ApolloDebugLogLevel = "info" | "warn" | "error";
 
