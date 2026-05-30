@@ -74,14 +74,10 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
     storeFingerprintForResuming: false,
   };
 
-  if (presigned) {
-    // Presigned URL is the upload resource — auth is in the query string
-    uploadOptions.uploadUrl = options.endpoint;
-  } else {
-    uploadOptions.endpoint = options.endpoint;
-    if (options.token) {
-      uploadOptions.headers = { Authorization: `Bearer ${options.token}` };
-    }
+  uploadOptions.endpoint = options.endpoint;
+  // Presigned URLs embed auth in query params — Bearer header breaks or duplicates auth
+  if (options.token && !presigned) {
+    uploadOptions.headers = { Authorization: `Bearer ${options.token}` };
   }
 
   const upload = new tus.Upload(options.file, uploadOptions);
