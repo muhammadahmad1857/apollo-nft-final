@@ -29,8 +29,8 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
     uploadSize: options.file.size,
     // Signed URL mode needs no header; legacy proxy mode also omits client JWT
     headers: options.token ? { Authorization: `Bearer ${options.token}` } : {},
-    // Direct Pinata uploads can use 50 MB chunks; proxy must stay under Vercel's 4.5 MB limit
-    chunkSize: viaProxy ? 2 * 1024 * 1024 : 50 * 1024 * 1024,
+    // Pinata requires chunk size strictly under 50 MB; proxy stays under Vercel's 4.5 MB limit
+    chunkSize: viaProxy ? 2 * 1024 * 1024 : 49 * 1024 * 1024,
     retryDelays: [0, 1000, 3000, 5000, 10000],
     metadata: {
       filename: options.file.name,

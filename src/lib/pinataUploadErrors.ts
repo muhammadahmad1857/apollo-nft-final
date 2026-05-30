@@ -3,7 +3,7 @@ export function formatPinataUploadError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
 
   if (message.includes("Upload-Length exceeds maximum upload size")) {
-    return "Pinata rejected this upload size. Ensure you have enough storage quota left on your Pinata account and that the file is under 25 GB.";
+    return "Pinata rejected this upload. Check that your Pinata account has enough remaining storage for the full file (Dashboard → Usage), and that the file is under 25 GB. Windows/macOS may show a rounded size (e.g. 11 GB) while the actual byte count is higher (~12 GB).";
   }
 
   if (message.includes("413")) {
