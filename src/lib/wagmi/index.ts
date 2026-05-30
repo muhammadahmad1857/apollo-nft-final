@@ -6,11 +6,11 @@ import { injected } from "wagmi/connectors";
 import {
   APOLLO_WALLET_CHROME_STORE_URL,
   APOLLO_WALLET_WEBSITE_URL,
+  disconnectApolloWallet,
   getApolloWalletIcon,
   getApolloWalletName,
   getApolloWalletProvider,
   getApolloWalletRdns,
-  getApolloWalletSdk,
   isApolloWalletInstalled,
 } from "./apollo-wallet-provider";
 import {
@@ -82,13 +82,10 @@ const apolloWallet = () => ({
         ...connector,
         ...walletDetails,
         async disconnect() {
-          const sdk = getApolloWalletSdk();
           try {
-            if (typeof sdk?.disconnect === "function") {
-              await sdk.disconnect();
-            }
+            await disconnectApolloWallet();
           } catch {
-            // SDK disconnect is best-effort; wagmi disconnect still runs below.
+            // Apollo disconnect is best-effort; wagmi disconnect still runs below.
           }
           return connector.disconnect();
         },

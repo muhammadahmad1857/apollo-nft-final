@@ -14,7 +14,6 @@ import { formatUnits } from 'viem'
 
 export const CustomConnectButton = () => {
   const { address, isConnected, isConnecting, isReconnecting } = useAccount()
-  console.debug('useAccount hook ->', { address, isConnected, isConnecting, isReconnecting });
 
   const { data: ensName } = useEnsName({
     address,
@@ -79,7 +78,6 @@ export const CustomConnectButton = () => {
         authenticationStatus,
         mounted,
       }) => {
-        console.debug('ConnectButton.Custom render ->', { account, chain, authenticationStatus, mounted });
         const ready = mounted && authenticationStatus !== 'loading'
         const connected =
           ready &&
@@ -101,22 +99,7 @@ export const CustomConnectButton = () => {
           >
             {!connected ? (
               <button
-                onClick={() => {
-                  try {
-                    console.debug('ConnectButton: openConnectModal clicked', {
-                      account,
-                      chain,
-                      windowEthereum: typeof window !== 'undefined' ? (window as any).ethereum : undefined,
-                    })
-                  } catch (e) {
-                    console.debug('ConnectButton: error inspecting before open', e)
-                  }
-                  try {
-                    openConnectModal()
-                  } catch (e) {
-                    console.debug('ConnectButton: openConnectModal threw', e)
-                  }
-                }}
+                onClick={openConnectModal}
                 type="button"
               >
                 Connect Wallet
