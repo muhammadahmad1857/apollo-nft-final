@@ -320,6 +320,8 @@ function findRawApolloProvider() {
 }
 
 export function getApolloWalletProvider() {
+  if (typeof window === "undefined") return undefined;
+
   requestApolloWalletProviders();
   return wrapProvider(findRawApolloProvider());
 }

@@ -24,8 +24,8 @@ const apolloWallet = () => ({
   iconUrl: async () =>
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%237c3aed'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect rx='24' width='96' height='96' fill='url(%23g)'/%3E%3Cpath d='M48 22l18 10v22L48 64 30 54V32z' fill='white'/%3E%3C/svg%3E",
   iconBackground: "#111827",
-  // Always show Apollo Wallet in the list — detection runs again at connect time
-  installed: true,
+  // Always show on client; skip SSR so build/prerender never touches the extension
+  installed: typeof window !== "undefined" ? true : undefined,
   downloadUrls: {
     browserExtension: APOLLO_WALLET_CHROME_STORE_URL,
     chrome: APOLLO_WALLET_CHROME_STORE_URL,
@@ -34,12 +34,11 @@ const apolloWallet = () => ({
     return createConnector((config) => ({
       ...injected({
         target: () => {
+          if (typeof window === "undefined") return undefined;
+
           const provider = getApolloWalletProvider();
-          if (!provider) {
-            throw new Error(
-              "Apollo Wallet extension not detected. Install it from the Chrome Web Store and refresh this page."
-            );
-          }
+          if (!provider) return undefined;
+
           return {
             id: "apollo",
             name: "Apollo Wallet",
