@@ -61,19 +61,6 @@
     "viem": "^2.44.4",
     "wagmi": "^3.4.1"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/engines",
-      "prisma",
-      "sharp",
-      "ffmpeg-static",
-      "bufferutil",
-      "core-js",
-      "esbuild",
-      "unrs-resolver",
-      "utf-8-validate"
-    ]
-  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/fluent-ffmpeg": "^2.1.28",
