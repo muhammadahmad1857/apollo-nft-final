@@ -57,8 +57,8 @@ export const config = getDefaultConfig({
   projectId,
   chains: [apolloMainnet],
   ssr: false,
-  // Show other installed wallets again; our Apollo connector uses matching rdns + adapter
-  multiInjectedProviderDiscovery: true,
+  // Raw EIP-6963 Apollo entry bypasses our adapter and hangs — use our connector only
+  multiInjectedProviderDiscovery: false,
   wallets: [
     {
       groupName: "Popular",
