@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "pnpm dlx prisma generate && next build",
-    "start": "next start",
+    "build": "pnpm dlx prisma generate && next build --port 4000",
+    "start": "next start --port 4000",
     "lint": "eslint"
   },
   "dependencies": {
