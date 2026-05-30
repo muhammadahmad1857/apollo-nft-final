@@ -38,7 +38,6 @@ const apolloWallet = () => ({
   downloadUrls: {
     browserExtension: APOLLO_WALLET_CHROME_STORE_URL,
     chrome: APOLLO_WALLET_CHROME_STORE_URL,
-    desktop: APOLLO_WALLET_WEBSITE_URL,
   },
   extension: {
     instructions: {
