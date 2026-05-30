@@ -12,6 +12,7 @@ import React from 'react'
 //   }
 // }
 import { config } from "@/lib/wagmi";
+import { initApolloWalletDiscovery } from "@/lib/wagmi/apollo-wallet-provider";
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 import { WagmiProvider } from "wagmi";
 import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
@@ -29,6 +30,10 @@ export function ThemeProvider({
 }
 
 const Provider = ({children}:{children:React.ReactNode}) => {
+  React.useEffect(() => {
+    return initApolloWalletDiscovery();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <WagmiProvider config={config}>

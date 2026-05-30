@@ -4,6 +4,9 @@ import { apolloMainnet } from "./apollo-chain";
 
 const APOLLO_CHAIN_HEX = `0x${apolloMainnet.id.toString(16)}`;
 
+export const APOLLO_WALLET_CHROME_STORE_URL =
+  "https://chromewebstore.google.com/detail/apollo-wallet/mnpnahmgchhkjphkkemhbnjedajbcbll";
+
 const APOLLO_PROVIDER_FLAGS = [
   "isApolloWallet",
   "isApollo",
@@ -15,31 +18,57 @@ const APOLLO_PROVIDER_FLAGS = [
 let eip6963ApolloProvider: any;
 let eip6963ApolloRdns: string | undefined;
 
+function isApolloAnnouncement(info: { name?: string; rdns?: string } | undefined) {
+  const name = String(info?.name ?? "").toLowerCase();
+  const rdns = String(info?.rdns ?? "").toLowerCase();
+  return (
+    name.includes("apollo") ||
+    name.includes("muses") ||
+    rdns.includes("apollo") ||
+    rdns.includes("muses")
+  );
+}
+
+function rememberAnnouncement(info: any, provider: any) {
+  if (!isApolloAnnouncement(info) || !provider) return;
+  eip6963ApolloProvider = provider;
+  if (info?.rdns) eip6963ApolloRdns = info.rdns;
+}
+
 if (typeof window !== "undefined") {
-  const onAnnounce = (event: Event) => {
+  window.addEventListener("eip6963:announceProvider", (event: Event) => {
     const detail = (event as CustomEvent).detail;
-    const info = detail?.info;
-    const provider = detail?.provider;
-    const name = String(info?.name ?? "").toLowerCase();
-    const rdns = String(info?.rdns ?? "").toLowerCase();
+    rememberAnnouncement(detail?.info, detail?.provider);
+  });
+}
 
-    if (
-      name.includes("apollo") ||
-      name.includes("muses") ||
-      rdns.includes("apollo") ||
-      rdns.includes("muses")
-    ) {
-      eip6963ApolloProvider = provider;
-      eip6963ApolloRdns = info?.rdns;
-    }
-  };
-
-  window.addEventListener("eip6963:announceProvider", onAnnounce);
+/** Ask installed extensions to announce themselves (EIP-6963). */
+export function requestApolloWalletProviders() {
+  if (typeof window === "undefined") return;
   window.dispatchEvent(new Event("eip6963:requestProvider"));
 }
 
+/**
+ * Extensions often inject after React hydrates — poll briefly so RainbowKit
+ * can detect Apollo Wallet as installed.
+ */
+export function initApolloWalletDiscovery() {
+  if (typeof window === "undefined") return () => undefined;
+
+  requestApolloWalletProviders();
+
+  let tries = 0;
+  const timer = window.setInterval(() => {
+    tries += 1;
+    requestApolloWalletProviders();
+    if (tries >= 24) window.clearInterval(timer);
+  }, 250);
+
+  return () => window.clearInterval(timer);
+}
+
 export function getApolloWalletRdns() {
-  return eip6963ApolloRdns ?? "io.apollo.wallet";
+  return eip6963ApolloRdns ?? "io.apollowallet";
 }
 
 function toHexChainId(chainId: any) {
@@ -77,7 +106,21 @@ function looksLikeProvider(value: any) {
 
 function isApolloLikeProvider(provider: any) {
   if (!provider || typeof provider !== "object") return false;
-  return APOLLO_PROVIDER_FLAGS.some((flag) => Boolean(provider[flag]));
+  if (APOLLO_PROVIDER_FLAGS.some((flag) => Boolean(provider[flag]))) return true;
+  const label = String(provider?.providerInfo?.name ?? provider?.name ?? "").toLowerCase();
+  return label.includes("apollo") || label.includes("muses");
+}
+
+function collectInjectedProviders(win: any) {
+  const providers: any[] = [];
+
+  if (Array.isArray(win.ethereum?.providers)) {
+    providers.push(...win.ethereum.providers);
+  } else if (win.ethereum) {
+    providers.push(win.ethereum);
+  }
+
+  return providers;
 }
 
 async function resolveChainId(raw: any) {
@@ -238,24 +281,21 @@ function pickBestProvider(candidates: any[]) {
   return valid[0];
 }
 
-export function getApolloWalletProvider() {
+function findRawApolloProvider() {
   if (typeof window === "undefined") return undefined;
 
   const win = window as any;
   const apollo = win.apollo;
+  const apolloWallet = win.apolloWallet;
   const muses = win.muses;
 
-  const fromProvidersArray =
-    win.ethereum?.providers && Array.isArray(win.ethereum.providers)
-      ? win.ethereum.providers.find(
-          (provider: any) =>
-            isApolloLikeProvider(provider) ||
-            String(provider?.name ?? "").toLowerCase().includes("apollo")
-        )
-      : undefined;
+  const fromInjected = collectInjectedProviders(win).find(isApolloLikeProvider);
 
   const candidates = [
     eip6963ApolloProvider,
+    apolloWallet?.ethereum,
+    apolloWallet?.provider,
+    apolloWallet,
     apollo?.ethereum,
     apollo?.evm,
     apollo?.provider,
@@ -272,14 +312,30 @@ export function getApolloWalletProvider() {
     muses?.providers?.evm,
     muses?.wallet,
     muses,
-    fromProvidersArray,
+    fromInjected,
     isApolloLikeProvider(win.ethereum) ? win.ethereum : undefined,
   ];
 
-  const raw = pickBestProvider(candidates);
-  return wrapProvider(raw);
+  return pickBestProvider(candidates);
+}
+
+export function getApolloWalletProvider() {
+  requestApolloWalletProviders();
+  return wrapProvider(findRawApolloProvider());
 }
 
 export function isApolloWalletInstalled() {
-  return typeof window !== "undefined" && !!getApolloWalletProvider();
+  return typeof window !== "undefined" && !!findRawApolloProvider();
+}
+
+export async function waitForApolloWalletProvider(timeoutMs = 6000) {
+  const started = Date.now();
+
+  while (Date.now() - started < timeoutMs) {
+    const provider = getApolloWalletProvider();
+    if (provider) return provider;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+
+  return undefined;
 }
