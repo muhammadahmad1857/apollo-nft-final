@@ -8,6 +8,8 @@ RUN apk add --no-cache libc6-compat openssl python3 make g++
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 RUN npm install -g pnpm
+RUN pnpm config set ignore-scripts false
+
 RUN pnpm install --frozen-lockfile
 
 COPY . .
