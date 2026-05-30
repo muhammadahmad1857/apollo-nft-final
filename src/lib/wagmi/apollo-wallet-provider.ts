@@ -4,6 +4,7 @@ import { apolloMainnet } from "./apollo-chain";
 
 const APOLLO_CHAIN_HEX = `0x${apolloMainnet.id.toString(16)}`;
 const APOLLO_WRAPPED = Symbol.for("apollo.wallet.wrapped");
+const APOLLO_RAW_PROVIDER = Symbol.for("apollo.wallet.raw");
 const MAX_DEBUG_LOGS = 150;
 const CONNECT_ACCOUNTS_TIMEOUT_MS = 60_000;
 
@@ -66,6 +67,8 @@ export function clearApolloWalletDebugLogs() {
 }
 
 export function getApolloWalletDebugState() {
+  const sdk = getApolloWalletSdk();
+  const provider = resolveApolloConnectProvider();
   return {
     rdns: getApolloWalletRdns(),
     name: getApolloWalletName(),
@@ -73,6 +76,14 @@ export function getApolloWalletDebugState() {
     installed: isApolloWalletInstalled(),
     providerWrapped: Boolean(eip6963ApolloProvider && isWrapped(eip6963ApolloProvider)),
     expectedChainHex: APOLLO_CHAIN_HEX,
+    sdk: sdk
+      ? {
+          keys: Object.keys(sdk).slice(0, 24),
+          hasConnect: typeof sdk.connect === "function",
+          hasRequestAccounts: typeof sdk.requestAccounts === "function",
+        }
+      : null,
+    connectProviderSource: describeProviderSource(provider),
   };
 }
 
@@ -90,6 +101,7 @@ const APOLLO_PROVIDER_FLAGS = [
 ] as const;
 
 let eip6963ApolloProvider: any;
+let eip6963InjectProvider: any;
 let eip6963ApolloRdns: string | undefined;
 let eip6963ApolloName: string | undefined;
 
@@ -115,11 +127,18 @@ function isWrapped(provider: any) {
   return Boolean(provider?.[APOLLO_WRAPPED]);
 }
 
+function getUnwrappedProvider(provider: any) {
+  return provider?.[APOLLO_RAW_PROVIDER] ?? provider;
+}
+
 function normalizeAccounts(value: any) {
   if (value == null) return [];
   if (Array.isArray(value)) return value;
   if (typeof value === "string" && value.length > 0) return [value];
   if (value && Array.isArray(value.accounts)) return value.accounts;
+  if (value && typeof value === "object" && typeof value.address === "string") {
+    return [value.address];
+  }
   return [];
 }
 
@@ -133,18 +152,117 @@ function looksLikeProvider(value: any) {
   );
 }
 
-const APOLLO_RAW_PROVIDER = Symbol.for("apollo.wallet.raw");
-
-function getUnwrappedProvider(provider: any) {
-  return provider?.[APOLLO_RAW_PROVIDER] ?? provider;
-}
-
 function isEthAddress(value: unknown) {
   return typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value);
 }
 
 function filterEvmAccounts(value: any) {
   return normalizeAccounts(value).filter(isEthAddress);
+}
+
+/** window.apolloWallet SDK — inject.js logs show this is separate from the passive inject RPC stub. */
+export function getApolloWalletSdk() {
+  if (typeof window === "undefined") return undefined;
+  const win = window as any;
+  return win.apolloWallet ?? win.apollo ?? win.muses;
+}
+
+function describeProviderSource(provider: any) {
+  if (!provider || typeof window === "undefined") return "none";
+  const win = window as any;
+  const sdk = getApolloWalletSdk();
+  if (provider === sdk) return "window.apolloWallet (sdk)";
+  if (provider === sdk?.ethereum) return "window.apolloWallet.ethereum";
+  if (provider === sdk?.provider) return "window.apolloWallet.provider";
+  if (provider === sdk?.evm) return "window.apolloWallet.evm";
+  if (provider === eip6963InjectProvider) return "eip6963 inject stub";
+  if (provider === win.ethereum) return "window.ethereum";
+  return "other";
+}
+
+/**
+ * The EIP-6963 / window.ethereum inject handles read-only RPC (chainId, eth_accounts)
+ * but Apollo opens the approval UI via window.apolloWallet.connect().
+ */
+export function resolveApolloConnectProvider() {
+  if (typeof window === "undefined") return undefined;
+
+  const sdk = getApolloWalletSdk();
+  if (sdk) {
+    const sdkCandidates = [sdk.ethereum, sdk.provider, sdk.evm, sdk].filter(Boolean);
+    const sdkProvider = sdkCandidates.find(looksLikeProvider);
+    if (sdkProvider) return sdkProvider;
+  }
+
+  if (eip6963InjectProvider && looksLikeProvider(eip6963InjectProvider)) {
+    return eip6963InjectProvider;
+  }
+
+  if (eip6963ApolloProvider) {
+    return getUnwrappedProvider(eip6963ApolloProvider);
+  }
+
+  return findFlaggedInjectedApolloProvider();
+}
+
+async function trySdkMethod(label: string, fn: () => Promise<unknown>) {
+  try {
+    pushApolloWalletDebugLog(`SDK → ${label}`);
+    const result = await fn();
+    const accounts = filterEvmAccounts(result);
+    pushApolloWalletDebugLog(`SDK ← ${label}`, { result, accounts });
+    return accounts;
+  } catch (err) {
+    pushApolloWalletDebugLog(
+      `SDK ✗ ${label}`,
+      { error: err instanceof Error ? err.message : String(err) },
+      "warn"
+    );
+    return [];
+  }
+}
+
+/**
+ * Opens the Apollo approval popup via the SDK — NOT via eth_requestAccounts on the inject stub.
+ */
+async function requestAccountsViaApolloSdk() {
+  const sdk = getApolloWalletSdk();
+  if (!sdk || typeof sdk !== "object") return [];
+
+  pushApolloWalletDebugLog("requestAccountsViaApolloSdk", {
+    keys: Object.keys(sdk).slice(0, 24),
+    hasConnect: typeof sdk.connect === "function",
+    hasRequestAccounts: typeof sdk.requestAccounts === "function",
+    hasEnable: typeof sdk.enable === "function",
+  });
+
+  if (typeof sdk.connect === "function") {
+    const accounts = await trySdkMethod("apolloWallet.connect()", () => sdk.connect());
+    if (accounts.length) return accounts;
+
+    const withChain = await trySdkMethod("apolloWallet.connect({ chainId })", () =>
+      sdk.connect({ chainId: apolloMainnet.id })
+    );
+    if (withChain.length) return withChain;
+  }
+
+  if (typeof sdk.requestAccounts === "function") {
+    const accounts = await trySdkMethod("apolloWallet.requestAccounts()", () =>
+      sdk.requestAccounts()
+    );
+    if (accounts.length) return accounts;
+  }
+
+  if (typeof sdk.enable === "function") {
+    const accounts = await trySdkMethod("apolloWallet.enable()", () => sdk.enable());
+    if (accounts.length) return accounts;
+  }
+
+  if (typeof sdk.openConnectModal === "function") {
+    await trySdkMethod("apolloWallet.openConnectModal()", () => sdk.openConnectModal());
+  }
+
+  return [];
 }
 
 function waitForNonEmptyAccountsChanged(raw: any, timeoutMs: number) {
@@ -184,18 +302,22 @@ function waitForNonEmptyAccountsChanged(raw: any, timeoutMs: number) {
   });
 }
 
-/**
- * Apollo/Muses wallets often resolve connect() or requestAccounts() while
- * eth_requestAccounts hangs until the user approves in the extension popup.
- */
 async function requestAccountsFromProvider(raw: any, params?: any[]) {
-  const accountsChangedPromise = waitForNonEmptyAccountsChanged(raw, CONNECT_ACCOUNTS_TIMEOUT_MS);
+  const eventTargets = [raw, getApolloWalletSdk()].filter(Boolean);
+  const accountsChangedPromise = Promise.race(
+    eventTargets.map((target) => waitForNonEmptyAccountsChanged(target, CONNECT_ACCOUNTS_TIMEOUT_MS))
+  );
 
   const promptPromise = (async () => {
+    // 1. SDK popup path — must run before eth_requestAccounts on inject stub
+    const sdkAccounts = await requestAccountsViaApolloSdk();
+    if (sdkAccounts.length) return sdkAccounts;
+
+    // 2. Provider-native methods on the connect provider (not inject stub)
     if (typeof raw.connect === "function") {
       const accounts = filterEvmAccounts(await raw.connect());
       if (accounts.length) {
-        pushApolloWalletDebugLog("connect() returned accounts", { accounts });
+        pushApolloWalletDebugLog("provider.connect() returned accounts", { accounts });
         return accounts;
       }
     }
@@ -203,7 +325,7 @@ async function requestAccountsFromProvider(raw: any, params?: any[]) {
     if (typeof raw.requestAccounts === "function") {
       const accounts = filterEvmAccounts(await raw.requestAccounts());
       if (accounts.length) {
-        pushApolloWalletDebugLog("requestAccounts() returned accounts", { accounts });
+        pushApolloWalletDebugLog("provider.requestAccounts() returned accounts", { accounts });
         return accounts;
       }
     }
@@ -213,7 +335,13 @@ async function requestAccountsFromProvider(raw: any, params?: any[]) {
       if (accounts.length) return accounts;
     }
 
+    // 3. Last resort — eth_requestAccounts on inject (does NOT open popup on Apollo)
     if (typeof raw.request === "function") {
+      pushApolloWalletDebugLog(
+        "fallback eth_requestAccounts on inject provider (may not open popup)",
+        undefined,
+        "warn"
+      );
       const accounts = filterEvmAccounts(
         await raw.request({ method: "eth_requestAccounts", params })
       );
@@ -239,11 +367,6 @@ async function requestAccountsFromProvider(raw: any, params?: any[]) {
   }
 }
 
-/**
- * Minimal adapter: passthrough RPC to the extension, but suppress spurious
- * accountsChanged([]) before the first successful connect. Apollo emits empty
- * accounts during handshake which makes wagmi call onDisconnect and abort connect.
- */
 function wrapProvider(raw: any) {
   if (!raw) return undefined;
   if (isWrapped(raw)) return raw;
@@ -252,17 +375,8 @@ function wrapProvider(raw: any) {
   let connectInProgress = false;
   const listenerMap = new Map<string, Map<(...args: any[]) => void, (...args: any[]) => void>>();
 
-  const notifyConnected = async (accounts: string[]) => {
-    if (!accounts.length || typeof raw.request !== "function") return;
-    const chainId = await raw.request({ method: "eth_chainId" });
-    if (typeof raw.emit === "function") {
-      raw.emit("accountsChanged", accounts);
-      raw.emit("connect", { chainId });
-    }
-  };
-
   const request = async ({ method, params }: { method: string; params?: any[] }) => {
-    pushApolloWalletDebugLog(`RPC → ${method}`, { params });
+    pushApolloWalletDebugLog(`RPC → ${method}`, { params, source: describeProviderSource(raw) });
 
     if (method === "eth_requestAccounts") connectInProgress = true;
 
@@ -270,10 +384,7 @@ function wrapProvider(raw: any) {
       if (method === "eth_requestAccounts") {
         const accounts = await requestAccountsFromProvider(raw, params);
         pushApolloWalletDebugLog(`RPC ← ${method}`, { result: accounts });
-        if (accounts.length > 0) {
-          hasConnectedAccounts = true;
-          await notifyConnected(accounts);
-        }
+        if (accounts.length > 0) hasConnectedAccounts = true;
         return accounts;
       }
 
@@ -353,16 +464,19 @@ if (typeof window !== "undefined") {
       const detail = (event as CustomEvent).detail;
       if (!detail?.provider || !isApolloAnnouncement(detail.info)) return;
 
-      // Use brand icon everywhere (Installed + Popular) for consistent UI.
+      eip6963InjectProvider = detail.provider;
+
       if (detail.info) detail.info.icon = APOLLO_WALLET_BRAND_ICON;
 
-      detail.provider = wrapProvider(detail.provider);
-      rememberAnnouncement(detail.info, detail.provider);
-      pushApolloWalletDebugLog("EIP-6963 Apollo provider announced", {
+      const connectProvider = resolveApolloConnectProvider() ?? detail.provider;
+      pushApolloWalletDebugLog("EIP-6963 Apollo announced — routing connect provider", {
         rdns: detail.info?.rdns,
-        name: detail.info?.name,
-        uuid: detail.info?.uuid,
+        injectSource: describeProviderSource(detail.provider),
+        connectSource: describeProviderSource(connectProvider),
       });
+
+      detail.provider = wrapProvider(connectProvider);
+      rememberAnnouncement(detail.info, detail.provider);
     },
     true
   );
@@ -406,41 +520,10 @@ function findFlaggedInjectedApolloProvider() {
   );
 }
 
-function findRawApolloProvider() {
-  if (typeof window === "undefined") return undefined;
-
-  if (eip6963ApolloProvider) {
-    return getUnwrappedProvider(eip6963ApolloProvider);
-  }
-
-  const flagged = findFlaggedInjectedApolloProvider();
-  if (flagged) return flagged;
-
-  const win = window as any;
-  const apolloWallet = win.apolloWallet;
-
-  const candidates = [
-    apolloWallet?.ethereum,
-    apolloWallet?.provider,
-    apolloWallet?.evm,
-    win.apollo?.ethereum,
-    win.apollo?.evm,
-    win.apollo?.provider,
-    win.muses?.ethereum,
-    win.muses?.evm,
-    win.muses?.provider,
-  ].filter(Boolean);
-
-  return candidates.find(
-    (provider) =>
-      looksLikeProvider(provider) &&
-      APOLLO_PROVIDER_FLAGS.some((flag) => Boolean(provider[flag]))
-  );
-}
-
 export function isApolloWalletInstalled() {
   if (typeof window === "undefined") return false;
-  if (eip6963ApolloProvider) return true;
+  if (getApolloWalletSdk()) return true;
+  if (eip6963ApolloProvider || eip6963InjectProvider) return true;
   return Boolean(findFlaggedInjectedApolloProvider());
 }
 
@@ -448,7 +531,7 @@ export function getApolloWalletProvider() {
   if (typeof window === "undefined") return undefined;
 
   requestApolloWalletProviders();
-  const provider = findRawApolloProvider();
+  const provider = resolveApolloConnectProvider();
   return provider ? wrapProvider(provider) : undefined;
 }
 
