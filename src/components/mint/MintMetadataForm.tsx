@@ -299,8 +299,8 @@ export function MintMetadataForm({
         return;
       }
 
-      if (file.size > 15 * 1024 * 1024 * 1024) {
-        toast.error("File size must be less than 15GB");
+      if (file.size > 25 * 1024 * 1024 * 1024) {
+        toast.error("File size must be less than 25GB");
         return;
       }
 
@@ -427,8 +427,8 @@ export function MintMetadataForm({
         return;
       }
 
-      if (file.size > 15 * 1024 * 1024 * 1024) {
-        toast.error("File size must be less than 15GB");
+      if (file.size > 25 * 1024 * 1024 * 1024) {
+        toast.error("File size must be less than 25GB");
         return;
       }
 
