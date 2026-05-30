@@ -10,6 +10,7 @@ import {
   getApolloWalletName,
   getApolloWalletProvider,
   getApolloWalletRdns,
+  getApolloWalletSdk,
   isApolloWalletInstalled,
 } from "./apollo-wallet-provider";
 import {
@@ -58,8 +59,8 @@ const apolloWallet = () => ({
     },
   },
   createConnector: (walletDetails: any) => {
-    return createConnector((config) => ({
-      ...injected({
+    return createConnector((config) => {
+      const connector = injected({
         target: () => {
           const name = getApolloWalletName();
           if (typeof window === "undefined") {
@@ -74,10 +75,25 @@ const apolloWallet = () => ({
             provider: provider ?? undefined,
           };
         },
-        shimDisconnect: false,
-      })(config),
-      ...walletDetails,
-    }));
+        shimDisconnect: true,
+      })(config);
+
+      return {
+        ...connector,
+        ...walletDetails,
+        async disconnect() {
+          const sdk = getApolloWalletSdk();
+          try {
+            if (typeof sdk?.disconnect === "function") {
+              await sdk.disconnect();
+            }
+          } catch {
+            // SDK disconnect is best-effort; wagmi disconnect still runs below.
+          }
+          return connector.disconnect();
+        },
+      };
+    });
   },
 });
 

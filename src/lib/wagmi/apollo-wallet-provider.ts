@@ -5,6 +5,7 @@ import { apolloMainnet } from "./apollo-chain";
 const APOLLO_CHAIN_HEX = `0x${apolloMainnet.id.toString(16)}`;
 const APOLLO_WRAPPED = Symbol.for("apollo.wallet.wrapped");
 const APOLLO_RAW_PROVIDER = Symbol.for("apollo.wallet.raw");
+const wrappedProviderCache = new WeakMap<object, any>();
 const MAX_DEBUG_LOGS = 150;
 const CONNECT_ACCOUNTS_TIMEOUT_MS = 60_000;
 
@@ -371,9 +372,22 @@ function wrapProvider(raw: any) {
   if (!raw) return undefined;
   if (isWrapped(raw)) return raw;
 
+  const cached = wrappedProviderCache.get(raw);
+  if (cached) return cached;
+
   let hasConnectedAccounts = false;
   let connectInProgress = false;
   const listenerMap = new Map<string, Map<(...args: any[]) => void, (...args: any[]) => void>>();
+
+  const resetConnectionState = (reason: string) => {
+    hasConnectedAccounts = false;
+    connectInProgress = false;
+    pushApolloWalletDebugLog(`connection state reset (${reason})`);
+  };
+
+  if (typeof raw.on === "function") {
+    raw.on("disconnect", () => resetConnectionState("provider disconnect event"));
+  }
 
   const request = async ({ method, params }: { method: string; params?: any[] }) => {
     pushApolloWalletDebugLog(`RPC → ${method}`, { params, source: describeProviderSource(raw) });
@@ -386,6 +400,18 @@ function wrapProvider(raw: any) {
         pushApolloWalletDebugLog(`RPC ← ${method}`, { result: accounts });
         if (accounts.length > 0) hasConnectedAccounts = true;
         return accounts;
+      }
+
+      if (method === "wallet_revokePermissions") {
+        resetConnectionState("wallet_revokePermissions");
+        const sdk = getApolloWalletSdk();
+        try {
+          if (typeof sdk?.disconnect === "function") {
+            await sdk.disconnect();
+          }
+        } catch {
+          // Best-effort SDK disconnect for EIP-6963 / Installed path.
+        }
       }
 
       if (typeof raw.request !== "function") {
@@ -415,7 +441,7 @@ function wrapProvider(raw: any) {
         ? (accounts: unknown) => {
             const normalized = normalizeAccounts(accounts);
             if (normalized.length === 0) {
-              if (connectInProgress || !hasConnectedAccounts) {
+              if (connectInProgress) {
                 pushApolloWalletDebugLog(
                   "ignored empty accountsChanged during connect handshake",
                   { connectInProgress, hasConnectedAccounts },
@@ -423,9 +449,21 @@ function wrapProvider(raw: any) {
                 );
                 return;
               }
-            } else {
-              hasConnectedAccounts = true;
+              if (hasConnectedAccounts) {
+                resetConnectionState("accountsChanged empty (disconnect)");
+                pushApolloWalletDebugLog(`provider event: accountsChanged`, normalized);
+                listener(accounts);
+                return;
+              }
+              pushApolloWalletDebugLog(
+                "ignored empty accountsChanged before first connect",
+                undefined,
+                "warn"
+              );
+              return;
             }
+
+            hasConnectedAccounts = true;
             pushApolloWalletDebugLog(`provider event: accountsChanged`, normalized);
             listener(accounts);
           }
@@ -447,7 +485,7 @@ function wrapProvider(raw: any) {
     listenerMap.get(event)?.delete(listener);
   };
 
-  return {
+  const wrapped = {
     ...raw,
     request,
     on,
@@ -455,6 +493,9 @@ function wrapProvider(raw: any) {
     [APOLLO_WRAPPED]: true,
     [APOLLO_RAW_PROVIDER]: raw,
   };
+
+  wrappedProviderCache.set(raw, wrapped);
+  return wrapped;
 }
 
 if (typeof window !== "undefined") {
