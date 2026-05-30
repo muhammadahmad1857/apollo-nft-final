@@ -36,16 +36,6 @@ function callApolloMethod(raw: any, methodName: string, ...args: unknown[]) {
   return undefined;
 }
 
-function hasApolloMethod(raw: any, methodName: string) {
-  if (typeof raw?.[methodName] === "function") return true;
-  try {
-    const proto = Object.getPrototypeOf(raw);
-    return Boolean(proto && typeof proto[methodName] === "function");
-  } catch {
-    return false;
-  }
-}
-
 function notifyManualConnectRequired() {
   if (typeof window === "undefined") return;
   window.dispatchEvent(
@@ -283,97 +273,6 @@ export function resolveApolloConnectProvider() {
   }
   if (eip6963ApolloProvider) return getUnwrappedProvider(eip6963ApolloProvider);
   return findFlaggedInjectedApolloProvider();
-}
-
-type ConnectAttempt = { label: string; run: () => Promise<unknown> };
-
-function buildConnectAttempts(sdk: any): ConnectAttempt[] {
-  const attempts: ConnectAttempt[] = [];
-  const add = (label: string, run: () => Promise<unknown>) => attempts.push({ label, run });
-
-  if (typeof sdk.connect === "function") {
-    add("apolloWallet.connect()", () => sdk.connect());
-    add("apolloWallet.connect({ chainId: 62606 })", () => sdk.connect({ chainId: apolloMainnet.id }));
-    add("apolloWallet.connect({ chainId: '0xf48e' })", () => sdk.connect({ chainId: APOLLO_CHAIN_HEX }));
-  }
-  if (typeof sdk.requestAccounts === "function") {
-    add("apolloWallet.requestAccounts()", () => sdk.requestAccounts());
-  }
-  if (typeof sdk.enable === "function") {
-    add("apolloWallet.enable()", () => sdk.enable());
-  }
-  if (typeof sdk.openConnectModal === "function") {
-    add("apolloWallet.openConnectModal()", () => sdk.openConnectModal());
-  }
-  if (typeof sdk.requestConnection === "function") {
-    add("apolloWallet.requestConnection()", () => sdk.requestConnection());
-  }
-
-  for (const nestedKey of ["wallet", "evm", "ethereum", "provider"] as const) {
-    const nested = sdk[nestedKey];
-    if (!nested || typeof nested !== "object") continue;
-    if (typeof nested.connect === "function") {
-      add(`apolloWallet.${nestedKey}.connect()`, () => nested.connect());
-    }
-    if (typeof nested.requestAccounts === "function") {
-      add(`apolloWallet.${nestedKey}.requestAccounts()`, () => nested.requestAccounts());
-    }
-  }
-
-  // Apollo inject exposes these on the prototype (not own props) — use callApolloMethod.
-  if (hasApolloMethod(sdk, "checkConnectionState")) {
-    add("apolloWallet.checkConnectionState()", async () => {
-      await callApolloMethod(sdk, "checkConnectionState");
-      return readAddressesFromProviderState(sdk);
-    });
-  }
-  if (hasApolloMethod(sdk, "setChainId")) {
-    add("apolloWallet.setChainId(0xf48e) → eth_requestAccounts", async () => {
-      await callApolloMethod(sdk, "setChainId", APOLLO_CHAIN_HEX);
-      if (typeof sdk.request === "function") {
-        return sdk.request({ method: "eth_requestAccounts" });
-      }
-      return readAddressesFromProviderState(sdk);
-    });
-  }
-
-  return attempts;
-}
-
-function waitForNonEmptyAccountsChanged(target: any, timeoutMs: number, label: string) {
-  return new Promise<string[]>((resolve, reject) => {
-    if (typeof target?.on !== "function") {
-      reject(new Error(`${label} does not support accountsChanged events`));
-      return;
-    }
-
-    let settled = false;
-    const cleanup = () => {
-      window.clearTimeout(timer);
-      if (typeof target.removeListener === "function") {
-        target.removeListener("accountsChanged", onAccountsChanged);
-      }
-    };
-
-    const onAccountsChanged = (accounts: unknown) => {
-      const evm = filterEvmAccounts(accounts);
-      if (!evm.length) return;
-      if (settled) return;
-      settled = true;
-      cleanup();
-      logApollo("info", `Got accounts from ${label}`, evm);
-      resolve(evm);
-    };
-
-    const timer = window.setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      reject(new Error(`Timed out waiting for approval (${label})`));
-    }, timeoutMs);
-
-    target.on("accountsChanged", onAccountsChanged);
-  });
 }
 
 function stubApolloWalletPermissions(params?: unknown[]) {
@@ -627,115 +526,35 @@ async function ensureApolloChainBeforeConnect(raw: any) {
   return { currentChain, chainPrepared: false, prepMethod: "none" as const };
 }
 
-/** eth_accounts works when eth_requestAccounts crashes — poll after user connects via extension UI. */
 async function recoverApolloAccountsAfterRpcUrlCrash(
   raw: any,
   timeoutMs: number
 ): Promise<string[]> {
-  logApollo("warn", "eth_requestAccounts rpcUrl crash — trying Apollo recovery path");
-
-  await tryApolloCheckConnectionState(raw);
+  logApollo("warn", "eth_requestAccounts rpcUrl crash — registering chain then retrying");
 
   try {
-    return await requestApolloAccounts(raw, Math.min(timeoutMs, 15_000));
-  } catch (retryErr) {
-    if (!isRpcUrlInjectError(retryErr)) throw retryErr;
+    await raw.request({
+      method: "wallet_addEthereumChain",
+      params: [getApolloAddChainParams()],
+    });
+    logApollo("info", "wallet_addEthereumChain succeeded — retrying eth_requestAccounts");
+  } catch (addErr) {
+    logApollo("warn", "wallet_addEthereumChain failed", {
+      error: addErr instanceof Error ? addErr.message : String(addErr),
+    });
+    await tryApolloSetChainId(raw);
   }
-
-  await tryApolloSetChainId(raw);
 
   try {
-    return await requestApolloAccounts(raw, Math.min(timeoutMs, 15_000));
+    return await requestApolloAccounts(raw, Math.min(timeoutMs, 30_000));
   } catch (retryErr) {
-    if (!isRpcUrlInjectError(retryErr)) throw retryErr;
+    const errMsg = retryErr instanceof Error ? retryErr.message : String(retryErr);
+    logApollo("error", "eth_requestAccounts failed after chain registration", { error: errMsg });
+    notifyManualConnectRequired();
+    throw new Error(
+      "Apollo Wallet could not connect. Open the extension, switch to Apollo Mainnet, approve this site under Connected Sites, then retry."
+    );
   }
-
-  return waitForManualApolloConnection(raw, timeoutMs);
-}
-
-async function waitForManualApolloConnection(raw: any, timeoutMs: number): Promise<string[]> {
-  logApollo(
-    "warn",
-    "Waiting for manual connect — click Apollo Wallet extension → unlock → switch to Apollo Mainnet → Connected Sites → approve this site"
-  );
-  notifyManualConnectRequired();
-  await tryApolloCheckConnectionState(raw);
-
-  let pollCount = 0;
-
-  const readAccounts = async () => {
-    const fromState = readAddressesFromProviderState(raw);
-    if (fromState.length) return fromState;
-    // eth_accounts triggers empty accountsChanged on every poll — call sparingly
-    pollCount += 1;
-    if (pollCount % 5 !== 0) return [] as string[];
-    try {
-      return filterEvmAccounts(await raw.request({ method: "eth_accounts" }));
-    } catch {
-      return [] as string[];
-    }
-  };
-
-  return new Promise<string[]>((resolve, reject) => {
-    let settled = false;
-    let pollTimer: number | undefined;
-
-    const finish = (accounts: string[], source: string) => {
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(hardTimeout);
-      if (pollTimer) window.clearTimeout(pollTimer);
-      if (typeof raw.removeListener === "function") {
-        raw.removeListener("accountsChanged", onAccountsChanged);
-      }
-      // #region agent log
-      debugIngest(
-        "apollo-wallet-provider.ts:waitForManualApolloConnection:success",
-        "manual connect detected",
-        { accounts, source },
-        "F",
-        "post-fix"
-      );
-      // #endregion
-      resolve(accounts);
-    };
-
-    const onAccountsChanged = (accounts: unknown) => {
-      const evm = filterEvmAccounts(accounts);
-      if (evm.length) finish(evm, "accountsChanged");
-    };
-
-    const poll = async () => {
-      if (settled) return;
-      const accounts = await readAccounts();
-      if (accounts.length) {
-        finish(accounts, "poll");
-        return;
-      }
-      pollTimer = window.setTimeout(poll, 1000);
-    };
-
-    const hardTimeout = window.setTimeout(async () => {
-      if (settled) return;
-      settled = true;
-      if (pollTimer) window.clearTimeout(pollTimer);
-      if (typeof raw.removeListener === "function") {
-        raw.removeListener("accountsChanged", onAccountsChanged);
-      }
-      reject(
-        new Error(
-          "Apollo Wallet did not share your address with this site. In the extension: menu (☰) → Connected Sites → connect " +
-            (typeof window !== "undefined" ? window.location.host : "this site") +
-            " → retry."
-        )
-      );
-    }, timeoutMs);
-
-    if (typeof raw.on === "function") {
-      raw.on("accountsChanged", onAccountsChanged);
-    }
-    poll();
-  });
 }
 
 /**
@@ -753,60 +572,28 @@ async function connectViaProviderRpc(raw: any): Promise<string[]> {
   logApollo("info", "Provider state before connect", inspectApolloProvider(raw));
 
   const chainPrep = await ensureApolloChainBeforeConnect(raw);
-  logApollo("info", "Chain prep before connect", chainPrep);
+  logApollo("info", "Chain prep result", chainPrep);
 
-  const accountsChangedPromise = waitForNonEmptyAccountsChanged(
-    raw,
-    CONNECT_ACCOUNTS_TIMEOUT_MS,
-    "accountsChanged"
-  ).catch(() => [] as string[]);
+  await tryApolloCheckConnectionState(raw);
 
-  const rpcPromise = (async () => {
-    await tryApolloCheckConnectionState(raw);
-    logApollo("info", "eth_requestAccounts (extension should open approval popup NOW)");
-    try {
-      const accounts = await requestApolloAccounts(raw, CONNECT_ACCOUNTS_TIMEOUT_MS);
-      logApollo("info", "eth_requestAccounts response", { accounts });
-      // #region agent log
-      debugIngest(
-        "apollo-wallet-provider.ts:connectViaProviderRpc:accountsOk",
-        "eth_requestAccounts succeeded",
-        { accounts, chainPrep },
-        "C",
-        "post-fix"
-      );
-      // #endregion
-      return accounts;
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      // #region agent log
-      debugIngest(
-        "apollo-wallet-provider.ts:connectViaProviderRpc:accountsFail",
-        "eth_requestAccounts failed",
-        { error: errMsg, chainPrep, hasRpcUrlError: isRpcUrlInjectError(err) },
-        "C",
-        "post-fix"
-      );
-      // #endregion
+  logApollo("info", "eth_requestAccounts — extension approval popup should open NOW");
 
-      if (isRpcUrlInjectError(err)) {
-        return recoverApolloAccountsAfterRpcUrlCrash(raw, CONNECT_ACCOUNTS_TIMEOUT_MS);
-      }
-      throw err;
+  try {
+    const accounts = await requestApolloAccounts(raw, CONNECT_ACCOUNTS_TIMEOUT_MS);
+    logApollo("info", "eth_requestAccounts succeeded", { accounts });
+    return accounts;
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    logApollo("warn", "eth_requestAccounts failed", {
+      error: errMsg,
+      hasRpcUrlError: isRpcUrlInjectError(err),
+    });
+
+    if (isRpcUrlInjectError(err)) {
+      return recoverApolloAccountsAfterRpcUrlCrash(raw, CONNECT_ACCOUNTS_TIMEOUT_MS);
     }
-  })();
-
-  const results = await Promise.allSettled([accountsChangedPromise, rpcPromise]);
-  for (const result of results) {
-    if (result.status === "fulfilled" && result.value.length > 0) {
-      return result.value;
-    }
+    throw err;
   }
-
-  const rpcError = results.find((r) => r.status === "rejected") as PromiseRejectedResult | undefined;
-  throw rpcError?.reason instanceof Error
-    ? rpcError.reason
-    : new Error("Connection failed. Open Apollo Wallet extension, unlock it, then try again.");
 }
 
 export async function connectApolloWallet(): Promise<string[]> {
@@ -822,28 +609,14 @@ export async function connectApolloWallet(): Promise<string[]> {
 
     logApollo("info", "window.apolloWallet inspection", inspectApolloProvider(sdk));
 
-    // Open extension connect UI + register rpcUrl before any EIP-1193 account RPC.
-    await tryApolloSetChainId(sdk);
-    await tryApolloCheckConnectionState(sdk);
-
-    const attempts = buildConnectAttempts(sdk);
-    for (const { label, run } of attempts) {
-      logApollo("info", `→ Trying ${label}`);
-      try {
-        const accounts = filterEvmAccounts(await run());
-        if (accounts.length) {
-          logApollo("info", `✓ SUCCESS via ${label}`, accounts);
-          return accounts;
-        }
-      } catch (err) {
-        logApollo("warn", `✗ ${label} failed`, { error: err instanceof Error ? err.message : String(err) });
-      }
-    }
-
     const raw = getRawApolloProvider();
     if (!raw) {
       throw new Error("Apollo provider not found.");
     }
+
+    logApollo("info", "Using inject provider for connect", {
+      source: describeProviderSource(getUnwrappedProvider(raw)),
+    });
 
     const accounts = await connectViaProviderRpc(getUnwrappedProvider(raw));
     logApollo("info", "─── CONNECT SUCCESS ───", accounts);
@@ -910,10 +683,30 @@ function wrapProvider(raw: any) {
       }
 
       if (method === "eth_requestAccounts") {
-        logApollo("info", "Connect requested — running Apollo connect flow");
-        const accounts = await connectApolloWallet();
-        if (accounts.length > 0) hasConnectedAccounts = true;
-        return accounts;
+        logApollo("info", "eth_requestAccounts — prepping chain then passing through to inject");
+        const unwrapped = getUnwrappedProvider(raw);
+        await ensureApolloChainBeforeConnect(unwrapped);
+        await tryApolloCheckConnectionState(unwrapped);
+
+        try {
+          const accounts = filterEvmAccounts(
+            await requestProviderWithTimeout(
+              unwrapped,
+              { method: "eth_requestAccounts" },
+              CONNECT_ACCOUNTS_TIMEOUT_MS
+            )
+          );
+          if (accounts.length) {
+            hasConnectedAccounts = true;
+            return accounts;
+          }
+          return recoverApolloAccountsAfterRpcUrlCrash(unwrapped, CONNECT_ACCOUNTS_TIMEOUT_MS);
+        } catch (err) {
+          if (isRpcUrlInjectError(err)) {
+            return recoverApolloAccountsAfterRpcUrlCrash(unwrapped, CONNECT_ACCOUNTS_TIMEOUT_MS);
+          }
+          throw err;
+        }
       }
 
       if (method === "wallet_revokePermissions") {
