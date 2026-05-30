@@ -10,6 +10,7 @@ import { WagmiProvider } from "wagmi";
 import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { MarketplaceStreamBridge } from "@/components/marketplace-stream-bridge";
 const queryClient = new QueryClient();
 import ProvidersDebug from "@/components/ProvidersDebug";
@@ -24,6 +25,19 @@ export function ThemeProvider({
 const Provider = ({children}:{children:React.ReactNode}) => {
   React.useEffect(() => {
     return initApolloWalletDiscovery();
+  }, []);
+
+  React.useEffect(() => {
+    const onManualConnect = (event: Event) => {
+      const host = (event as CustomEvent<{ host?: string }>).detail?.host ?? "this site";
+      toast.info("Approve Apollo Wallet connection", {
+        id: "apollo-manual-connect",
+        duration: 60_000,
+        description: `Open the Apollo Wallet extension → unlock → switch to Apollo Mainnet → Connected Sites → approve ${host}.`,
+      });
+    };
+    window.addEventListener("apollo-wallet:manual-connect-required", onManualConnect);
+    return () => window.removeEventListener("apollo-wallet:manual-connect-required", onManualConnect);
   }, []);
 
   return (

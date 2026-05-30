@@ -9,31 +9,41 @@ const wrappedProviderCache = new WeakMap<object, any>();
 const MAX_DEBUG_LOGS = 150;
 const CONNECT_ACCOUNTS_TIMEOUT_MS = 60_000;
 const LOG_PREFIX = "[Apollo Wallet]";
+let suppressEmptyAccountsChangedWarn = false;
 
-// #region agent log
 function debugIngest(
-  location: string,
-  message: string,
-  data: Record<string, unknown>,
-  hypothesisId: string,
-  runId = "pre-fix"
+  _location: string,
+  _message: string,
+  _data: Record<string, unknown>,
+  _hypothesisId: string,
+  _runId = "pre-fix"
 ) {
-  logApollo("info", `[debug ${hypothesisId}] ${message}`, data);
-  fetch("http://127.0.0.1:7865/ingest/1c0546f0-2a95-4ee7-8716-a30c25e6140e", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "9102ba" },
-    body: JSON.stringify({
-      sessionId: "9102ba",
-      runId,
-      hypothesisId,
-      location,
-      message,
-      data,
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
+  // disabled — debug ingest server not used in production
 }
-// #endregion
+
+function callApolloMethod(raw: any, methodName: string, ...args: unknown[]) {
+  if (typeof raw?.[methodName] === "function") {
+    return raw[methodName](...args);
+  }
+  try {
+    const proto = Object.getPrototypeOf(raw);
+    if (proto && typeof proto[methodName] === "function") {
+      return proto[methodName].call(raw, ...args);
+    }
+  } catch {
+    // ignore
+  }
+  return undefined;
+}
+
+function notifyManualConnectRequired() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent("apollo-wallet:manual-connect-required", {
+      detail: { host: window.location.host },
+    })
+  );
+}
 
 /** Canonical brand icon — same in Popular (not installed) and after EIP-6963 discovery. */
 export const APOLLO_WALLET_BRAND_ICON = "/icons/apollo-wallet.png";
@@ -300,6 +310,23 @@ function buildConnectAttempts(sdk: any): ConnectAttempt[] {
     }
   }
 
+  // Apollo inject exposes these on the prototype — they open the approval UI and register rpcUrl.
+  if (typeof sdk.checkConnectionState === "function") {
+    add("apolloWallet.checkConnectionState()", async () => {
+      await sdk.checkConnectionState();
+      return readAddressesFromProviderState(sdk);
+    });
+  }
+  if (typeof sdk.setChainId === "function") {
+    add("apolloWallet.setChainId(0xf48e) → eth_requestAccounts", async () => {
+      await sdk.setChainId(APOLLO_CHAIN_HEX);
+      if (typeof sdk.request === "function") {
+        return sdk.request({ method: "eth_requestAccounts" });
+      }
+      return readAddressesFromProviderState(sdk);
+    });
+  }
+
   return attempts;
 }
 
@@ -407,6 +434,63 @@ function getApolloAddChainParams() {
   };
 }
 
+/** Apollo inject internal APIs — register rpcUrl / open approval UI before eth_requestAccounts. */
+async function tryApolloSetChainId(raw: any) {
+  for (const chainId of [APOLLO_CHAIN_HEX, apolloMainnet.id] as const) {
+    try {
+      const result = callApolloMethod(raw, "setChainId", chainId);
+      if (result !== undefined) {
+        await result;
+        logApollo("info", "setChainId succeeded", { chainId });
+        return true;
+      }
+    } catch (err) {
+      logApollo("warn", "setChainId failed", {
+        chainId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+  return false;
+}
+
+/** Opens the extension connect/approval UI without going through broken rpcUrl path. */
+async function tryApolloCheckConnectionState(raw: any) {
+  for (const method of ["checkConnectionState", "enable", "openConnectModal"] as const) {
+    try {
+      const result = callApolloMethod(raw, method);
+      if (result !== undefined) {
+        await result;
+        logApollo("info", `${method} completed — confirm in extension if prompted`);
+        return true;
+      }
+    } catch (err) {
+      logApollo("warn", `${method} failed`, {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+  return false;
+}
+
+async function requestApolloAccounts(raw: any, timeoutMs: number) {
+  const result = await requestProviderWithTimeout(
+    raw,
+    { method: "eth_requestAccounts" },
+    timeoutMs
+  );
+  const accounts = filterEvmAccounts(result);
+  if (accounts.length) return accounts;
+
+  const fromState = readAddressesFromProviderState(raw);
+  if (fromState.length) {
+    logApollo("info", "Using selectedAddress/activeAddress from provider", fromState);
+    return fromState;
+  }
+
+  throw new Error("No account returned — approve the connection in the Apollo Wallet extension popup.");
+}
+
 /** Register + switch to Apollo Mainnet before account requests (inject crashes on null rpcUrl when chain missing). */
 async function ensureApolloChainBeforeConnect(raw: any) {
   const identity = getProviderIdentityDiagnostic(raw);
@@ -443,6 +527,24 @@ async function ensureApolloChainBeforeConnect(raw: any) {
     "A"
   );
   // #endregion
+
+  // setChainId registers rpcUrl in the extension — required even when eth_chainId already matches.
+  const setChainOk = await tryApolloSetChainId(raw);
+  if (setChainOk) {
+    try {
+      const afterSet = (await raw.request({ method: "eth_chainId" })) as string;
+      if (afterSet.toLowerCase() === APOLLO_CHAIN_HEX.toLowerCase()) {
+        return {
+          currentChain,
+          chainPrepared: true,
+          prepMethod: "setChainId" as const,
+          afterChain: afterSet,
+        };
+      }
+    } catch {
+      // continue with wallet_addEthereumChain / switch fallbacks
+    }
+  }
 
   if (alreadyApollo) {
     return { currentChain, chainPrepared: true, prepMethod: "already-apollo" as const };
@@ -508,24 +610,47 @@ async function ensureApolloChainBeforeConnect(raw: any) {
 }
 
 /** eth_accounts works when eth_requestAccounts crashes — poll after user connects via extension UI. */
+async function recoverApolloAccountsAfterRpcUrlCrash(
+  raw: any,
+  timeoutMs: number
+): Promise<string[]> {
+  logApollo("warn", "eth_requestAccounts rpcUrl crash — trying Apollo recovery path");
+
+  await tryApolloCheckConnectionState(raw);
+
+  try {
+    return await requestApolloAccounts(raw, Math.min(timeoutMs, 15_000));
+  } catch (retryErr) {
+    if (!isRpcUrlInjectError(retryErr)) throw retryErr;
+  }
+
+  await tryApolloSetChainId(raw);
+
+  try {
+    return await requestApolloAccounts(raw, Math.min(timeoutMs, 15_000));
+  } catch (retryErr) {
+    if (!isRpcUrlInjectError(retryErr)) throw retryErr;
+  }
+
+  return waitForManualApolloConnection(raw, timeoutMs);
+}
+
 async function waitForManualApolloConnection(raw: any, timeoutMs: number): Promise<string[]> {
   logApollo(
     "warn",
-    "Extension RPC crashed — open Apollo Wallet extension, unlock, switch to Apollo Mainnet, connect this site"
+    "Waiting for manual connect — click Apollo Wallet extension → unlock → switch to Apollo Mainnet → Connected Sites → approve this site"
   );
-  // #region agent log
-  debugIngest(
-    "apollo-wallet-provider.ts:waitForManualApolloConnection",
-    "starting manual connect poll",
-    { timeoutMs },
-    "F",
-    "post-fix"
-  );
-  // #endregion
+  notifyManualConnectRequired();
+  await tryApolloCheckConnectionState(raw);
+
+  let pollCount = 0;
 
   const readAccounts = async () => {
     const fromState = readAddressesFromProviderState(raw);
     if (fromState.length) return fromState;
+    // eth_accounts triggers empty accountsChanged on every poll — call sparingly
+    pollCount += 1;
+    if (pollCount % 5 !== 0) return [] as string[];
     try {
       return filterEvmAccounts(await raw.request({ method: "eth_accounts" }));
     } catch {
@@ -569,7 +694,7 @@ async function waitForManualApolloConnection(raw: any, timeoutMs: number): Promi
         finish(accounts, "poll");
         return;
       }
-      pollTimer = window.setTimeout(poll, 2000);
+      pollTimer = window.setTimeout(poll, 1000);
     };
 
     const hardTimeout = window.setTimeout(async () => {
@@ -581,7 +706,7 @@ async function waitForManualApolloConnection(raw: any, timeoutMs: number): Promi
       }
       reject(
         new Error(
-          "Apollo Wallet extension did not connect. Open the extension, switch to Apollo Mainnet (chain 62606), approve this site, then retry."
+          "Apollo Wallet did not connect. In the extension: unlock → switch to Apollo Mainnet (62606) → Connected Sites → approve this site → retry."
         )
       );
     }, timeoutMs);
@@ -617,34 +742,21 @@ async function connectViaProviderRpc(raw: any): Promise<string[]> {
   ).catch(() => [] as string[]);
 
   const rpcPromise = (async () => {
+    await tryApolloCheckConnectionState(raw);
     logApollo("info", "eth_requestAccounts (extension should open approval popup NOW)");
     try {
-      const result = await requestProviderWithTimeout(
-        raw,
-        { method: "eth_requestAccounts" },
-        CONNECT_ACCOUNTS_TIMEOUT_MS
-      );
-      logApollo("info", "eth_requestAccounts response", { result });
+      const accounts = await requestApolloAccounts(raw, CONNECT_ACCOUNTS_TIMEOUT_MS);
+      logApollo("info", "eth_requestAccounts response", { accounts });
       // #region agent log
       debugIngest(
         "apollo-wallet-provider.ts:connectViaProviderRpc:accountsOk",
         "eth_requestAccounts succeeded",
-        { result, chainPrep },
+        { accounts, chainPrep },
         "C",
         "post-fix"
       );
       // #endregion
-
-      const accounts = filterEvmAccounts(result);
-      if (accounts.length) return accounts;
-
-      const fromState = readAddressesFromProviderState(raw);
-      if (fromState.length) {
-        logApollo("info", "Using selectedAddress/activeAddress from provider", fromState);
-        return fromState;
-      }
-
-      throw new Error("No account returned — approve the connection in the Apollo Wallet extension popup.");
+      return accounts;
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       // #region agent log
@@ -658,8 +770,7 @@ async function connectViaProviderRpc(raw: any): Promise<string[]> {
       // #endregion
 
       if (isRpcUrlInjectError(err)) {
-        logApollo("warn", "eth_requestAccounts rpcUrl crash — trying manual extension connect fallback");
-        return waitForManualApolloConnection(raw, CONNECT_ACCOUNTS_TIMEOUT_MS);
+        return recoverApolloAccountsAfterRpcUrlCrash(raw, CONNECT_ACCOUNTS_TIMEOUT_MS);
       }
       throw err;
     }
@@ -680,47 +791,36 @@ async function connectViaProviderRpc(raw: any): Promise<string[]> {
 
 export async function connectApolloWallet(): Promise<string[]> {
   logApollo("info", "─── CONNECT START ───");
-
-  const sdk = getApolloWalletSdk();
-  if (!sdk) {
-    logApollo("error", "window.apolloWallet not found — install the extension.");
-    throw new Error("Apollo Wallet extension not found.");
-  }
-
-  logApollo("info", "window.apolloWallet inspection", inspectApolloProvider(sdk));
-
-  // Optional connect()/requestAccounts() for other Apollo builds
-  const attempts = buildConnectAttempts(sdk);
-  // #region agent log
-  debugIngest(
-    "apollo-wallet-provider.ts:connectApolloWallet:attempts",
-    "SDK connect attempts available",
-    {
-      attemptLabels: attempts.map((a) => a.label),
-      protoMethods: inspectApolloProvider(sdk)?.protoMethods ?? [],
-    },
-    "E"
-  );
-  // #endregion
-  for (const { label, run } of attempts) {
-    logApollo("info", `→ Trying ${label}`);
-    try {
-      const accounts = filterEvmAccounts(await run());
-      if (accounts.length) {
-        logApollo("info", `✓ SUCCESS via ${label}`, accounts);
-        return accounts;
-      }
-    } catch (err) {
-      logApollo("warn", `✗ ${label} failed`, { error: err instanceof Error ? err.message : String(err) });
-    }
-  }
-
-  const raw = getRawApolloProvider();
-  if (!raw) {
-    throw new Error("Apollo provider not found.");
-  }
+  suppressEmptyAccountsChangedWarn = true;
 
   try {
+    const sdk = getApolloWalletSdk();
+    if (!sdk) {
+      logApollo("error", "window.apolloWallet not found — install the extension.");
+      throw new Error("Apollo Wallet extension not found.");
+    }
+
+    logApollo("info", "window.apolloWallet inspection", inspectApolloProvider(sdk));
+
+    const attempts = buildConnectAttempts(sdk);
+    for (const { label, run } of attempts) {
+      logApollo("info", `→ Trying ${label}`);
+      try {
+        const accounts = filterEvmAccounts(await run());
+        if (accounts.length) {
+          logApollo("info", `✓ SUCCESS via ${label}`, accounts);
+          return accounts;
+        }
+      } catch (err) {
+        logApollo("warn", `✗ ${label} failed`, { error: err instanceof Error ? err.message : String(err) });
+      }
+    }
+
+    const raw = getRawApolloProvider();
+    if (!raw) {
+      throw new Error("Apollo provider not found.");
+    }
+
     const accounts = await connectViaProviderRpc(getUnwrappedProvider(raw));
     logApollo("info", "─── CONNECT SUCCESS ───", accounts);
     return accounts;
@@ -728,9 +828,11 @@ export async function connectApolloWallet(): Promise<string[]> {
     logApollo("error", "─── CONNECT FAILED ───", {
       error: err instanceof Error ? err.message : String(err),
       hint:
-        "If no popup appeared: unlock Apollo Wallet extension → click its icon → approve this site → retry.",
+        "If no popup appeared: unlock Apollo Wallet extension → Connected Sites → approve this site → retry.",
     });
     throw err instanceof Error ? err : new Error(String(err));
+  } finally {
+    suppressEmptyAccountsChangedWarn = false;
   }
 }
 
@@ -765,9 +867,20 @@ function wrapProvider(raw: any) {
 
     try {
       if (method === "wallet_requestPermissions") {
-        // Apollo inject throws "Cannot read properties of null (reading 'rpcUrl')" — stub success for wagmi.
-        logApollo("info", "Stubbing wallet_requestPermissions (Apollo inject bug — rpcUrl null)");
-        return stubApolloWalletPermissions(params);
+        const unwrapped = getUnwrappedProvider(raw);
+        await ensureApolloChainBeforeConnect(unwrapped);
+        await tryApolloSetChainId(unwrapped);
+        try {
+          const result = await unwrapped.request({ method, params });
+          logApollo("info", "wallet_requestPermissions succeeded", { result });
+          return result;
+        } catch (err) {
+          if (isRpcUrlInjectError(err)) {
+            logApollo("info", "Stubbing wallet_requestPermissions (Apollo inject rpcUrl bug on wrong chain)");
+            return stubApolloWalletPermissions(params);
+          }
+          throw err;
+        }
       }
 
       if (method === "eth_requestAccounts") {
@@ -813,7 +926,9 @@ function wrapProvider(raw: any) {
             const normalized = normalizeAccounts(accounts);
             if (normalized.length === 0) {
               if (connectInProgress) {
-                logApollo("warn", "Ignored empty accountsChanged during connect (normal for Apollo inject)");
+                if (!suppressEmptyAccountsChangedWarn) {
+                  logApollo("warn", "Ignored empty accountsChanged during connect (normal for Apollo inject)");
+                }
                 return;
               }
               if (hasConnectedAccounts) {
