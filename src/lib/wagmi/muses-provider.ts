@@ -1,14 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+const APOLLO_CHAIN_HEX = "0xf48e"; // Apollo Mainnet (62606)
+
 function toHexChainId(chainId: any) {
   if (typeof chainId === "string") {
     if (chainId.startsWith("0x")) return chainId;
+    if (/apollo|mainnet/i.test(chainId)) return APOLLO_CHAIN_HEX;
     const asNum = Number(chainId);
     if (!Number.isNaN(asNum)) return `0x${asNum.toString(16)}`;
-    return chainId;
+    return APOLLO_CHAIN_HEX;
   }
   if (typeof chainId === "number") return `0x${chainId.toString(16)}`;
-  return "0x1";
+  return APOLLO_CHAIN_HEX;
 }
 
 function normalizeAccounts(value: any) {
