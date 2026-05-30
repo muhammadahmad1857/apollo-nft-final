@@ -907,7 +907,23 @@ const LOG_PREFIX = "[Apollo Wallet]";
 let suppressEmptyAccountsChangedWarn = false;
 
 // ─────────────────────────────────────────────────────────────
-// 🧠 GLOBAL CRASH INTELLIGENCE (NEW)
+// 🧠 DEBUG STATE (RESTORED PROPERLY)
+// ─────────────────────────────────────────────────────────────
+
+type ApolloDebugLogLevel = "info" | "warn" | "error";
+
+export type ApolloWalletDebugLog = {
+  ts: string;
+  level: ApolloDebugLogLevel;
+  message: string;
+  data?: unknown;
+};
+
+const debugLogs: ApolloWalletDebugLog[] = [];
+const debugSubscribers = new Set<() => void>();
+
+// ─────────────────────────────────────────────────────────────
+// 🧠 GLOBAL CRASH INTELLIGENCE
 // ─────────────────────────────────────────────────────────────
 
 let lastErrorStack: string | null = null;
@@ -925,8 +941,22 @@ if (typeof window !== "undefined") {
 }
 
 // ─────────────────────────────────────────────────────────────
+// LOGGING ENGINE (RESTORED FULL)
+// ─────────────────────────────────────────────────────────────
 
-function logApollo(level: "info" | "warn" | "error", message: string, data?: unknown) {
+function logApollo(level: ApolloDebugLogLevel, message: string, data?: unknown) {
+  const entry: ApolloWalletDebugLog = {
+    ts: new Date().toISOString(),
+    level,
+    message,
+    data,
+  };
+
+  debugLogs.unshift(entry);
+  if (debugLogs.length > MAX_DEBUG_LOGS) debugLogs.pop();
+
+  debugSubscribers.forEach((fn) => fn());
+
   const line = `${LOG_PREFIX} ${message}`;
   if (level === "error") console.error(line, data ?? "");
   else if (level === "warn") console.warn(line, data ?? "");
@@ -934,7 +964,33 @@ function logApollo(level: "info" | "warn" | "error", message: string, data?: unk
 }
 
 // ─────────────────────────────────────────────────────────────
-// CORE PATCH HELPERS
+// 🔥 EXPORTED DEBUG API (FIXED BUILD ERROR HERE)
+// ─────────────────────────────────────────────────────────────
+
+export function pushApolloWalletDebugLog(
+  message: string,
+  data?: unknown,
+  level: ApolloDebugLogLevel = "info"
+) {
+  logApollo(level, message, data);
+}
+
+export function getApolloWalletDebugLogs() {
+  return [...debugLogs];
+}
+
+export function subscribeApolloWalletDebugLogs(cb: () => void) {
+  debugSubscribers.add(cb);
+  return () => debugSubscribers.delete(cb);
+}
+
+export function clearApolloWalletDebugLogs() {
+  debugLogs.length = 0;
+  debugSubscribers.forEach((fn) => fn());
+}
+
+// ─────────────────────────────────────────────────────────────
+// CORE HELPERS
 // ─────────────────────────────────────────────────────────────
 
 function getApolloWalletSdk() {
@@ -944,7 +1000,7 @@ function getApolloWalletSdk() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 🧬 EXPERIMENTAL: PROXY chains interception (NEW)
+// 🧬 PROXY CHAIN FIX (kept intact)
 // ─────────────────────────────────────────────────────────────
 
 function tryProxyChains(target: any) {
@@ -954,17 +1010,14 @@ function tryProxyChains(target: any) {
     if (!target.chains || typeof target.chains !== "object") return target;
 
     const original = target.chains;
-
-    // Avoid double wrapping
     if (original?.__apolloProxy) return target;
 
     const proxy = new Proxy(original, {
       get(t, prop: string) {
         const value = (t as any)[prop];
 
-        // If missing chain, inject fallback
-        if (!value && prop?.startsWith?.("0x")) {
-          logApollo("warn", `⚠️ Proxy injected missing chain ${prop}`);
+        if (!value && typeof prop === "string" && prop.startsWith("0x")) {
+          logApollo("warn", `⚠️ Proxy fallback chain injected: ${prop}`);
 
           return {
             rpcUrl: apolloMainnet.rpcUrls.default.http[0],
@@ -991,7 +1044,7 @@ function tryProxyChains(target: any) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// PATCH CHAINS MAP (enhanced logging)
+// PATCH CHAINS MAP
 // ─────────────────────────────────────────────────────────────
 
 function patchInjectChainsMap(raw: any): boolean {
@@ -1030,7 +1083,6 @@ function patchInjectChainsMap(raw: any): boolean {
         }
       }
 
-      // ALSO TRY PROXY HOOK
       tryProxyChains(target);
     } catch (e) {
       logApollo("warn", "patchInjectChainsMap error", e);
@@ -1054,19 +1106,15 @@ function requestProviderWithTimeout(raw: any, payload: any, timeoutMs: number) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// MAIN CONNECT FLOW
+// MAIN FLOW
 // ─────────────────────────────────────────────────────────────
 
 async function connectViaProviderRpc(raw: any): Promise<string[]> {
   logApollo("info", "═══ CONNECT START ═══");
 
-  // Step 1: patch memory
-  logApollo("info", "Patching chains map...");
   const patched = patchInjectChainsMap(raw);
-
   logApollo(patched ? "info" : "warn", patched ? "patched" : "patch failed");
 
-  // Step 2: trigger wallet UI
   try {
     await raw.request({ method: "eth_requestAccounts" });
 
@@ -1080,7 +1128,6 @@ async function connectViaProviderRpc(raw: any): Promise<string[]> {
       lastErrorStack,
     });
 
-    // IMPORTANT: show real failure point
     throw err;
   }
 }
@@ -1094,6 +1141,5 @@ export async function connectApolloWallet() {
   if (!sdk) throw new Error("Apollo Wallet not found");
 
   const raw = sdk.provider ?? sdk;
-
   return connectViaProviderRpc(raw);
 }

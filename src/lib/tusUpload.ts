@@ -21,17 +21,29 @@ function isVercelTusProxy(endpoint: string): boolean {
   return endpoint.startsWith("/") || endpoint.includes("/api/pinata/tus");
 }
 
+/** Pinata presigned URLs embed auth in query params — no Bearer header. */
+function isPinataPresignedUrl(url: string): boolean {
+  return (
+    url.includes("uploads.pinata.cloud") &&
+    (url.includes("X-Signature=") || url.includes("x-signature="))
+  );
+}
+
+function pinataChunkSize(file: File, viaProxy: boolean): number {
+  if (viaProxy) return 2 * 1024 * 1024;
+  // Pinata docs: chunk must be < 50 MB; use 10 MB for multi-GB files (reliability)
+  if (file.size > 2 * 1024 * 1024 * 1024) return 10 * 1024 * 1024;
+  return 50 * 1024 * 1024;
+}
+
 export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
   const viaProxy = isVercelTusProxy(options.endpoint);
+  const presigned = isPinataPresignedUrl(options.endpoint);
 
-  const upload = new tus.Upload(options.file, {
-    endpoint: options.endpoint,
+  const uploadOptions: tus.UploadOptions = {
     uploadSize: options.file.size,
-    // Signed URL mode needs no header; legacy proxy mode also omits client JWT
-    headers: options.token ? { Authorization: `Bearer ${options.token}` } : {},
-    // Pinata requires chunk size strictly under 50 MB; proxy stays under Vercel's 4.5 MB limit
-    chunkSize: viaProxy ? 2 * 1024 * 1024 : 49 * 1024 * 1024,
-    retryDelays: [0, 1000, 3000, 5000, 10000],
+    chunkSize: pinataChunkSize(options.file, viaProxy),
+    retryDelays: [0, 3000, 5000, 10000, 20000],
     metadata: {
       filename: options.file.name,
       filetype: options.file.type || "application/octet-stream",
@@ -39,13 +51,11 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
     },
     onProgress: options.onProgress,
     onChunkComplete: (_chunkSize, _bytesAccepted, _bytesTotal) => {
-      // Fire once as soon as the first chunk lands — upload.url is now set and contains the Pinata file UUID
       if (options.onFileCreated && upload.url) {
         const segments = upload.url.split("/").filter(Boolean);
         const uuid = segments.find((s) => UUID_RE.test(s));
         if (uuid) {
           options.onFileCreated(uuid, options.file.name);
-          // Prevent firing again by clearing the callback reference
           options.onFileCreated = undefined;
         }
       }
@@ -62,7 +72,19 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
       options.onError(err instanceof Error ? err : new Error(String(err)));
     },
     storeFingerprintForResuming: false,
-  });
+  };
+
+  if (presigned) {
+    // Presigned URL is the upload resource — auth is in the query string
+    uploadOptions.uploadUrl = options.endpoint;
+  } else {
+    uploadOptions.endpoint = options.endpoint;
+    if (options.token) {
+      uploadOptions.headers = { Authorization: `Bearer ${options.token}` };
+    }
+  }
+
+  const upload = new tus.Upload(options.file, uploadOptions);
 
   upload.start();
 
@@ -76,11 +98,6 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 /**
  * After a TUS upload completes, Pinata's upload URL contains the file ID.
  * We call our server-side /api/pinata/file-info to exchange it for the IPFS CID.
- *
- * upload.url is our proxy URL: /api/pinata/tus/{uuid}/{filename}
- * OR the original Pinata URL: https://uploads.pinata.cloud/v3/files/{uuid}/{filename}
- *
- * In both cases the UUID segment IS the Pinata file ID → direct UUID lookup in file-info.
  */
 async function extractCid(uploadUrl: string, filename?: string): Promise<string> {
   const segments = uploadUrl.split("/").filter(Boolean);
@@ -88,10 +105,8 @@ async function extractCid(uploadUrl: string, filename?: string): Promise<string>
 
   let fileId: string;
   if (uuidIdx !== -1) {
-    // UUID is the Pinata file ID — use it for a direct /v3/files/{uuid} lookup
     fileId = segments[uuidIdx]!;
   } else {
-    // No UUID in URL — fall back to filename-based search
     fileId = segments[segments.length - 1] ?? "";
   }
 
@@ -99,7 +114,6 @@ async function extractCid(uploadUrl: string, filename?: string): Promise<string>
     throw new Error(`Cannot extract file ID from TUS upload URL: ${uploadUrl}`);
   }
 
-  // Poll up to 10 times (Pinata may take a moment to assign the CID)
   const filenameParam = filename ? `&filename=${encodeURIComponent(filename)}` : "";
   for (let attempt = 0; attempt < 10; attempt++) {
     const res = await fetch(`/api/pinata/file-info?id=${fileId}${filenameParam}`);

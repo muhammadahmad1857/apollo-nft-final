@@ -7,9 +7,9 @@ const DEFAULT_MAX_BYTES = 25 * 1024 * 1024 * 1024;
 /**
  * Returns credentials for direct browser → Pinata TUS uploads.
  *
- * Uses a short-lived scoped JWT (Pinata's recommended TUS pattern). Presigned
- * URLs with max_file_size often reject large uploads with 413 even when the
- * signed cap matches the file byte length.
+ * Prefer presigned URLs without max_file_size — signing an exact byte cap
+ * causes Pinata to return 413 "Upload-Length exceeds maximum upload size"
+ * on large files even when the cap matches the file.
  */
 export async function POST(req: Request) {
   try {
@@ -40,6 +40,45 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!process.env.PINATA_JWT) {
+      return NextResponse.json({ error: "Pinata not configured" }, { status: 500 });
+    }
+
+    const signPayload: Record<string, unknown> = {
+      network: "public",
+      date: Math.floor(Date.now() / 1000),
+      expires: 14400,
+    };
+
+    if (body.filename) {
+      signPayload.filename = body.filename;
+    }
+
+    const signRes = await fetch("https://uploads.pinata.cloud/v3/files/sign", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.PINATA_JWT}`,
+      },
+      body: JSON.stringify(signPayload),
+    });
+
+    if (signRes.ok) {
+      const signData = (await signRes.json()) as { data?: string };
+      if (signData.data) {
+        return NextResponse.json({
+          data: {
+            url: signData.data,
+            token: "",
+          },
+        });
+      }
+    } else {
+      const errText = await signRes.text();
+      console.error("[signed-upload-url] presign failed:", signRes.status, errText);
+    }
+
+    // Fallback: short-lived scoped JWT for direct TUS to the collection endpoint
     const jwtRes = await fetch("https://api.pinata.cloud/v3/api_keys", {
       method: "POST",
       headers: {
@@ -48,9 +87,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         keyname: `TUS-Upload-${Date.now()}${body.filename ? `-${body.filename}` : ""}`,
-        permissions: {
-          admin: true,
-        },
+        permissions: { admin: true },
         maxUses: 10,
       }),
     });
@@ -59,7 +96,7 @@ export async function POST(req: Request) {
       const errText = await jwtRes.text();
       console.error("[signed-upload-url] JWT creation error:", jwtRes.status, errText);
       return NextResponse.json(
-        { error: "Failed to create upload token", details: errText },
+        { error: "Failed to create upload credentials", details: errText },
         { status: jwtRes.status }
       );
     }
