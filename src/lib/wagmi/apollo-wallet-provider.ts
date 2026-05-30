@@ -5,9 +5,78 @@ import { apolloMainnet } from "./apollo-chain";
 const APOLLO_CHAIN_HEX = `0x${apolloMainnet.id.toString(16)}`;
 const ACCOUNTS_CHANGED_TIMEOUT_MS = 15_000;
 const APOLLO_WRAPPED = Symbol.for("apollo.wallet.wrapped");
+const MAX_DEBUG_LOGS = 150;
+
+type ApolloDebugLogLevel = "info" | "warn" | "error";
+
+export type ApolloWalletDebugLog = {
+  ts: string;
+  level: ApolloDebugLogLevel;
+  message: string;
+  data?: unknown;
+};
+
+const debugLogs: ApolloWalletDebugLog[] = [];
+const debugSubscribers = new Set<() => void>();
+
+function isDebugPanelOpen() {
+  return (
+    typeof window !== "undefined" &&
+    window.location.search.includes("showProviders=1")
+  );
+}
+
+export function pushApolloWalletDebugLog(
+  message: string,
+  data?: unknown,
+  level: ApolloDebugLogLevel = "info"
+) {
+  const entry: ApolloWalletDebugLog = {
+    ts: new Date().toISOString(),
+    level,
+    message,
+    data,
+  };
+  debugLogs.unshift(entry);
+  if (debugLogs.length > MAX_DEBUG_LOGS) debugLogs.pop();
+  debugSubscribers.forEach((fn) => fn());
+
+  if (isDebugPanelOpen()) {
+    const prefix = `[apollo-wallet:${level}]`;
+    if (data !== undefined) console.log(prefix, message, data);
+    else console.log(prefix, message);
+  }
+}
+
+export function getApolloWalletDebugLogs() {
+  return [...debugLogs];
+}
+
+export function subscribeApolloWalletDebugLogs(cb: () => void) {
+  debugSubscribers.add(cb);
+  return () => debugSubscribers.delete(cb);
+}
+
+export function clearApolloWalletDebugLogs() {
+  debugLogs.length = 0;
+  debugSubscribers.forEach((fn) => fn());
+}
+
+export function getApolloWalletDebugState() {
+  return {
+    rdns: getApolloWalletRdns(),
+    name: getApolloWalletName(),
+    hasExtensionIcon: Boolean(eip6963ApolloIcon),
+    installed: isApolloWalletInstalled(),
+    providerWrapped: Boolean(eip6963ApolloProvider && isWrapped(eip6963ApolloProvider)),
+    expectedChainHex: APOLLO_CHAIN_HEX,
+  };
+}
 
 export const APOLLO_WALLET_CHROME_STORE_URL =
   "https://chromewebstore.google.com/detail/apollo-wallet/mnpnahmgchhkjphkkemhbnjedajbcbll";
+
+export const APOLLO_WALLET_WEBSITE_URL = "https://apollowallet.io";
 
 const APOLLO_PROVIDER_FLAGS = [
   "isApolloWallet",
@@ -58,6 +127,11 @@ if (typeof window !== "undefined") {
 
       detail.provider = wrapProvider(detail.provider);
       rememberAnnouncement(detail.info, detail.provider);
+      pushApolloWalletDebugLog("EIP-6963 Apollo provider announced (wrapped)", {
+        rdns: detail.info?.rdns,
+        name: detail.info?.name,
+        uuid: detail.info?.uuid,
+      });
     },
     true
   );
@@ -122,13 +196,6 @@ function looksLikeProvider(value: any) {
   );
 }
 
-function isApolloLikeProvider(provider: any) {
-  if (!provider || typeof provider !== "object") return false;
-  if (APOLLO_PROVIDER_FLAGS.some((flag) => Boolean(provider[flag]))) return true;
-  const label = String(provider?.providerInfo?.name ?? provider?.name ?? "").toLowerCase();
-  return label.includes("apollo") || label.includes("muses");
-}
-
 async function resolveChainId(raw: any) {
   if (typeof raw.request === "function") {
     const chainId = await raw.request({ method: "eth_chainId" });
@@ -141,26 +208,26 @@ async function resolveChainId(raw: any) {
 }
 
 async function requestPermissions(raw: any) {
-  if (typeof raw.request !== "function") return;
-  try {
-    await raw.request({
-      method: "wallet_requestPermissions",
-      params: [{ eth_accounts: {} }],
-    });
-  } catch {
-    // Already authorized or wallet does not support permissions RPC
-  }
+  // wagmi's injected connector already calls wallet_requestPermissions when shimDisconnect is on.
+  // Skip duplicate permission prompts — they can prevent Apollo's popup from opening.
+  void raw;
 }
 
 async function promptForAccounts(raw: any) {
+  if (typeof raw.request === "function") {
+    const viaEth = normalizeAccounts(
+      await raw.request({ method: "eth_requestAccounts" })
+    );
+    if (viaEth.length) return viaEth;
+  }
   if (typeof raw.requestAccounts === "function") {
     return normalizeAccounts(await raw.requestAccounts());
   }
   if (typeof raw.connect === "function") {
     return normalizeAccounts(await raw.connect());
   }
-  if (typeof raw.request === "function") {
-    return normalizeAccounts(await raw.request({ method: "eth_requestAccounts" }));
+  if (typeof raw.enable === "function") {
+    return normalizeAccounts(await raw.enable());
   }
   if (typeof raw.getAccounts === "function") {
     return normalizeAccounts(await raw.getAccounts());
@@ -235,17 +302,25 @@ async function waitForAccountsChanged(raw: any, timeoutMs: number) {
 }
 
 async function requestEvmAccounts(raw: any) {
+  pushApolloWalletDebugLog("connect flow started");
   await requestPermissions(raw);
 
   try {
-    const immediate = pickEvmAccounts(await promptForAccounts(raw));
+    const rawAccounts = await promptForAccounts(raw);
+    pushApolloWalletDebugLog("promptForAccounts result", { rawAccounts });
+    const immediate = pickEvmAccounts(rawAccounts);
+    pushApolloWalletDebugLog("connect flow succeeded (immediate)", { accounts: immediate });
     return immediate;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    pushApolloWalletDebugLog("promptForAccounts empty/failed, waiting for accountsChanged", { message }, "warn");
     if (!message.includes("no accounts")) throw err;
   }
 
-  return waitForAccountsChanged(raw, ACCOUNTS_CHANGED_TIMEOUT_MS);
+  pushApolloWalletDebugLog(`waiting for accountsChanged (${ACCOUNTS_CHANGED_TIMEOUT_MS}ms)`);
+  const accounts = await waitForAccountsChanged(raw, ACCOUNTS_CHANGED_TIMEOUT_MS);
+  pushApolloWalletDebugLog("connect flow succeeded (accountsChanged)", { accounts });
+  return accounts;
 }
 
 function wrapProvider(raw: any) {
@@ -277,7 +352,10 @@ function wrapProvider(raw: any) {
 
   if (typeof raw.on === "function") {
     for (const event of ["accountsChanged", "chainChanged", "connect", "disconnect"] as const) {
-      raw.on(event, (...args: any[]) => emit(event, ...args));
+      raw.on(event, (...args: any[]) => {
+        pushApolloWalletDebugLog(`provider event: ${event}`, args);
+        emit(event, ...args);
+      });
     }
   }
 
@@ -290,66 +368,96 @@ function wrapProvider(raw: any) {
   };
 
   const request = async ({ method, params }: { method: string; params?: any[] }) => {
+    pushApolloWalletDebugLog(`RPC → ${method}`, { params });
     let result: any;
 
-    switch (method) {
-      case "eth_requestAccounts": {
-        result = await requestEvmAccounts(raw);
-        await notifyConnected(result);
-        return result;
-      }
-      case "eth_accounts": {
-        if (typeof raw.request === "function") {
-          result = normalizeAccounts(await raw.request({ method, params }));
-        } else if (typeof raw.getAccounts === "function") {
-          result = normalizeAccounts(await raw.getAccounts());
-        } else {
-          result = [];
+    try {
+      switch (method) {
+        case "eth_requestAccounts": {
+          result = await requestEvmAccounts(raw);
+          if (result.length) await notifyConnected(result);
+          pushApolloWalletDebugLog(`RPC ← ${method}`, { result });
+          return result;
         }
-        return result.filter(isEthAddress);
-      }
-      case "eth_chainId": {
-        return resolveChainId(raw);
-      }
-      case "wallet_switchEthereumChain": {
-        const target = params?.[0]?.chainId;
-        const normalized =
-          typeof target === "string" && target.startsWith("0x")
-            ? parseInt(target, 16)
-            : Number(target);
+        case "wallet_requestPermissions": {
+          if (typeof raw.request === "function") {
+            result = await raw.request({ method, params });
+            pushApolloWalletDebugLog(`RPC ← ${method}`, { result });
+            return result;
+          }
+          throw new Error("Apollo Wallet does not support wallet_requestPermissions");
+        }
+        case "eth_accounts": {
+          if (typeof raw.request === "function") {
+            result = normalizeAccounts(await raw.request({ method, params }));
+          } else if (typeof raw.getAccounts === "function") {
+            result = normalizeAccounts(await raw.getAccounts());
+          } else {
+            result = [];
+          }
+          result = result.filter(isEthAddress);
+          pushApolloWalletDebugLog(`RPC ← ${method}`, { result });
+          return result;
+        }
+        case "eth_chainId": {
+          result = await resolveChainId(raw);
+          pushApolloWalletDebugLog(`RPC ← ${method}`, { result });
+          return result;
+        }
+        case "wallet_switchEthereumChain": {
+          const target = params?.[0]?.chainId;
+          const normalized =
+            typeof target === "string" && target.startsWith("0x")
+              ? parseInt(target, 16)
+              : Number(target);
 
-        if (typeof raw.switchChain === "function") {
-          result = await raw.switchChain(normalized);
-          break;
+          if (typeof raw.switchChain === "function") {
+            result = await raw.switchChain(normalized);
+            break;
+          }
+          if (typeof raw.switchNetwork === "function") {
+            result = await raw.switchNetwork(normalized);
+            break;
+          }
+          if (typeof raw.request === "function") {
+            result = await raw.request({ method, params });
+            break;
+          }
+          throw new Error("Apollo Wallet does not support chain switching");
         }
-        if (typeof raw.switchNetwork === "function") {
-          result = await raw.switchNetwork(normalized);
-          break;
+        case "wallet_addEthereumChain": {
+          if (typeof raw.request === "function") {
+            result = await raw.request({ method, params });
+            pushApolloWalletDebugLog(`RPC ← ${method}`, { result });
+            return result;
+          }
+          throw new Error("Apollo Wallet does not support adding chains");
         }
-        if (typeof raw.request === "function") {
-          result = await raw.request({ method, params });
-          break;
+        default: {
+          if (typeof raw.request === "function") {
+            result = await raw.request({ method, params });
+            pushApolloWalletDebugLog(`RPC ← ${method}`, { result });
+            return result;
+          }
+          if (typeof raw._request === "function") {
+            result = await raw._request({ method, params });
+            pushApolloWalletDebugLog(`RPC ← ${method}`, { result });
+            return result;
+          }
+          throw new Error(`Unsupported method on Apollo Wallet adapter: ${method}`);
         }
-        throw new Error("Apollo Wallet does not support chain switching");
       }
-      case "wallet_addEthereumChain": {
-        if (typeof raw.request === "function") {
-          return raw.request({ method, params });
-        }
-        throw new Error("Apollo Wallet does not support adding chains");
-      }
-      default: {
-        if (typeof raw.request === "function") {
-          return raw.request({ method, params });
-        }
-        if (typeof raw._request === "function") {
-          return raw._request({ method, params });
-        }
-        throw new Error(`Unsupported method on Apollo Wallet adapter: ${method}`);
-      }
+
+      pushApolloWalletDebugLog(`RPC ← ${method}`, { result });
+      return result;
+    } catch (err) {
+      pushApolloWalletDebugLog(
+        `RPC ✗ ${method}`,
+        { error: err instanceof Error ? err.message : String(err) },
+        "error"
+      );
+      throw err;
     }
-
-    return result;
   };
 
   const wrapped = {
@@ -364,47 +472,57 @@ function wrapProvider(raw: any) {
   return wrapped;
 }
 
-function findRawApolloProvider() {
+function findFlaggedInjectedApolloProvider() {
   if (typeof window === "undefined") return undefined;
 
   const win = window as any;
-  const apollo = win.apollo;
-  const apolloWallet = win.apolloWallet;
-  const muses = win.muses;
+  const providers = [win.ethereum, ...(Array.isArray(win.ethereum?.providers) ? win.ethereum.providers : [])]
+    .filter(Boolean);
 
-  const injectedApollo = [win.ethereum, ...(Array.isArray(win.ethereum?.providers) ? win.ethereum.providers : [])]
-    .filter(Boolean)
-    .find(isApolloLikeProvider);
+  return providers.find(
+    (provider) =>
+      looksLikeProvider(provider) &&
+      APOLLO_PROVIDER_FLAGS.some((flag) => Boolean(provider[flag]))
+  );
+}
 
-  const candidates = [
-    eip6963ApolloProvider,
-    injectedApollo,
-    apolloWallet?.ethereum,
-    apolloWallet?.provider,
-    apolloWallet,
-    apollo?.ethereum,
-    apollo?.evm,
-    apollo?.provider,
-    apollo?.ethereumProvider,
-    apollo?.providers?.ethereum,
-    apollo?.providers?.evm,
-    apollo?.wallet,
-    apollo,
-    muses?.ethereum,
-    muses?.evm,
-    muses?.provider,
-    muses?.ethereumProvider,
-    muses?.providers?.ethereum,
-    muses?.providers?.evm,
-    muses?.wallet,
-    muses,
-  ].filter(Boolean);
+function findRawApolloProvider() {
+  if (typeof window === "undefined") return undefined;
 
   if (eip6963ApolloProvider && looksLikeProvider(eip6963ApolloProvider)) {
     return eip6963ApolloProvider;
   }
 
-  return candidates.find((provider) => looksLikeProvider(provider) && isApolloLikeProvider(provider));
+  const flagged = findFlaggedInjectedApolloProvider();
+  if (flagged) return flagged;
+
+  const win = window as any;
+  const apolloWallet = win.apolloWallet;
+
+  const candidates = [
+    apolloWallet?.ethereum,
+    apolloWallet?.provider,
+    apolloWallet?.evm,
+    win.apollo?.ethereum,
+    win.apollo?.evm,
+    win.apollo?.provider,
+    win.muses?.ethereum,
+    win.muses?.evm,
+    win.muses?.provider,
+  ].filter(Boolean);
+
+  return candidates.find(
+    (provider) =>
+      looksLikeProvider(provider) &&
+      APOLLO_PROVIDER_FLAGS.some((flag) => Boolean(provider[flag]))
+  );
+}
+
+/** Only true when EIP-6963 or an explicitly flagged Apollo provider exists. */
+export function isApolloWalletInstalled() {
+  if (typeof window === "undefined") return false;
+  if (eip6963ApolloProvider && looksLikeProvider(eip6963ApolloProvider)) return true;
+  return Boolean(findFlaggedInjectedApolloProvider());
 }
 
 export function getApolloWalletProvider() {
@@ -413,10 +531,6 @@ export function getApolloWalletProvider() {
   requestApolloWalletProviders();
   const provider = findRawApolloProvider();
   return provider ? wrapProvider(provider) : undefined;
-}
-
-export function isApolloWalletInstalled() {
-  return typeof window !== "undefined" && !!findRawApolloProvider();
 }
 
 export async function waitForApolloWalletProvider(timeoutMs = 6000) {

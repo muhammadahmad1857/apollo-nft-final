@@ -5,6 +5,7 @@ import { createConnector } from "wagmi";
 import { injected } from "wagmi/connectors";
 import {
   APOLLO_WALLET_CHROME_STORE_URL,
+  APOLLO_WALLET_WEBSITE_URL,
   getApolloWalletIcon,
   getApolloWalletName,
   getApolloWalletProvider,
@@ -30,27 +31,48 @@ const apolloWallet = () => ({
   rdns: getApolloWalletRdns(),
   iconUrl: async () => getApolloWalletIcon(),
   iconBackground: "#1a1408",
+  // Must be explicit boolean — `undefined` makes RainbowKit treat the wallet as ready
+  // and wagmi's injected connector falls back to window.ethereum (MetaMask).
   installed:
-    typeof window !== "undefined"
-      ? isApolloWalletInstalled() || undefined
-      : undefined,
+    typeof window !== "undefined" ? isApolloWalletInstalled() : false,
   downloadUrls: {
     browserExtension: APOLLO_WALLET_CHROME_STORE_URL,
     chrome: APOLLO_WALLET_CHROME_STORE_URL,
+    desktop: APOLLO_WALLET_WEBSITE_URL,
+  },
+  extension: {
+    instructions: {
+      learnMoreUrl: APOLLO_WALLET_WEBSITE_URL,
+      steps: [
+        {
+          step: "install" as const,
+          title: "Install Apollo Wallet",
+          description:
+            "Install the Apollo Wallet browser extension from the Chrome Web Store, or visit apollowallet.io to get started.",
+        },
+        {
+          step: "refresh" as const,
+          title: "Refresh the page",
+          description: "After installing, reload this page then connect again.",
+        },
+      ],
+    },
   },
   createConnector: (walletDetails: any) => {
     return createConnector((config) => ({
       ...injected({
         target: () => {
-          if (typeof window === "undefined") return undefined;
+          const name = getApolloWalletName();
+          if (typeof window === "undefined") {
+            // Always return a target object — returning undefined makes injected() use window.ethereum.
+            return { id: "apollo", name, provider: undefined };
+          }
 
           const provider = getApolloWalletProvider();
-          if (!provider) return undefined;
-
           return {
             id: "apollo",
-            name: getApolloWalletName(),
-            provider,
+            name,
+            provider: provider ?? undefined,
           };
         },
         shimDisconnect: false,
