@@ -3,7 +3,7 @@
 FROM node:22-slim AS base
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@11.5.0 --activate
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -21,16 +21,15 @@ FROM base AS deps
 #     && rm -rf /var/lib/apt/lists/*
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-
 # IMPORTANT: stop pnpm build-script blocking + allow native deps
 # RUN pnpm config set ignore-scripts false 
-RUN echo "onlyBuiltDependencies:" > pnpm-workspace.yaml \
- && echo "  - prisma" >> pnpm-workspace.yaml \
- && echo "  - @prisma/engines" >> pnpm-workspace.yaml \
- && echo "  - sharp" >> pnpm-workspace.yaml \
- && echo "  - ffmpeg-static" >> pnpm-workspace.yaml \
- && echo "  - bufferutil" >> pnpm-workspace.yaml \
- && echo "  - utf-8-validate" >> pnpm-workspace.yaml
+# RUN echo "onlyBuiltDependencies:" > pnpm-workspace.yaml \
+#  && echo "  - prisma" >> pnpm-workspace.yaml \
+#  && echo "  - @prisma/engines" >> pnpm-workspace.yaml \
+#  && echo "  - sharp" >> pnpm-workspace.yaml \
+#  && echo "  - ffmpeg-static" >> pnpm-workspace.yaml \
+#  && echo "  - bufferutil" >> pnpm-workspace.yaml \
+#  && echo "  - utf-8-validate" >> pnpm-workspace.yaml
 RUN pnpm install --frozen-lockfile
 
 # ─────────────────────────────
