@@ -15,11 +15,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
-import { startTusUpload, type TusUploadHandle } from "@/lib/tusUpload";
 import { formatUploadProgress } from "@/lib/formatBytes";
 import { formatPinataUploadError } from "@/lib/pinataUploadErrors";
+import * as tus from "tus-js-client";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function getFileType(file: File): string {
   const type = file.type.toLowerCase();
@@ -68,8 +69,6 @@ interface MintMetadataFormProps {
   showRemoveButton?: boolean;
   royaltyLabel?: string;
   showRoyalty?: boolean;
-  /** Called as soon as the Pinata file UUID is known (first chunk uploaded) — before upload completes */
-  onFileCreated?: (fileId: string, filename: string) => void;
 }
 
 export function MintMetadataForm({
@@ -79,7 +78,6 @@ export function MintMetadataForm({
   showRemoveButton = false,
   royaltyLabel = "Royalty Percentage",
   showRoyalty = true,
-  onFileCreated,
 }: MintMetadataFormProps) {
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
@@ -97,8 +95,8 @@ export function MintMetadataForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const trailerFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
-  const fileUploadHandleRef = useRef<TusUploadHandle | null>(null);
-  const trailerUploadHandleRef = useRef<TusUploadHandle | null>(null);
+  const fileUploadHandleRef = useRef<tus.Upload | null>(null);
+  const trailerUploadHandleRef = useRef<tus.Upload | null>(null);
 
   const handleChange = useCallback(
     (field: keyof MintFormValues, value: string | number | undefined) => {
@@ -217,7 +215,7 @@ export function MintMetadataForm({
         setUploadedBytes(0);
         setTotalBytes(file.size);
 
-        // Detect fileType immediately so Queue Mint has it before upload finishes
+        // Detect fileType immediately so the form reflects the asset type while uploading.
         const earlyFileType = getFileType(file);
         onChange((prev) => ({ ...prev, fileType: earlyFileType }));
 
@@ -238,32 +236,69 @@ export function MintMetadataForm({
         if (!tusEndpoint) throw new Error("No TUS endpoint in signed URL response");
 
         await new Promise<void>((resolve, reject) => {
-          fileUploadHandleRef.current = startTusUpload({
-            file,
+          const uploadOptions: tus.UploadOptions = {
             endpoint: tusEndpoint,
-            token: tusToken,
-            onFileCreated,
+            uploadSize: file.size,
+            chunkSize: 32 * 1024 * 1024,
+            retryDelays: [0, 3000, 5000, 10000, 20000],
+            metadata: {
+              filename: file.name,
+              filetype: file.type || "application/octet-stream",
+              network: "public",
+            },
             onProgress: (bytesSent, bytesTotal) => {
               setUploadedBytes(bytesSent);
               setTotalBytes(bytesTotal);
               setUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
             },
-            onSuccess: (cid) => {
-              const ipfsUrl = `ipfs://${cid}`;
-              const detectedFileType = getFileType(file);
-              setUploadProgress(100);
-              onChange((prev) => ({
-                ...prev,
-                musicTrackUrl: ipfsUrl,
-                fileType: detectedFileType,
-              }));
-              toast.success("✓ File uploaded successfully!", {
-                description: `File type: ${detectedFileType}`,
-              });
-              resolve();
+            onSuccess: async () => {
+              try {
+                const uploadUrl = fileUploadHandleRef.current?.url ?? "";
+                const segments = uploadUrl.split("/").filter(Boolean);
+                const fileId = segments.find((segment) => UUID_RE.test(segment));
+                if (!fileId) {
+                  throw new Error(`Cannot determine file ID from upload URL: ${uploadUrl}`);
+                }
+
+                const res = await fetch(
+                  `/api/pinata/file-info?id=${encodeURIComponent(fileId)}&filename=${encodeURIComponent(file.name)}`
+                );
+                if (!res.ok) {
+                  throw new Error("CID not available after upload");
+                }
+
+                const data = (await res.json()) as { cid?: string };
+                if (!data.cid) {
+                  throw new Error("CID not available after upload");
+                }
+
+                const ipfsUrl = `ipfs://${data.cid}`;
+                const detectedFileType = getFileType(file);
+                setUploadProgress(100);
+                onChange((prev) => ({
+                  ...prev,
+                  musicTrackUrl: ipfsUrl,
+                  fileType: detectedFileType,
+                }));
+                toast.success("✓ File uploaded successfully!", {
+                  description: `File type: ${detectedFileType}`,
+                });
+                resolve();
+              } catch (error) {
+                reject(error instanceof Error ? error : new Error(String(error)));
+              }
             },
-            onError: (err) => reject(err),
-          });
+            onError: (err) => reject(err instanceof Error ? err : new Error(String(err))),
+            removeFingerprintOnSuccess: true,
+            storeFingerprintForResuming: true,
+          };
+
+          if (tusToken) {
+            uploadOptions.headers = { Authorization: `Bearer ${tusToken}` };
+          }
+
+          fileUploadHandleRef.current = new tus.Upload(file, uploadOptions);
+          fileUploadHandleRef.current.start();
         });
       } catch (error) {
         console.error("Upload error:", error);
@@ -276,7 +311,7 @@ export function MintMetadataForm({
         fileUploadHandleRef.current = null;
       }
     },
-    [onChange, onFileCreated]
+    [onChange]
   );
 
   // Handle file selection
@@ -368,31 +403,69 @@ export function MintMetadataForm({
         if (!tusEndpoint) throw new Error("No TUS endpoint in signed URL response");
 
         await new Promise<void>((resolve, reject) => {
-          trailerUploadHandleRef.current = startTusUpload({
-            file,
+          const uploadOptions: tus.UploadOptions = {
             endpoint: tusEndpoint,
-            token: tusToken,
+            uploadSize: file.size,
+            chunkSize: 32 * 1024 * 1024,
+            retryDelays: [0, 3000, 5000, 10000, 20000],
+            metadata: {
+              filename: file.name,
+              filetype: file.type || "application/octet-stream",
+              network: "public",
+            },
             onProgress: (bytesSent, bytesTotal) => {
               setTrailerUploadedBytes(bytesSent);
               setTrailerTotalBytes(bytesTotal);
               setTrailerUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
             },
-            onSuccess: (cid) => {
-              const ipfsUrl = `ipfs://${cid}`;
-              const detectedFileType = getFileType(file);
-              setTrailerUploadProgress(100);
-              onChange((prev) => ({
-                ...prev,
-                trailerUrl: ipfsUrl,
-                trailerFileType: detectedFileType,
-              }));
-              toast.success("✓ Trailer uploaded successfully!", {
-                description: `Trailer type: ${detectedFileType}`,
-              });
-              resolve();
+            onSuccess: async () => {
+              try {
+                const uploadUrl = trailerUploadHandleRef.current?.url ?? "";
+                const segments = uploadUrl.split("/").filter(Boolean);
+                const fileId = segments.find((segment) => UUID_RE.test(segment));
+                if (!fileId) {
+                  throw new Error(`Cannot determine file ID from upload URL: ${uploadUrl}`);
+                }
+
+                const res = await fetch(
+                  `/api/pinata/file-info?id=${encodeURIComponent(fileId)}&filename=${encodeURIComponent(file.name)}`
+                );
+                if (!res.ok) {
+                  throw new Error("CID not available after upload");
+                }
+
+                const data = (await res.json()) as { cid?: string };
+                if (!data.cid) {
+                  throw new Error("CID not available after upload");
+                }
+
+                const ipfsUrl = `ipfs://${data.cid}`;
+                const detectedFileType = getFileType(file);
+                setTrailerUploadProgress(100);
+                onChange((prev) => ({
+                  ...prev,
+                  trailerUrl: ipfsUrl,
+                  trailerFileType: detectedFileType,
+                }));
+                toast.success("✓ Trailer uploaded successfully!", {
+                  description: `Trailer type: ${detectedFileType}`,
+                });
+                resolve();
+              } catch (error) {
+                reject(error instanceof Error ? error : new Error(String(error)));
+              }
             },
-            onError: (err) => reject(err),
-          });
+            onError: (err) => reject(err instanceof Error ? err : new Error(String(err))),
+            removeFingerprintOnSuccess: true,
+            storeFingerprintForResuming: true,
+          };
+
+          if (tusToken) {
+            uploadOptions.headers = { Authorization: `Bearer ${tusToken}` };
+          }
+
+          trailerUploadHandleRef.current = new tus.Upload(file, uploadOptions);
+          trailerUploadHandleRef.current.start();
         });
       } catch (error) {
         console.error("Trailer upload error:", error);

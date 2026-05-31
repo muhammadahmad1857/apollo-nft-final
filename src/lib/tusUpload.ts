@@ -158,7 +158,7 @@ function getProxyChunkSize(): number {
   }
 
   // Keep chunks small to survive strict reverse-proxy body limits.
-  return 256 * 1024;
+  return 64 * 1024;
 }
 
 /** Pinata presigned URLs embed auth in query params — no Bearer header. */

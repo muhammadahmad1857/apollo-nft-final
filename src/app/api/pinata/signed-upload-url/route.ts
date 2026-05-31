@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 
 const PINATA_TUS_ENDPOINT = "https://uploads.pinata.cloud/v3/files";
-const LOCAL_TUS_PROXY_ENDPOINT = "/api/pinata/tus";
 /** Pinata hard per-file limit (docs: 25 GB). App default cap matches that. */
 const DEFAULT_MAX_BYTES = 25 * 1024 * 1024 * 1024;
-const USE_DIRECT_SIGNED_TUS = process.env.PINATA_USE_DIRECT_SIGNED_TUS === "true";
+const USE_PROXY_TUS = process.env.PINATA_USE_PROXY_TUS === "true";
 
 /**
  * Returns credentials for direct browser -> Pinata TUS uploads.
@@ -42,12 +41,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Pinata not configured" }, { status: 500 });
     }
 
-    // Default to local proxy mode. This avoids direct signed URL policy mismatches
-    // that can return first-PATCH 413 Upload-Length errors for otherwise valid files.
-    if (!USE_DIRECT_SIGNED_TUS) {
+    // Keep proxy mode as an opt-in fallback only.
+    if (USE_PROXY_TUS) {
       return NextResponse.json({
         data: {
-          url: LOCAL_TUS_PROXY_ENDPOINT,
+          url: "/api/pinata/tus",
           token: "",
         },
       });
@@ -59,8 +57,7 @@ export async function POST(req: Request) {
       network: "public",
       date: Math.floor(Date.now() / 1000),
       expires: 14400,
-      // Align Pinata signed upload policy with TUS Upload-Length to avoid first-PATCH 413.
-      max_file_size: signedMaxFileSize,
+      maxFileSize: signedMaxFileSize,
     };
 
     if (body.filename) {

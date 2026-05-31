@@ -10,18 +10,11 @@ import { useMintContract } from "@/hooks/useMint";
 import { saveRoyalty, getRoyalty, removeRoyalty } from "@/lib/royaltySessionStorage";
 import MintSuccessDialog from "@/components/MintSuccess";
 import { MintMetadataForm, type MintFormValues } from "@/components/mint/MintMetadataForm";
-import { useUser } from "@/hooks/useUser";
 
 export default function MintPage() {
   const { address } = useAccount();
-  const { data: user } = useUser(address);
   const { mint, handleToasts, isBusy, isPriceLoading } =
     useMintContract();
-
-  // Pinata file UUID + original filename — available as soon as first chunk lands, before upload completes
-  const [pinataFileId, setPinataFileId] = useState<string | undefined>(undefined);
-  const [pinataFilename, setPinataFilename] = useState<string | undefined>(undefined);
-  const [isQueueing, setIsQueueing] = useState(false);
 
   // Form State
   const [formValues, setFormValues] = useState<MintFormValues>({
@@ -59,8 +52,6 @@ export default function MintPage() {
       trailerFileType: undefined,
       royaltyBps: 500,
     });
-    setPinataFileId(undefined);
-    setPinataFilename(undefined);
     removeRoyalty("SINGLE");
     toast.success("Form reset");
   };
@@ -69,43 +60,6 @@ export default function MintPage() {
     !!formValues.name?.trim() &&
     !!formValues.title?.trim() &&
     !!formValues.description?.trim();
-
-  // Called when upload is still in progress but user wants to queue the mint
-  const handleQueueMint = async () => {
-    if (!address || !pinataFileId || !requiredFieldsFilled) {
-      toast.error("Please fill in Name, Title, and Description before queuing");
-      return;
-    }
-    setIsQueueing(true);
-    try {
-      const res = await fetch("/api/pending-mints", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          walletAddress: address,
-          pinataFileId,
-          name: formValues.name,
-          title: formValues.title,
-          description: formValues.description ?? "",
-          coverImageUrl: formValues.coverImageUrl,
-          fileType: formValues.fileType ?? "other",
-          trailerUrl: formValues.trailerUrl,
-          trailerFileType: formValues.trailerFileType,
-          royaltyBps: formValues.royaltyBps,
-          pinataFilename,
-        }),
-      });
-      if (!res.ok) throw new Error("Failed to queue mint");
-      toast.success("Mint queued!", {
-        description: "We'll notify you when the upload finishes. You can close this page.",
-      });
-      handleReset();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to queue mint");
-    } finally {
-      setIsQueueing(false);
-    }
-  };
 
   // Handle mint
   const handleMint = async () => {
@@ -230,7 +184,6 @@ useEffect(() => {
           <MintMetadataForm
             values={formValues}
             onChange={setFormValues}
-            onFileCreated={(fileId, filename) => { setPinataFileId(fileId); setPinataFilename(filename); }}
           />
 
           {/* Action Buttons */}
@@ -243,48 +196,30 @@ useEffect(() => {
               Reset
             </Button>
 
-            {/* Upload in progress but file ID known — offer to queue */}
-            {pinataFileId && !formValues.musicTrackUrl ? (
-              <Button
-                onClick={handleQueueMint}
-                disabled={isQueueing || !address || !requiredFieldsFilled}
-                className="flex-1 py-3 h-auto text-base font-semibold rounded-xl shadow-lg disabled:opacity-80 disabled:cursor-not-allowed! transition-all"
-              >
-                {isQueueing ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Queuing...
-                  </span>
-                ) : (
-                  "Queue Mint"
-                )}
-              </Button>
-            ) : (
-              <Button
-                onClick={handleMint}
-                disabled={
-                  !formValues.musicTrackUrl ||
-                  formValues.musicTrackUrl.trim() === "" ||
-                  !requiredFieldsFilled ||
-                  isPriceLoading ||
-                  isBusy ||
-                  isMinting ||
-                  !address
-                }
-                className="flex-1 py-3 h-auto text-base font-semibold rounded-xl shadow-lg disabled:opacity-80 disabled:cursor-not-allowed! transition-all"
-              >
-                {isBusy || isMinting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Minting...
-                  </span>
-                ) : !address ? (
-                  "Connect Wallet"
-                ) : (
-                  "Mint NFT"
-                )}
-              </Button>
-            )}
+            <Button
+              onClick={handleMint}
+              disabled={
+                !formValues.musicTrackUrl ||
+                formValues.musicTrackUrl.trim() === "" ||
+                !requiredFieldsFilled ||
+                isPriceLoading ||
+                isBusy ||
+                isMinting ||
+                !address
+              }
+              className="flex-1 py-3 h-auto text-base font-semibold rounded-xl shadow-lg disabled:opacity-80 disabled:cursor-not-allowed! transition-all"
+            >
+              {isBusy || isMinting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Minting...
+                </span>
+              ) : !address ? (
+                "Connect Wallet"
+              ) : (
+                "Mint NFT"
+              )}
+            </Button>
           </div>
         </motion.div>
       </div>

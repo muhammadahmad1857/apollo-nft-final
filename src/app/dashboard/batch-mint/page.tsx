@@ -22,11 +22,6 @@ export default function BatchMintPage() {
   const { mint, handleToasts, isBusy, isPriceLoading, mintPriceHuman } =
     useMintContract();
 
-  // Pinata file UUID + filename — set as soon as first TUS chunk lands
-  const [pinataFileId, setPinataFileId] = useState<string | undefined>(undefined);
-  const [pinataFilename, setPinataFilename] = useState<string | undefined>(undefined);
-  const [isQueueing, setIsQueueing] = useState(false);
-
   const [formValues, setFormValues] = useState<MintFormValues>({
     name: "",
     title: "",
@@ -79,8 +74,6 @@ export default function BatchMintPage() {
     setQuantity(1);
     setQuantityInput("1");
     setUniversalRoyaltyBps(500);
-    setPinataFileId(undefined);
-    setPinataFilename(undefined);
     removeRoyalty("BATCH");
     toast.success("Form reset");
   };
@@ -90,48 +83,6 @@ export default function BatchMintPage() {
     const parsed = Number(value);
     if (Number.isInteger(parsed) && parsed >= 1) {
       setQuantity(parsed);
-    }
-  };
-
-  // Queue mint while upload is still in progress
-  const handleQueueMint = async () => {
-    if (!address || !pinataFileId || !requiredFieldsFilled) {
-      toast.error("Please fill in Name, Title, and Description before queuing");
-      return;
-    }
-    if (!hasValidQuantity) {
-      toast.error("Quantity must be a whole number greater than 0");
-      return;
-    }
-    setIsQueueing(true);
-    try {
-      const res = await fetch("/api/pending-mints", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          walletAddress: address,
-          pinataFileId,
-          pinataFilename,
-          name: formValues.name,
-          title: formValues.title,
-          description: formValues.description ?? "",
-          coverImageUrl: formValues.coverImageUrl,
-          fileType: formValues.fileType ?? "other",
-          trailerUrl: formValues.trailerUrl,
-          trailerFileType: formValues.trailerFileType,
-          royaltyBps: universalRoyaltyBps,
-          quantity,
-        }),
-      });
-      if (!res.ok) throw new Error("Failed to queue mint");
-      toast.success("Mint queued!", {
-        description: "We'll notify you when the upload finishes. You can close this page.",
-      });
-      handleReset();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to queue mint");
-    } finally {
-      setIsQueueing(false);
     }
   };
 
@@ -243,10 +194,6 @@ export default function BatchMintPage() {
             values={formValues}
             onChange={setFormValues}
             showRoyalty={false}
-            onFileCreated={(fileId, filename) => {
-              setPinataFileId(fileId);
-              setPinataFilename(filename);
-            }}
           />
 
           {/* Quantity */}
@@ -320,49 +267,31 @@ export default function BatchMintPage() {
               Reset
             </Button>
 
-            {/* Upload in progress but file ID known — offer to queue */}
-            {pinataFileId && !formValues.musicTrackUrl ? (
-              <Button
-                onClick={handleQueueMint}
-                disabled={isQueueing || !address || !requiredFieldsFilled || !hasValidQuantity}
-                className="flex-1 py-3 h-auto text-base font-semibold rounded-xl shadow-lg disabled:opacity-80 disabled:cursor-not-allowed! transition-all"
-              >
-                {isQueueing ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Queuing...
-                  </span>
-                ) : (
-                  "Queue Mint"
-                )}
-              </Button>
-            ) : (
-              <Button
-                onClick={handleMint}
-                disabled={
-                  !formValues.musicTrackUrl ||
-                  formValues.musicTrackUrl.trim() === "" ||
-                  !requiredFieldsFilled ||
-                  !isQuantityInputValid ||
-                  isPriceLoading ||
-                  isBusy ||
-                  isMinting ||
-                  !address
-                }
-                className="flex-1 py-3 h-auto text-base font-semibold rounded-xl shadow-lg disabled:opacity-80 disabled:cursor-not-allowed! transition-all"
-              >
-                {isBusy || isMinting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Minting {hasValidQuantity ? quantity : 0} NFT{quantity !== 1 ? "s" : ""}...
-                  </span>
-                ) : !address ? (
-                  "Connect Wallet"
-                ) : (
-                  `Mint ${hasValidQuantity ? quantity : 0} NFT${quantity !== 1 ? "s" : ""}`
-                )}
-              </Button>
-            )}
+            <Button
+              onClick={handleMint}
+              disabled={
+                !formValues.musicTrackUrl ||
+                formValues.musicTrackUrl.trim() === "" ||
+                !requiredFieldsFilled ||
+                !isQuantityInputValid ||
+                isPriceLoading ||
+                isBusy ||
+                isMinting ||
+                !address
+              }
+              className="flex-1 py-3 h-auto text-base font-semibold rounded-xl shadow-lg disabled:opacity-80 disabled:cursor-not-allowed! transition-all"
+            >
+              {isBusy || isMinting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Minting {hasValidQuantity ? quantity : 0} NFT{quantity !== 1 ? "s" : ""}...
+                </span>
+              ) : !address ? (
+                "Connect Wallet"
+              ) : (
+                `Mint ${hasValidQuantity ? quantity : 0} NFT${quantity !== 1 ? "s" : ""}`
+              )}
+            </Button>
           </div>
         </motion.div>
       </div>
