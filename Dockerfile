@@ -65,8 +65,9 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# copy full next app (NO standalone)
-COPY --from=builder /app ./
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
+
+COPY --from=builder /app ./ 
 
 EXPOSE 4000
 
