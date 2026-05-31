@@ -151,6 +151,16 @@ function isVercelTusProxy(endpoint: string): boolean {
   return endpoint.startsWith("/") || endpoint.includes("/api/pinata/tus");
 }
 
+function getProxyChunkSize(): number {
+  const configured = Number(process.env.NEXT_PUBLIC_TUS_PROXY_CHUNK_BYTES);
+  if (Number.isFinite(configured) && configured > 0) {
+    return Math.floor(configured);
+  }
+
+  // Keep chunks small to survive strict reverse-proxy body limits.
+  return 256 * 1024;
+}
+
 /** Pinata presigned URLs embed auth in query params — no Bearer header. */
 function isPinataPresignedUrl(url: string): boolean {
   const lowerUrl = url.toLowerCase();
@@ -161,7 +171,7 @@ function isPinataPresignedUrl(url: string): boolean {
 }
 
 function pinataChunkSize(file: File, viaProxy: boolean): number {
-  if (viaProxy) return 4 * 1024 * 1024;
+  if (viaProxy) return getProxyChunkSize();
   // Keep direct uploads conservative for reliability and simpler 413 troubleshooting.
   if (file.size > 2 * 1024 * 1024 * 1024) return 4 * 1024 * 1024;
   return 8 * 1024 * 1024;

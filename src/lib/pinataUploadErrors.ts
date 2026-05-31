@@ -20,7 +20,7 @@ export function formatPinataUploadError(error: unknown, fileSizeBytes?: number):
     return (
       "Upload rejected (413 — payload too large)." +
       sizeHint +
-      " This is usually an upload policy mismatch, not a Vercel limit. Refresh and retry to get a fresh signed URL."
+      " This can be a proxy request-body limit. Refresh and retry; if it continues, reduce proxy TUS chunk size (NEXT_PUBLIC_TUS_PROXY_CHUNK_BYTES)."
     );
   }
 
