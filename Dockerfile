@@ -23,8 +23,7 @@ FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # IMPORTANT: stop pnpm build-script blocking + allow native deps
-RUN pnpm config set ignore-scripts false 
-#  && pnpm config set only-built-dependencies true
+# RUN pnpm config set ignore-scripts false 
 
 RUN pnpm install --frozen-lockfile
 
