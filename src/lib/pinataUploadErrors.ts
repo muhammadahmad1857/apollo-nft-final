@@ -10,9 +10,9 @@ export function formatPinataUploadError(error: unknown, fileSizeBytes?: number):
 
   if (message.includes("Upload-Length exceeds maximum upload size")) {
     return (
-      "Pinata rejected the upload size cap on this transfer." +
+      "Pinata rejected this upload because Upload-Length exceeded the signed upload limit." +
       sizeHint +
-      " If this keeps happening with a file under 25 GB, email team@pinata.cloud with the upload ID from your browser network tab."
+      " Retry after refreshing the page so a new signed URL is created. If this persists for files under your configured cap, contact Pinata support with the upload request ID from the network tab."
     );
   }
 
@@ -20,7 +20,7 @@ export function formatPinataUploadError(error: unknown, fileSizeBytes?: number):
     return (
       "Upload rejected (413 — payload too large)." +
       sizeHint +
-      " Try again after redeploying; if it persists, contact Pinata support."
+      " This is usually an upload policy mismatch, not a Vercel limit. Refresh and retry to get a fresh signed URL."
     );
   }
 

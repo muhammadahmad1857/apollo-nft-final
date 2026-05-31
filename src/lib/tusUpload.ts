@@ -153,17 +153,18 @@ function isVercelTusProxy(endpoint: string): boolean {
 
 /** Pinata presigned URLs embed auth in query params — no Bearer header. */
 function isPinataPresignedUrl(url: string): boolean {
+  const lowerUrl = url.toLowerCase();
   return (
-    url.includes("uploads.pinata.cloud") &&
-    (url.includes("X-Signature=") || url.includes("x-signature="))
+    lowerUrl.includes("uploads.pinata.cloud") &&
+    lowerUrl.includes("x-signature=")
   );
 }
 
 function pinataChunkSize(file: File, viaProxy: boolean): number {
   if (viaProxy) return 4 * 1024 * 1024;
-  // Pinata docs: chunk must be < 50 MB; use 10 MB for multi-GB files (reliability)
+  // Keep direct uploads conservative for reliability and simpler 413 troubleshooting.
   if (file.size > 2 * 1024 * 1024 * 1024) return 4 * 1024 * 1024;
-  return 50 * 1024 * 1024;
+  return 8 * 1024 * 1024;
 }
 
 export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
@@ -180,7 +181,7 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
       network: "public",
     },
     onProgress: options.onProgress,
-    onChunkComplete: (_chunkSize, _bytesAccepted, _bytesTotal) => {
+    onChunkComplete: () => {
       if (options.onFileCreated && upload.url) {
         const segments = upload.url.split("/").filter(Boolean);
         const uuid = segments.find((s) => UUID_RE.test(s));
@@ -207,7 +208,7 @@ export function startTusUpload(options: TusUploadOptions): TusUploadHandle {
   };
 
   uploadOptions.endpoint = options.endpoint;
-  console.log("Options endpoint",options.endpoint)
+
   // Presigned URLs embed auth in query params — Bearer header breaks or duplicates auth
   if (options.token && !presigned) {
     uploadOptions.headers = { Authorization: `Bearer ${options.token}` };

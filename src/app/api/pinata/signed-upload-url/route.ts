@@ -5,11 +5,7 @@ const PINATA_TUS_ENDPOINT = "https://uploads.pinata.cloud/v3/files";
 const DEFAULT_MAX_BYTES = 25 * 1024 * 1024 * 1024;
 
 /**
- * Returns credentials for direct browser → Pinata TUS uploads.
- *
- * Prefer presigned URLs without max_file_size — signing an exact byte cap
- * causes Pinata to return 413 "Upload-Length exceeds maximum upload size"
- * on large files even when the cap matches the file.
+ * Returns credentials for direct browser -> Pinata TUS uploads.
  */
 export async function POST(req: Request) {
   try {
@@ -44,15 +40,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Pinata not configured" }, { status: 500 });
     }
 
+    const signedMaxFileSize = Math.min(maxAllowed, Math.max(fileSize, 1));
+
     const signPayload: Record<string, unknown> = {
       network: "public",
       date: Math.floor(Date.now() / 1000),
       expires: 14400,
+      // Align Pinata signed upload policy with TUS Upload-Length to avoid first-PATCH 413.
+      max_file_size: signedMaxFileSize,
     };
 
     if (body.filename) {
       signPayload.filename = body.filename;
     }
+
+    console.info("[signed-upload-url] signing direct TUS URL", {
+      requestedFileSize: fileSize,
+      signedMaxFileSize,
+      hasFilename: Boolean(body.filename),
+    });
 
     const signRes = await fetch("https://uploads.pinata.cloud/v3/files/sign", {
       method: "POST",
