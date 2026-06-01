@@ -18,6 +18,7 @@ import Image from "next/image";
 import { formatUploadProgress } from "@/lib/formatBytes";
 import { formatPinataUploadError } from "@/lib/pinataUploadErrors";
 import * as tus from "tus-js-client";
+import { uploadSupabaseMediaFile } from "@/lib/supabase/mediaUpload";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -96,7 +97,6 @@ export function MintMetadataForm({
   const trailerFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
   const fileUploadHandleRef = useRef<tus.Upload | null>(null);
-  const trailerUploadHandleRef = useRef<tus.Upload | null>(null);
 
   const handleChange = useCallback(
     (field: keyof MintFormValues, value: string | number | undefined) => {
@@ -206,8 +206,8 @@ export function MintMetadataForm({
     setCoverPreview(null);
   };
 
-  // Upload file to Pinata via TUS resumable upload
-  const uploadToPinata = useCallback(
+  // Upload the main file to Supabase when it is video; keep Pinata for other media.
+  const uploadMainMedia = useCallback(
     async (file: File) => {
       try {
         setIsUploadingFile(true);
@@ -218,6 +218,20 @@ export function MintMetadataForm({
         // Detect fileType immediately so the form reflects the asset type while uploading.
         const earlyFileType = getFileType(file);
         onChange((prev) => ({ ...prev, fileType: earlyFileType }));
+
+        if (file.type.startsWith("video/")) {
+          const { publicUrl } = await uploadSupabaseMediaFile(file, "video");
+          setUploadProgress(100);
+          onChange((prev) => ({
+            ...prev,
+            musicTrackUrl: publicUrl,
+            fileType: earlyFileType,
+          }));
+          toast.success("✓ Video uploaded to Supabase!", {
+            description: `File type: ${earlyFileType}`,
+          });
+          return;
+        }
 
         const signedRes = await fetch("/api/pinata/signed-upload-url", {
           method: "POST",
@@ -314,6 +328,40 @@ export function MintMetadataForm({
     [onChange]
   );
 
+  const uploadTrailerToStorage = useCallback(
+    async (file: File) => {
+      try {
+        setIsUploadingTrailer(true);
+        setTrailerUploadProgress(0);
+        setTrailerUploadedBytes(0);
+        setTrailerTotalBytes(file.size);
+
+        const detectedFileType = getFileType(file);
+        const { publicUrl } = await uploadSupabaseMediaFile(file, "trailer");
+
+        setTrailerUploadProgress(100);
+        onChange((prev) => ({
+          ...prev,
+          trailerUrl: publicUrl,
+          trailerFileType: detectedFileType,
+        }));
+
+        toast.success("✓ Trailer uploaded to Supabase!", {
+          description: `Trailer type: ${detectedFileType}`,
+        });
+      } catch (error) {
+        console.error("Trailer upload error:", error);
+        toast.error("Failed to upload trailer", {
+          description: error instanceof Error ? error.message : "Supabase upload failed",
+        });
+      } finally {
+        setIsUploadingTrailer(false);
+        setTrailerUploadProgress(0);
+      }
+    },
+    [onChange]
+  );
+
   // Handle file selection
   const handleFile = useCallback(
     (file: File) => {
@@ -339,9 +387,9 @@ export function MintMetadataForm({
         return;
       }
 
-      void uploadToPinata(file);
+      void uploadMainMedia(file);
     },
-    [uploadToPinata]
+    [uploadMainMedia]
   );
 
   const handleDrop = useCallback(
@@ -377,110 +425,6 @@ export function MintMetadataForm({
     [handleFile]
   );
 
-  // Upload trailer to Pinata via TUS resumable upload
-  const uploadTrailerToPinata = useCallback(
-    async (file: File) => {
-      try {
-        setIsUploadingTrailer(true);
-        setTrailerUploadProgress(0);
-        setTrailerUploadedBytes(0);
-        setTrailerTotalBytes(file.size);
-
-        const signedRes = await fetch("/api/pinata/signed-upload-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            filename: file.name,
-            fileSize: file.size,
-          }),
-        });
-
-        if (!signedRes.ok) throw new Error("Failed to get signed upload URL");
-
-        const signedData = await signedRes.json() as { data?: { url?: string; token?: string }; url?: string };
-        const tusEndpoint = signedData?.data?.url ?? signedData?.url;
-        const tusToken = signedData?.data?.token ?? "";
-        if (!tusEndpoint) throw new Error("No TUS endpoint in signed URL response");
-
-        await new Promise<void>((resolve, reject) => {
-          const uploadOptions: tus.UploadOptions = {
-            endpoint: tusEndpoint,
-            uploadSize: file.size,
-            chunkSize: 32 * 1024 * 1024,
-            retryDelays: [0, 3000, 5000, 10000, 20000],
-            metadata: {
-              filename: file.name,
-              filetype: file.type || "application/octet-stream",
-              network: "public",
-            },
-            onProgress: (bytesSent, bytesTotal) => {
-              setTrailerUploadedBytes(bytesSent);
-              setTrailerTotalBytes(bytesTotal);
-              setTrailerUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
-            },
-            onSuccess: async () => {
-              try {
-                const uploadUrl = trailerUploadHandleRef.current?.url ?? "";
-                const segments = uploadUrl.split("/").filter(Boolean);
-                const fileId = segments.find((segment) => UUID_RE.test(segment));
-                if (!fileId) {
-                  throw new Error(`Cannot determine file ID from upload URL: ${uploadUrl}`);
-                }
-
-                const res = await fetch(
-                  `/api/pinata/file-info?id=${encodeURIComponent(fileId)}&filename=${encodeURIComponent(file.name)}`
-                );
-                if (!res.ok) {
-                  throw new Error("CID not available after upload");
-                }
-
-                const data = (await res.json()) as { cid?: string };
-                if (!data.cid) {
-                  throw new Error("CID not available after upload");
-                }
-
-                const ipfsUrl = `ipfs://${data.cid}`;
-                const detectedFileType = getFileType(file);
-                setTrailerUploadProgress(100);
-                onChange((prev) => ({
-                  ...prev,
-                  trailerUrl: ipfsUrl,
-                  trailerFileType: detectedFileType,
-                }));
-                toast.success("✓ Trailer uploaded successfully!", {
-                  description: `Trailer type: ${detectedFileType}`,
-                });
-                resolve();
-              } catch (error) {
-                reject(error instanceof Error ? error : new Error(String(error)));
-              }
-            },
-            onError: (err) => reject(err instanceof Error ? err : new Error(String(err))),
-            removeFingerprintOnSuccess: true,
-            storeFingerprintForResuming: true,
-          };
-
-          if (tusToken) {
-            uploadOptions.headers = { Authorization: `Bearer ${tusToken}` };
-          }
-
-          trailerUploadHandleRef.current = new tus.Upload(file, uploadOptions);
-          trailerUploadHandleRef.current.start();
-        });
-      } catch (error) {
-        console.error("Trailer upload error:", error);
-        toast.error("Failed to upload trailer", {
-          description: formatPinataUploadError(error),
-        });
-      } finally {
-        setIsUploadingTrailer(false);
-        setTrailerUploadProgress(0);
-        trailerUploadHandleRef.current = null;
-      }
-    },
-    [onChange]
-  );
-
   const handleTrailerFile = useCallback(
     (file: File) => {
       const fileExtension = file.name
@@ -505,9 +449,9 @@ export function MintMetadataForm({
         return;
       }
 
-      void uploadTrailerToPinata(file);
+      void uploadTrailerToStorage(file);
     },
-    [uploadTrailerToPinata]
+    [uploadTrailerToStorage]
   );
 
   const handleTrailerDrop = useCallback(

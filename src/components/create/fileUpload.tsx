@@ -8,6 +8,7 @@ import Link from "next/link";
 import { startTusUpload, type TusUploadHandle } from "@/lib/tusUpload";
 import { formatUploadProgress } from "@/lib/formatBytes";
 import { formatPinataUploadError } from "@/lib/pinataUploadErrors";
+import { uploadSupabaseMediaFile } from "@/lib/supabase/mediaUpload";
 
 interface FileUploadProps {
   onUploadComplete: (
@@ -60,13 +61,22 @@ export function FileUpload({
 
   const acceptedTypes = [".md", ".pdf", ".doc", ".docx", ".txt"];
 
-  const uploadToPinata = useCallback(
+  const uploadToStorage = useCallback(
     async (file: File) => {
       try {
         setIsUploading(true);
         setUploadProgress(0);
         setUploadedBytes(0);
         setTotalBytes(file.size);
+
+        if (file.type.startsWith("video/")) {
+          const fileType = getFileType(file);
+          const { publicUrl } = await uploadSupabaseMediaFile(file, "video");
+          setUploadProgress(100);
+          onUploadComplete(publicUrl, fileType, file.name);
+          toast.success("Video uploaded to Supabase!");
+          return;
+        }
 
         // Get signed TUS URL
         const signedRes = await fetch("/api/pinata/signed-upload-url", {
@@ -141,10 +151,10 @@ export function FileUpload({
         return;
       }
 
-      void uploadToPinata(file);
+      void uploadToStorage(file);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [uploadToPinata]
+    [uploadToStorage]
   );
 
   const handleDrop = useCallback(
@@ -284,7 +294,7 @@ export function FileUpload({
                     or click to browse
                   </p>
                   <p className="mt-3 text-xs text-zinc-50 dark:text-zinc-500">
-                    Accepted: Any audio, video, image, .md, .pdf, .doc, .docx, .txt • Max 5GB
+                    Accepted: Video uploads go to Supabase. Audio, image, .md, .pdf, .doc, .docx, and .txt keep using Pinata • Max 5GB
                   </p>
                 </div>
               </>
