@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, CheckCircle2, Loader2, FileVideo, Music } from "lucide-react";
 import { toast } from "sonner";
@@ -8,8 +8,10 @@ import Link from "next/link";
 import { startTusUpload, type TusUploadHandle } from "@/lib/tusUpload";
 import { formatUploadProgress } from "@/lib/formatBytes";
 import { formatPinataUploadError } from "@/lib/pinataUploadErrors";
-import { uploadR2MediaFile } from "@/lib/r2/mediaUpload";
+import { getR2ResumePercentForFile, uploadR2MediaFile } from "@/lib/r2/mediaUpload";
 import { R2_MAX_UPLOAD_BYTES } from "@/lib/r2/config";
+import { UploadLeaveGuard } from "@/components/upload/UploadLeaveGuard";
+import { R2PendingUploadBanner } from "@/components/upload/R2PendingUploadBanner";
 
 interface FileUploadProps {
   onUploadComplete: (
@@ -60,8 +62,13 @@ export function FileUpload({
   const [totalBytes, setTotalBytes] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadHandleRef = useRef<TusUploadHandle | null>(null);
+  const [pendingRefreshKey, setPendingRefreshKey] = useState(0);
 
   const acceptedTypes = [".md", ".pdf", ".doc", ".docx", ".txt"];
+
+  const openFilePicker = useCallback(() => {
+    if (!isUploading) fileInputRef.current?.click();
+  }, [isUploading]);
 
   const uploadToStorage = useCallback(
     async (file: File) => {
@@ -73,6 +80,11 @@ export function FileUpload({
         setTotalBytes(file.size);
 
         if (file.type.startsWith("video/")) {
+          const resumePercent = getR2ResumePercentForFile(file, "video");
+          if (resumePercent !== null) {
+            toast.info(`Resuming Cloudflare upload from ${resumePercent}%`);
+          }
+
           const fileType = getFileType(file);
           const { publicUrl } = await uploadR2MediaFile(file, "video", (bytesSent, bytesTotal) => {
             setUploadedBytes(bytesSent);
@@ -132,6 +144,7 @@ export function FileUpload({
         setUploadLabel(null);
         setUploadProgress(0);
         uploadHandleRef.current = null;
+        setPendingRefreshKey((key) => key + 1);
       }
     },
     [onUploadComplete]
@@ -193,8 +206,16 @@ export function FileUpload({
     [handleFile]
   );
 
+  const guardActive = useMemo(() => isUploading, [isUploading]);
+
   return (
+    <UploadLeaveGuard active={guardActive}>
     <div className="space-y-6">
+      <R2PendingUploadBanner
+        kind="video"
+        refreshKey={pendingRefreshKey}
+        onResumeClick={openFilePicker}
+      />
       <AnimatePresence mode="wait">
         {uploadedFile ? (
           <motion.div
@@ -249,7 +270,7 @@ export function FileUpload({
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            onClick={() => !isUploading && fileInputRef.current?.click()}
+            onClick={openFilePicker}
             className={`
               relative cursor-pointer rounded-xl border-2 border-dashed p-12 backdrop-blur-lg text-center transition-all duration-300 bg-zinc-950/20
               ${
@@ -320,5 +341,6 @@ export function FileUpload({
         </Link>
       </p>
     </div>
+    </UploadLeaveGuard>
   );
 }

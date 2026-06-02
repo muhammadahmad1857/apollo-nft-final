@@ -11,7 +11,6 @@ import { useAccount } from 'wagmi'
 import Footer from '@/components/footer'
 import { useUser } from '@/hooks/useUser'
 import { BlockedUserNotice } from '@/components/blocked-user-notice'
-import PendingMintPoller from '@/components/PendingMintPoller'
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const {address,isConnected,isConnecting,isReconnecting} = useAccount()
   const { data: user, isLoading: isUserLoading } = useUser(address || "")
@@ -57,7 +56,6 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       children
     )}
       <Footer/>
-      {isConnected && <PendingMintPoller />}
       </SidebarInset>
     </SidebarProvider>
 

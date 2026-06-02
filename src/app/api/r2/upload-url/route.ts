@@ -3,7 +3,7 @@ import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
   CreateMultipartUploadCommand,
-  PutObjectCommand,
+  ListPartsCommand,
   S3Client,
   UploadPartCommand,
 } from "@aws-sdk/client-s3";
@@ -34,7 +34,7 @@ function createR2Client() {
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json().catch(() => ({}))) as {
-      action?: "initiate" | "sign-part" | "complete" | "abort";
+      action?: "initiate" | "sign-part" | "complete" | "abort" | "list-parts";
       filename?: string;
       kind?: "video" | "trailer";
       contentType?: string;
@@ -61,6 +61,29 @@ export async function POST(req: NextRequest) {
       );
 
       return NextResponse.json({ ok: true });
+    }
+
+    if (body.action === "list-parts") {
+      if (!body.uploadId || !body.key) {
+        return NextResponse.json({ error: "uploadId and key are required" }, { status: 400 });
+      }
+
+      const list = await createR2Client().send(
+        new ListPartsCommand({
+          Bucket: bucket,
+          Key: body.key,
+          UploadId: body.uploadId,
+        })
+      );
+
+      return NextResponse.json({
+        parts:
+          list.Parts?.map((part) => ({
+            partNumber: part.PartNumber ?? 0,
+            etag: part.ETag ?? "",
+            size: part.Size ?? 0,
+          })) ?? [],
+      });
     }
 
     if (body.action === "complete") {

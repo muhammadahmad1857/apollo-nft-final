@@ -44,12 +44,27 @@ export function getR2SecretAccessKey(): string {
   return secretAccessKey;
 }
 
+/** Legacy misconfiguration: bucket name was included in the public URL path. */
+const LEGACY_R2_PUBLIC_PATH_SUFFIX = "/pinata-videos";
+
 export function getR2PublicBaseUrl(): string {
   const publicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? process.env.R2_PUBLIC_URL;
   if (!publicUrl) {
     throw new Error("R2 public URL is not configured");
   }
-  return publicUrl.replace(/\/$/, "");
+
+  let base = publicUrl.replace(/\/$/, "");
+  if (base.endsWith(LEGACY_R2_PUBLIC_PATH_SUFFIX)) {
+    base = base.slice(0, -LEGACY_R2_PUBLIC_PATH_SUFFIX.length);
+  }
+
+  return base;
+}
+
+/** Fixes URLs already saved with /pinata-videos/videos/... or /pinata-videos/trailers/... */
+export function normalizeR2MediaUrl(url: string): string {
+  if (!url) return url;
+  return url.replace(/\/pinata-videos\/(videos|trailers)\//i, "/$1/");
 }
 
 export function sanitizeR2PathSegment(value: string): string {

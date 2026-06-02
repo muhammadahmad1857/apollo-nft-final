@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -18,8 +18,10 @@ import Image from "next/image";
 import { formatUploadProgress } from "@/lib/formatBytes";
 import { formatPinataUploadError } from "@/lib/pinataUploadErrors";
 import * as tus from "tus-js-client";
-import { uploadR2MediaFile } from "@/lib/r2/mediaUpload";
+import { getR2ResumePercentForFile, uploadR2MediaFile } from "@/lib/r2/mediaUpload";
 import { R2_MAX_UPLOAD_BYTES } from "@/lib/r2/config";
+import { UploadLeaveGuard } from "@/components/upload/UploadLeaveGuard";
+import { R2PendingUploadBanner } from "@/components/upload/R2PendingUploadBanner";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -100,6 +102,20 @@ export function MintMetadataForm({
   const trailerFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
   const fileUploadHandleRef = useRef<tus.Upload | null>(null);
+  const [pendingRefreshKey, setPendingRefreshKey] = useState(0);
+
+  const openMainFilePicker = useCallback(() => {
+    if (!isUploadingFile) fileInputRef.current?.click();
+  }, [isUploadingFile]);
+
+  const openTrailerFilePicker = useCallback(() => {
+    if (!isUploadingTrailer) trailerFileInputRef.current?.click();
+  }, [isUploadingTrailer]);
+
+  const guardActive = useMemo(
+    () => isUploadingCover || isUploadingFile || isUploadingTrailer,
+    [isUploadingCover, isUploadingFile, isUploadingTrailer]
+  );
 
   const handleChange = useCallback(
     (field: keyof MintFormValues, value: string | number | undefined) => {
@@ -224,6 +240,11 @@ export function MintMetadataForm({
         onChange((prev) => ({ ...prev, fileType: earlyFileType }));
 
         if (file.type.startsWith("video/")) {
+          const resumePercent = getR2ResumePercentForFile(file, "video");
+          if (resumePercent !== null) {
+            toast.info(`Resuming Cloudflare upload from ${resumePercent}%`);
+          }
+
           const { publicUrl } = await uploadR2MediaFile(file, "video", (bytesSent, bytesTotal) => {
             setUploadedBytes(bytesSent);
             setTotalBytes(bytesTotal);
@@ -332,6 +353,7 @@ export function MintMetadataForm({
         setFileUploadLabel(null);
         setUploadProgress(0);
         fileUploadHandleRef.current = null;
+        setPendingRefreshKey((key) => key + 1);
       }
     },
     [onChange]
@@ -345,6 +367,11 @@ export function MintMetadataForm({
         setTrailerUploadProgress(0);
         setTrailerUploadedBytes(0);
         setTrailerTotalBytes(file.size);
+
+        const resumePercent = getR2ResumePercentForFile(file, "trailer");
+        if (resumePercent !== null) {
+          toast.info(`Resuming Cloudflare trailer upload from ${resumePercent}%`);
+        }
 
         const detectedFileType = getFileType(file);
         const { publicUrl } = await uploadR2MediaFile(file, "trailer", (bytesSent, bytesTotal) => {
@@ -372,6 +399,7 @@ export function MintMetadataForm({
         setIsUploadingTrailer(false);
         setTrailerUploadLabel(null);
         setTrailerUploadProgress(0);
+        setPendingRefreshKey((key) => key + 1);
       }
     },
     [onChange]
@@ -503,6 +531,7 @@ export function MintMetadataForm({
   );
 
   return (
+    <UploadLeaveGuard active={guardActive}>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -704,6 +733,12 @@ export function MintMetadataForm({
           Upload File <span className="text-red-500">*</span>
         </Label>
 
+        <R2PendingUploadBanner
+          kind="video"
+          refreshKey={pendingRefreshKey}
+          onResumeClick={openMainFilePicker}
+        />
+
         <AnimatePresence mode="wait">
           {values.musicTrackUrl && values.musicTrackUrl.trim() !== "" ? (
             <motion.div
@@ -810,6 +845,12 @@ export function MintMetadataForm({
           Trailer <span className="text-zinc-500">(Optional)</span>
         </Label>
 
+        <R2PendingUploadBanner
+          kind="trailer"
+          refreshKey={pendingRefreshKey}
+          onResumeClick={openTrailerFilePicker}
+        />
+
         <AnimatePresence mode="wait">
           {values.trailerUrl && values.trailerUrl.trim() !== "" ? (
             <motion.div
@@ -910,5 +951,6 @@ export function MintMetadataForm({
         </AnimatePresence>
       </div>
     </motion.div>
+    </UploadLeaveGuard>
   );
 }
