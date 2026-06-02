@@ -70,7 +70,11 @@ function putPartToSignedUrl(
       if (xhr.status >= 200 && xhr.status < 300) {
         const etag = xhr.getResponseHeader("ETag") || xhr.getResponseHeader("etag");
         if (!etag) {
-          reject(new Error("R2 multipart part upload did not return an ETag"));
+          reject(
+            new Error(
+              "R2 multipart part upload succeeded, but the browser could not read the ETag response header. Add ETag to the bucket CORS ExposeHeaders so multipart completion can work."
+            )
+          );
           return;
         }
         resolve(etag.replaceAll('"', ""));
