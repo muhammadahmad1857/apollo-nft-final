@@ -18,7 +18,8 @@ import Image from "next/image";
 import { formatUploadProgress } from "@/lib/formatBytes";
 import { formatPinataUploadError } from "@/lib/pinataUploadErrors";
 import * as tus from "tus-js-client";
-import { uploadSupabaseMediaFile } from "@/lib/supabase/mediaUpload";
+import { uploadR2MediaFile } from "@/lib/r2/mediaUpload";
+import { R2_MAX_UPLOAD_BYTES } from "@/lib/r2/config";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -220,14 +221,18 @@ export function MintMetadataForm({
         onChange((prev) => ({ ...prev, fileType: earlyFileType }));
 
         if (file.type.startsWith("video/")) {
-          const { publicUrl } = await uploadSupabaseMediaFile(file, "video");
+          const { publicUrl } = await uploadR2MediaFile(file, "video", (bytesSent, bytesTotal) => {
+            setUploadedBytes(bytesSent);
+            setTotalBytes(bytesTotal);
+            setUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
+          });
           setUploadProgress(100);
           onChange((prev) => ({
             ...prev,
             musicTrackUrl: publicUrl,
             fileType: earlyFileType,
           }));
-          toast.success("✓ Video uploaded to Supabase!", {
+          toast.success("✓ Video uploaded to Cloudflare R2!", {
             description: `File type: ${earlyFileType}`,
           });
           return;
@@ -337,7 +342,11 @@ export function MintMetadataForm({
         setTrailerTotalBytes(file.size);
 
         const detectedFileType = getFileType(file);
-        const { publicUrl } = await uploadSupabaseMediaFile(file, "trailer");
+        const { publicUrl } = await uploadR2MediaFile(file, "trailer", (bytesSent, bytesTotal) => {
+          setTrailerUploadedBytes(bytesSent);
+          setTrailerTotalBytes(bytesTotal);
+          setTrailerUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
+        });
 
         setTrailerUploadProgress(100);
         onChange((prev) => ({
@@ -346,7 +355,7 @@ export function MintMetadataForm({
           trailerFileType: detectedFileType,
         }));
 
-        toast.success("✓ Trailer uploaded to Supabase!", {
+        toast.success("✓ Trailer uploaded to Cloudflare R2!", {
           description: `Trailer type: ${detectedFileType}`,
         });
       } catch (error) {
@@ -382,8 +391,8 @@ export function MintMetadataForm({
         return;
       }
 
-      if (file.size > 25 * 1024 * 1024 * 1024) {
-        toast.error("File size must be less than 25GB");
+      if (file.size > R2_MAX_UPLOAD_BYTES) {
+        toast.error("Cloudflare R2 video uploads are limited to 15GB");
         return;
       }
 
@@ -444,8 +453,8 @@ export function MintMetadataForm({
         return;
       }
 
-      if (file.size > 25 * 1024 * 1024 * 1024) {
-        toast.error("File size must be less than 25GB");
+      if (file.size > R2_MAX_UPLOAD_BYTES) {
+        toast.error("Cloudflare R2 video uploads are limited to 15GB");
         return;
       }
 

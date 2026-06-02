@@ -3,6 +3,8 @@ export const SUPABASE_MEDIA_BUCKET =
   process.env.SUPABASE_MEDIA_BUCKET ??
   "apollo-media";
 
+export const SUPABASE_MAX_UPLOAD_BYTES = 15 * 1024 * 1024 * 1024;
+
 export const SUPABASE_TRAILER_FOLDER = "trailers";
 export const SUPABASE_VIDEO_FOLDER = "videos";
 

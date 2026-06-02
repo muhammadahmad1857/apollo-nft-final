@@ -3,8 +3,10 @@ import {
   buildSupabaseObjectPath,
   getSupabasePublicUrl,
   isSupabaseStorageUrl,
+  SUPABASE_MAX_UPLOAD_BYTES,
   SUPABASE_MEDIA_BUCKET,
 } from "@/lib/supabase/config";
+import { formatBytes } from "@/lib/formatBytes";
 
 export interface SupabaseUploadResult {
   publicUrl: string;
@@ -13,6 +15,12 @@ export interface SupabaseUploadResult {
 }
 
 export async function uploadSupabaseMediaFile(file: File, kind: "video" | "trailer") {
+  if (file.size > SUPABASE_MAX_UPLOAD_BYTES) {
+    throw new Error(
+      `Supabase uploads are limited to 15GB. Your file is ${formatBytes(file.size)}.`
+    );
+  }
+
   const response = await fetch("/api/supabase/storage-upload-url", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -8,7 +8,8 @@ import Link from "next/link";
 import { startTusUpload, type TusUploadHandle } from "@/lib/tusUpload";
 import { formatUploadProgress } from "@/lib/formatBytes";
 import { formatPinataUploadError } from "@/lib/pinataUploadErrors";
-import { uploadSupabaseMediaFile } from "@/lib/supabase/mediaUpload";
+import { uploadR2MediaFile } from "@/lib/r2/mediaUpload";
+import { R2_MAX_UPLOAD_BYTES } from "@/lib/r2/config";
 
 interface FileUploadProps {
   onUploadComplete: (
@@ -71,10 +72,14 @@ export function FileUpload({
 
         if (file.type.startsWith("video/")) {
           const fileType = getFileType(file);
-          const { publicUrl } = await uploadSupabaseMediaFile(file, "video");
+          const { publicUrl } = await uploadR2MediaFile(file, "video", (bytesSent, bytesTotal) => {
+            setUploadedBytes(bytesSent);
+            setTotalBytes(bytesTotal);
+            setUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
+          });
           setUploadProgress(100);
           onUploadComplete(publicUrl, fileType, file.name);
-          toast.success("Video uploaded to Supabase!");
+          toast.success("Video uploaded to Cloudflare R2!");
           return;
         }
 
@@ -146,8 +151,8 @@ export function FileUpload({
         return;
       }
 
-      if (file.size > 25 * 1024 * 1024 * 1024) {
-        toast.error("File size must be less than 25GB");
+      if (file.size > R2_MAX_UPLOAD_BYTES) {
+        toast.error("Cloudflare R2 video uploads are limited to 15GB");
         return;
       }
 
@@ -294,7 +299,7 @@ export function FileUpload({
                     or click to browse
                   </p>
                   <p className="mt-3 text-xs text-zinc-50 dark:text-zinc-500">
-                    Accepted: Video uploads go to Supabase. Audio, image, .md, .pdf, .doc, .docx, and .txt keep using Pinata • Max 5GB
+                    Accepted: Video uploads go to Cloudflare R2. Audio, image, .md, .pdf, .doc, .docx, and .txt keep using Pinata • Max 15GB
                   </p>
                 </div>
               </>
