@@ -42,7 +42,11 @@ function putFileToSignedUrl(
     };
 
     xhr.onerror = () => {
-      reject(new Error("Network error while uploading to R2"));
+      reject(
+        new Error(
+          "R2 upload was blocked by the browser, usually because the bucket CORS policy is missing the exact Origin or does not allow the request headers. Check AllowedOrigins and AllowedHeaders on the R2 bucket."
+        )
+      );
     };
 
     xhr.send(file);
@@ -85,7 +89,11 @@ function putPartToSignedUrl(
     };
 
     xhr.onerror = () => {
-      reject(new Error("Network error while uploading R2 multipart part"));
+      reject(
+        new Error(
+          "R2 multipart part upload was blocked by the browser, usually because the bucket CORS policy is missing the exact Origin or does not allow the request headers. Make sure AllowedOrigins matches the app origin exactly and AllowedHeaders includes Content-Type and any x-amz-* headers; ExposeHeaders should include ETag."
+        )
+      );
     };
 
     xhr.send(blob);
