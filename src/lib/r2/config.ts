@@ -21,17 +21,25 @@ export function getR2AccountId(): string {
 }
 
 export function getR2AccessKeyId(): string {
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID?.trim();
   if (!accessKeyId) {
     throw new Error("R2 access key ID is not configured");
+  }
+  if (!/^[A-Za-z0-9]{32}$/.test(accessKeyId)) {
+    throw new Error(
+      "R2 access key ID must be the 32-character Access Key ID from Cloudflare R2, not an API token or secret"
+    );
   }
   return accessKeyId;
 }
 
 export function getR2SecretAccessKey(): string {
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY?.trim();
   if (!secretAccessKey) {
     throw new Error("R2 secret access key is not configured");
+  }
+  if (secretAccessKey.length < 40) {
+    throw new Error("R2 secret access key looks invalid; please paste the full Cloudflare R2 secret");
   }
   return secretAccessKey;
 }
