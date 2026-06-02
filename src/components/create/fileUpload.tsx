@@ -54,6 +54,7 @@ export function FileUpload({
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadLabel, setUploadLabel] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedBytes, setUploadedBytes] = useState(0);
   const [totalBytes, setTotalBytes] = useState(0);
@@ -66,6 +67,7 @@ export function FileUpload({
     async (file: File) => {
       try {
         setIsUploading(true);
+        setUploadLabel(file.type.startsWith("video/") ? "Multipart Cloudflare R2 upload" : "Pinata TUS upload");
         setUploadProgress(0);
         setUploadedBytes(0);
         setTotalBytes(file.size);
@@ -127,6 +129,7 @@ export function FileUpload({
         toast.error(formatPinataUploadError(error));
       } finally {
         setIsUploading(false);
+        setUploadLabel(null);
         setUploadProgress(0);
         uploadHandleRef.current = null;
       }
@@ -270,7 +273,7 @@ export function FileUpload({
                 <Loader2 className="mx-auto h-12 w-12 animate-spin text-white" />
                 <div>
                   <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                    Uploading...
+                    {uploadLabel ?? "Uploading..."}
                   </p>
                   {totalBytes > 0 && (
                     <p className="text-xs text-zinc-400 mt-1">

@@ -63,7 +63,7 @@ function putPartToSignedUrl(
     xhr.upload.onprogress = (event) => {
       if (!onProgress) return;
       const partTotal = event.lengthComputable ? event.total : blob.size;
-      onProgress(bytesBase + event.loaded, bytesBase + partTotal);
+      onProgress(bytesBase + event.loaded, totalBytes);
     };
 
     xhr.onload = () => {

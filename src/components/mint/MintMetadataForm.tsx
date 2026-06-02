@@ -84,11 +84,13 @@ export function MintMetadataForm({
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [fileUploadLabel, setFileUploadLabel] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedBytes, setUploadedBytes] = useState(0);
   const [totalBytes, setTotalBytes] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploadingTrailer, setIsUploadingTrailer] = useState(false);
+  const [trailerUploadLabel, setTrailerUploadLabel] = useState<string | null>(null);
   const [trailerUploadProgress, setTrailerUploadProgress] = useState(0);
   const [trailerUploadedBytes, setTrailerUploadedBytes] = useState(0);
   const [trailerTotalBytes, setTrailerTotalBytes] = useState(0);
@@ -212,6 +214,7 @@ export function MintMetadataForm({
     async (file: File) => {
       try {
         setIsUploadingFile(true);
+        setFileUploadLabel(file.type.startsWith("video/") ? "Multipart Cloudflare R2 upload" : "Pinata TUS upload");
         setUploadProgress(0);
         setUploadedBytes(0);
         setTotalBytes(file.size);
@@ -326,6 +329,7 @@ export function MintMetadataForm({
         });
       } finally {
         setIsUploadingFile(false);
+        setFileUploadLabel(null);
         setUploadProgress(0);
         fileUploadHandleRef.current = null;
       }
@@ -337,6 +341,7 @@ export function MintMetadataForm({
     async (file: File) => {
       try {
         setIsUploadingTrailer(true);
+        setTrailerUploadLabel("Multipart Cloudflare R2 trailer upload");
         setTrailerUploadProgress(0);
         setTrailerUploadedBytes(0);
         setTrailerTotalBytes(file.size);
@@ -365,6 +370,7 @@ export function MintMetadataForm({
         });
       } finally {
         setIsUploadingTrailer(false);
+        setTrailerUploadLabel(null);
         setTrailerUploadProgress(0);
       }
     },
@@ -766,7 +772,7 @@ export function MintMetadataForm({
                   <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
                   <div>
                     <p className="text-xs font-bold text-white mb-2">
-                      Uploading...
+                      {fileUploadLabel ?? "Uploading..."}
                     </p>
                     {totalBytes > 0 && (
                       <p className="text-xs text-zinc-400 mb-1">
@@ -872,7 +878,7 @@ export function MintMetadataForm({
                   <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
                   <div>
                     <p className="text-xs font-bold text-white mb-2">
-                      Uploading trailer...
+                      {trailerUploadLabel ?? "Uploading trailer..."}
                     </p>
                     {trailerTotalBytes > 0 && (
                       <p className="text-xs text-zinc-400 mb-1">
