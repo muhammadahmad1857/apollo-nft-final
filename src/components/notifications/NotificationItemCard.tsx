@@ -6,8 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getNotificationTypeMeta } from "@/lib/notificationType";
 import type { NotificationItem } from "@/types/notifications";
-import { PendingMintSignButton } from "@/components/PendingMintSignButton";
-
 interface NotificationItemCardProps {
   item: NotificationItem;
   onMarkRead: (id: number) => void;
@@ -78,14 +76,6 @@ export function NotificationItemCard({
             </p>
 
             <div className="flex items-center gap-2">
-              {item.type === "PENDING_MINT_READY" &&
-                typeof item.metadata?.pendingMintId === "string" && (
-                  <PendingMintSignButton
-                    pendingMintId={item.metadata.pendingMintId}
-                    onMinted={() => onMarkRead(item.id)}
-                  />
-                )}
-
               {!item.isRead && (
                 <Button
                   size="sm"

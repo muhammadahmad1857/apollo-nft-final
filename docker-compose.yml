@@ -1,34 +1,32 @@
-version: "3.9"
-
 services:
   app:
     build: .
     env_file:
       - .env
-    container_name: apollonft
+    container_name: apollonft-dev
     restart: unless-stopped
     labels:
       # Enable Traefik for this container
       - "traefik.enable=true" 
       
       # Route configuration - Match requests for apollonft.io and www.apollonft.io
-      - "traefik.http.routers.apollonft.rule=Host(`apollonft.io`) || Host(`www.apollonft.io`)"
-      - "traefik.http.routers.apollonft.entrypoints=websecure"
+      - "traefik.http.routers.apollonft-dev.rule=Host(`dev.apollonft.io`) || Host(`www.apollonft.io`)"
+      - "traefik.http.routers.apollonft-dev.entrypoints=websecure"
       
       # TLS/SSL configuration - Enable HTTPS with Let's Encrypt certificates
-      - "traefik.http.routers.apollonft.tls=true"
-      - "traefik.http.routers.apollonft.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.apollonft-dev.tls=true"
+      - "traefik.http.routers.apollonft-dev.tls.certresolver=letsencrypt"
       
       # Middleware to redirect www.apollonft.io to apollonft.io (remove www prefix)
       - "traefik.http.middlewares.www-to-nonwww.redirectregex.regex=^https?://www\\.(.*)"
       - "traefik.http.middlewares.www-to-nonwww.redirectregex.replacement=https://$${1}"
-      - "traefik.http.routers.apollonft.middlewares=www-to-nonwww"
+      - "traefik.http.routers.apollonft-dev.middlewares=www-to-nonwww"
       # Internal service configuration - Application runs on port 3000
-      - "traefik.http.services.apollonft.loadbalancer.server.port=3000"
+      - "traefik.http.services.apollonft-dev.loadbalancer.server.port=4000"
     networks:
       - traefik-proxy
     ports:
-      - "3000:3000" # optional if using Traefik only
+      - "4000:4000" # optional if using Traefik only
 
 networks:
   traefik-proxy:

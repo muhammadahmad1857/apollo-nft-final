@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -15,10 +15,16 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
-import { startTusUpload, type TusUploadHandle } from "@/lib/tusUpload";
 import { formatUploadProgress } from "@/lib/formatBytes";
+import { formatPinataUploadError } from "@/lib/pinataUploadErrors";
+import * as tus from "tus-js-client";
+import { getR2ResumePercentForFile, uploadR2MediaFile } from "@/lib/r2/mediaUpload";
+import { R2_MAX_UPLOAD_BYTES } from "@/lib/r2/config";
+import { UploadLeaveGuard } from "@/components/upload/UploadLeaveGuard";
+import { R2PendingUploadBanner } from "@/components/upload/R2PendingUploadBanner";
 
 const PINATA_GATEWAY = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/`;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function getFileType(file: File): string {
   const type = file.type.toLowerCase();
@@ -67,8 +73,6 @@ interface MintMetadataFormProps {
   showRemoveButton?: boolean;
   royaltyLabel?: string;
   showRoyalty?: boolean;
-  /** Called as soon as the Pinata file UUID is known (first chunk uploaded) — before upload completes */
-  onFileCreated?: (fileId: string, filename: string) => void;
 }
 
 export function MintMetadataForm({
@@ -78,16 +82,17 @@ export function MintMetadataForm({
   showRemoveButton = false,
   royaltyLabel = "Royalty Percentage",
   showRoyalty = true,
-  onFileCreated,
 }: MintMetadataFormProps) {
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [fileUploadLabel, setFileUploadLabel] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedBytes, setUploadedBytes] = useState(0);
   const [totalBytes, setTotalBytes] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploadingTrailer, setIsUploadingTrailer] = useState(false);
+  const [trailerUploadLabel, setTrailerUploadLabel] = useState<string | null>(null);
   const [trailerUploadProgress, setTrailerUploadProgress] = useState(0);
   const [trailerUploadedBytes, setTrailerUploadedBytes] = useState(0);
   const [trailerTotalBytes, setTrailerTotalBytes] = useState(0);
@@ -96,8 +101,21 @@ export function MintMetadataForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const trailerFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
-  const fileUploadHandleRef = useRef<TusUploadHandle | null>(null);
-  const trailerUploadHandleRef = useRef<TusUploadHandle | null>(null);
+  const fileUploadHandleRef = useRef<tus.Upload | null>(null);
+  const [pendingRefreshKey, setPendingRefreshKey] = useState(0);
+
+  const openMainFilePicker = useCallback(() => {
+    if (!isUploadingFile) fileInputRef.current?.click();
+  }, [isUploadingFile]);
+
+  const openTrailerFilePicker = useCallback(() => {
+    if (!isUploadingTrailer) trailerFileInputRef.current?.click();
+  }, [isUploadingTrailer]);
+
+  const guardActive = useMemo(
+    () => isUploadingCover || isUploadingFile || isUploadingTrailer,
+    [isUploadingCover, isUploadingFile, isUploadingTrailer]
+  );
 
   const handleChange = useCallback(
     (field: keyof MintFormValues, value: string | number | undefined) => {
@@ -207,25 +225,49 @@ export function MintMetadataForm({
     setCoverPreview(null);
   };
 
-  // Upload file to Pinata via TUS resumable upload
-  const uploadToPinata = useCallback(
+  // Upload the main file to Supabase when it is video; keep Pinata for other media.
+  const uploadMainMedia = useCallback(
     async (file: File) => {
       try {
         setIsUploadingFile(true);
+        setFileUploadLabel(file.type.startsWith("video/") ? "Multipart Cloudflare R2 upload" : "Pinata TUS upload");
         setUploadProgress(0);
         setUploadedBytes(0);
         setTotalBytes(file.size);
 
-        // Detect fileType immediately so Queue Mint has it before upload finishes
+        // Detect fileType immediately so the form reflects the asset type while uploading.
         const earlyFileType = getFileType(file);
         onChange((prev) => ({ ...prev, fileType: earlyFileType }));
+
+        if (file.type.startsWith("video/")) {
+          const resumePercent = getR2ResumePercentForFile(file, "video");
+          if (resumePercent !== null) {
+            toast.info(`Resuming Cloudflare upload from ${resumePercent}%`);
+          }
+
+          const { publicUrl } = await uploadR2MediaFile(file, "video", (bytesSent, bytesTotal) => {
+            setUploadedBytes(bytesSent);
+            setTotalBytes(bytesTotal);
+            setUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
+          });
+          setUploadProgress(100);
+          onChange((prev) => ({
+            ...prev,
+            musicTrackUrl: publicUrl,
+            fileType: earlyFileType,
+          }));
+          toast.success("✓ Video uploaded to Cloudflare R2!", {
+            description: `File type: ${earlyFileType}`,
+          });
+          return;
+        }
 
         const signedRes = await fetch("/api/pinata/signed-upload-url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             filename: file.name,
-            maxFileSize: 15 * 1024 * 1024 * 1024,
+            fileSize: file.size,
           }),
         });
 
@@ -237,45 +279,130 @@ export function MintMetadataForm({
         if (!tusEndpoint) throw new Error("No TUS endpoint in signed URL response");
 
         await new Promise<void>((resolve, reject) => {
-          fileUploadHandleRef.current = startTusUpload({
-            file,
+          const uploadOptions: tus.UploadOptions = {
             endpoint: tusEndpoint,
-            token: tusToken,
-            onFileCreated,
+            uploadSize: file.size,
+            chunkSize: 32 * 1024 * 1024,
+            retryDelays: [0, 3000, 5000, 10000, 20000],
+            metadata: {
+              filename: file.name,
+              filetype: file.type || "application/octet-stream",
+              network: "public",
+            },
             onProgress: (bytesSent, bytesTotal) => {
               setUploadedBytes(bytesSent);
               setTotalBytes(bytesTotal);
               setUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
             },
-            onSuccess: (cid) => {
-              const ipfsUrl = `ipfs://${cid}`;
-              const detectedFileType = getFileType(file);
-              setUploadProgress(100);
-              onChange((prev) => ({
-                ...prev,
-                musicTrackUrl: ipfsUrl,
-                fileType: detectedFileType,
-              }));
-              toast.success("✓ File uploaded successfully!", {
-                description: `File type: ${detectedFileType}`,
-              });
-              resolve();
+            onSuccess: async () => {
+              try {
+                const uploadUrl = fileUploadHandleRef.current?.url ?? "";
+                const segments = uploadUrl.split("/").filter(Boolean);
+                const fileId = segments.find((segment) => UUID_RE.test(segment));
+                if (!fileId) {
+                  throw new Error(`Cannot determine file ID from upload URL: ${uploadUrl}`);
+                }
+
+                const res = await fetch(
+                  `/api/pinata/file-info?id=${encodeURIComponent(fileId)}&filename=${encodeURIComponent(file.name)}`
+                );
+                if (!res.ok) {
+                  throw new Error("CID not available after upload");
+                }
+
+                const data = (await res.json()) as { cid?: string };
+                if (!data.cid) {
+                  throw new Error("CID not available after upload");
+                }
+
+                const ipfsUrl = `ipfs://${data.cid}`;
+                const detectedFileType = getFileType(file);
+                setUploadProgress(100);
+                onChange((prev) => ({
+                  ...prev,
+                  musicTrackUrl: ipfsUrl,
+                  fileType: detectedFileType,
+                }));
+                toast.success("✓ File uploaded successfully!", {
+                  description: `File type: ${detectedFileType}`,
+                });
+                resolve();
+              } catch (error) {
+                reject(error instanceof Error ? error : new Error(String(error)));
+              }
             },
-            onError: (err) => reject(err),
-          });
+            onError: (err) => reject(err instanceof Error ? err : new Error(String(err))),
+            removeFingerprintOnSuccess: true,
+            storeFingerprintForResuming: true,
+          };
+
+          if (tusToken) {
+            uploadOptions.headers = { Authorization: `Bearer ${tusToken}` };
+          }
+
+          fileUploadHandleRef.current = new tus.Upload(file, uploadOptions);
+          fileUploadHandleRef.current.start();
         });
       } catch (error) {
         console.error("Upload error:", error);
         toast.error("Failed to upload file", {
-          description: error instanceof Error ? error.message : "Please try again",
+          description: formatPinataUploadError(error),
         });
       } finally {
         setIsUploadingFile(false);
+        setFileUploadLabel(null);
         setUploadProgress(0);
         fileUploadHandleRef.current = null;
+        setPendingRefreshKey((key) => key + 1);
       }
     },
-    [onChange, onFileCreated]
+    [onChange]
+  );
+
+  const uploadTrailerToStorage = useCallback(
+    async (file: File) => {
+      try {
+        setIsUploadingTrailer(true);
+        setTrailerUploadLabel("Multipart Cloudflare R2 trailer upload");
+        setTrailerUploadProgress(0);
+        setTrailerUploadedBytes(0);
+        setTrailerTotalBytes(file.size);
+
+        const resumePercent = getR2ResumePercentForFile(file, "trailer");
+        if (resumePercent !== null) {
+          toast.info(`Resuming Cloudflare trailer upload from ${resumePercent}%`);
+        }
+
+        const detectedFileType = getFileType(file);
+        const { publicUrl } = await uploadR2MediaFile(file, "trailer", (bytesSent, bytesTotal) => {
+          setTrailerUploadedBytes(bytesSent);
+          setTrailerTotalBytes(bytesTotal);
+          setTrailerUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
+        });
+
+        setTrailerUploadProgress(100);
+        onChange((prev) => ({
+          ...prev,
+          trailerUrl: publicUrl,
+          trailerFileType: detectedFileType,
+        }));
+
+        toast.success("✓ Trailer uploaded to Cloudflare R2!", {
+          description: `Trailer type: ${detectedFileType}`,
+        });
+      } catch (error) {
+        console.error("Trailer upload error:", error);
+        toast.error("Failed to upload trailer", {
+          description: error instanceof Error ? error.message : "Supabase upload failed",
+        });
+      } finally {
+        setIsUploadingTrailer(false);
+        setTrailerUploadLabel(null);
+        setTrailerUploadProgress(0);
+        setPendingRefreshKey((key) => key + 1);
+      }
+    },
+    [onChange]
   );
 
   // Handle file selection
@@ -298,14 +425,14 @@ export function MintMetadataForm({
         return;
       }
 
-      if (file.size > 15 * 1024 * 1024 * 1024) {
-        toast.error("File size must be less than 15GB");
+      if (file.size > R2_MAX_UPLOAD_BYTES) {
+        toast.error("Cloudflare R2 video uploads are limited to 15GB");
         return;
       }
 
-      void uploadToPinata(file);
+      void uploadMainMedia(file);
     },
-    [uploadToPinata]
+    [uploadMainMedia]
   );
 
   const handleDrop = useCallback(
@@ -341,72 +468,6 @@ export function MintMetadataForm({
     [handleFile]
   );
 
-  // Upload trailer to Pinata via TUS resumable upload
-  const uploadTrailerToPinata = useCallback(
-    async (file: File) => {
-      try {
-        setIsUploadingTrailer(true);
-        setTrailerUploadProgress(0);
-        setTrailerUploadedBytes(0);
-        setTrailerTotalBytes(file.size);
-
-        const signedRes = await fetch("/api/pinata/signed-upload-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            filename: file.name,
-            maxFileSize: 15 * 1024 * 1024 * 1024,
-          }),
-        });
-
-        if (!signedRes.ok) throw new Error("Failed to get signed upload URL");
-
-        const signedData = await signedRes.json() as { data?: { url?: string; token?: string }; url?: string };
-        const tusEndpoint = signedData?.data?.url ?? signedData?.url;
-        const tusToken = signedData?.data?.token ?? "";
-        if (!tusEndpoint) throw new Error("No TUS endpoint in signed URL response");
-
-        await new Promise<void>((resolve, reject) => {
-          trailerUploadHandleRef.current = startTusUpload({
-            file,
-            endpoint: tusEndpoint,
-            token: tusToken,
-            onProgress: (bytesSent, bytesTotal) => {
-              setTrailerUploadedBytes(bytesSent);
-              setTrailerTotalBytes(bytesTotal);
-              setTrailerUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
-            },
-            onSuccess: (cid) => {
-              const ipfsUrl = `ipfs://${cid}`;
-              const detectedFileType = getFileType(file);
-              setTrailerUploadProgress(100);
-              onChange((prev) => ({
-                ...prev,
-                trailerUrl: ipfsUrl,
-                trailerFileType: detectedFileType,
-              }));
-              toast.success("✓ Trailer uploaded successfully!", {
-                description: `Trailer type: ${detectedFileType}`,
-              });
-              resolve();
-            },
-            onError: (err) => reject(err),
-          });
-        });
-      } catch (error) {
-        console.error("Trailer upload error:", error);
-        toast.error("Failed to upload trailer", {
-          description: error instanceof Error ? error.message : "Please try again",
-        });
-      } finally {
-        setIsUploadingTrailer(false);
-        setTrailerUploadProgress(0);
-        trailerUploadHandleRef.current = null;
-      }
-    },
-    [onChange]
-  );
-
   const handleTrailerFile = useCallback(
     (file: File) => {
       const fileExtension = file.name
@@ -426,14 +487,14 @@ export function MintMetadataForm({
         return;
       }
 
-      if (file.size > 15 * 1024 * 1024 * 1024) {
-        toast.error("File size must be less than 15GB");
+      if (file.size > R2_MAX_UPLOAD_BYTES) {
+        toast.error("Cloudflare R2 video uploads are limited to 15GB");
         return;
       }
 
-      void uploadTrailerToPinata(file);
+      void uploadTrailerToStorage(file);
     },
-    [uploadTrailerToPinata]
+    [uploadTrailerToStorage]
   );
 
   const handleTrailerDrop = useCallback(
@@ -470,6 +531,7 @@ export function MintMetadataForm({
   );
 
   return (
+    <UploadLeaveGuard active={guardActive}>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -671,6 +733,12 @@ export function MintMetadataForm({
           Upload File <span className="text-red-500">*</span>
         </Label>
 
+        <R2PendingUploadBanner
+          kind="video"
+          refreshKey={pendingRefreshKey}
+          onResumeClick={openMainFilePicker}
+        />
+
         <AnimatePresence mode="wait">
           {values.musicTrackUrl && values.musicTrackUrl.trim() !== "" ? (
             <motion.div
@@ -739,7 +807,7 @@ export function MintMetadataForm({
                   <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
                   <div>
                     <p className="text-xs font-bold text-white mb-2">
-                      Uploading...
+                      {fileUploadLabel ?? "Uploading..."}
                     </p>
                     {totalBytes > 0 && (
                       <p className="text-xs text-zinc-400 mb-1">
@@ -776,6 +844,12 @@ export function MintMetadataForm({
         <Label className="text-sm font-semibold">
           Trailer <span className="text-zinc-500">(Optional)</span>
         </Label>
+
+        <R2PendingUploadBanner
+          kind="trailer"
+          refreshKey={pendingRefreshKey}
+          onResumeClick={openTrailerFilePicker}
+        />
 
         <AnimatePresence mode="wait">
           {values.trailerUrl && values.trailerUrl.trim() !== "" ? (
@@ -845,7 +919,7 @@ export function MintMetadataForm({
                   <Loader2 className="mx-auto h-8 w-8 animate-spin text-white" />
                   <div>
                     <p className="text-xs font-bold text-white mb-2">
-                      Uploading trailer...
+                      {trailerUploadLabel ?? "Uploading trailer..."}
                     </p>
                     {trailerTotalBytes > 0 && (
                       <p className="text-xs text-zinc-400 mb-1">
@@ -877,5 +951,6 @@ export function MintMetadataForm({
         </AnimatePresence>
       </div>
     </motion.div>
+    </UploadLeaveGuard>
   );
 }

@@ -15,26 +15,21 @@ import { formatUnits } from 'viem'
 export const CustomConnectButton = () => {
   const { address, isConnected, isConnecting, isReconnecting } = useAccount()
 
-  // ✅ Fetch ENS name (only works on Ethereum mainnet)
   const { data: ensName } = useEnsName({
     address,
   })
 
-  // ✅ Fetch ENS avatar using ENS name (NOT wallet address)
   const { data: ensAvatar } = useEnsAvatar({
     name: String(ensName),
   })
 
-  // ✅ Fetch wallet balance
   const { data: balance } = useBalance({
     address,
   })
-const formattedBalance =
-  balance
-    ? Number(formatUnits(balance.value, balance.decimals)).toFixed(4)
-    : null
-
-    console.log(balance)
+  const formattedBalance =
+    balance
+      ? Number(formatUnits(balance.value, balance.decimals)).toFixed(4)
+      : null
 
   useEffect(() => {
     const registerUser = async () => {
@@ -63,7 +58,6 @@ const formattedBalance =
     }
   }, [isConnected, address, ensName, ensAvatar])
 
-  // 🔄 Show loader when connecting
   if (isConnecting || isReconnecting) {
     return (
       <p className="flex items-center gap-2">
@@ -104,22 +98,24 @@ const formattedBalance =
             })}
           >
             {!connected ? (
-              <button onClick={openConnectModal} type="button">
+              <button
+                onClick={openConnectModal}
+                type="button"
+              >
                 Connect Wallet
               </button>
-            ) : chain.unsupported ? (
+            ) : chain?.unsupported ? (
               <button onClick={openChainModal} type="button">
                 Wrong network
               </button>
             ) : (
               <div style={{ display: 'flex', gap: 12 }}>
-                {/* Chain Button */}
                 <button
                   onClick={openChainModal}
                   style={{ display: 'flex', alignItems: 'center' }}
                   type="button"
                 >
-                  {chain.hasIcon && (
+                  {chain?.hasIcon && (
                     <div
                       style={{
                         background: chain.iconBackground,
@@ -139,10 +135,9 @@ const formattedBalance =
                       )}
                     </div>
                   )}
-                  {chain.name}
+                  {chain?.name}
                 </button>
 
-                {/* Account Button */}
                 <button onClick={openAccountModal} type="button">
                   {ensName || account.displayName}
                   {balance

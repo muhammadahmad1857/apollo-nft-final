@@ -1,5 +1,14 @@
 packages:
   - .
-ignoredBuiltDependencies:
+
+# pnpm v10+ reads build-script allowlists here (not package.json)
+onlyBuiltDependencies:
+  - "@prisma/engines"
+  - prisma
   - sharp
+  - ffmpeg-static
+  - bufferutil
+  - core-js
+  - esbuild
   - unrs-resolver
+  - utf-8-validate

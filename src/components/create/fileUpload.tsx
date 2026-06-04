@@ -1,12 +1,17 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, CheckCircle2, Loader2, FileVideo, Music } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { startTusUpload, type TusUploadHandle } from "@/lib/tusUpload";
 import { formatUploadProgress } from "@/lib/formatBytes";
+import { formatPinataUploadError } from "@/lib/pinataUploadErrors";
+import { getR2ResumePercentForFile, uploadR2MediaFile } from "@/lib/r2/mediaUpload";
+import { R2_MAX_UPLOAD_BYTES } from "@/lib/r2/config";
+import { UploadLeaveGuard } from "@/components/upload/UploadLeaveGuard";
+import { R2PendingUploadBanner } from "@/components/upload/R2PendingUploadBanner";
 
 interface FileUploadProps {
   onUploadComplete: (
@@ -51,21 +56,46 @@ export function FileUpload({
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadLabel, setUploadLabel] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedBytes, setUploadedBytes] = useState(0);
   const [totalBytes, setTotalBytes] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadHandleRef = useRef<TusUploadHandle | null>(null);
+  const [pendingRefreshKey, setPendingRefreshKey] = useState(0);
 
   const acceptedTypes = [".md", ".pdf", ".doc", ".docx", ".txt"];
 
-  const uploadToPinata = useCallback(
+  const openFilePicker = useCallback(() => {
+    if (!isUploading) fileInputRef.current?.click();
+  }, [isUploading]);
+
+  const uploadToStorage = useCallback(
     async (file: File) => {
       try {
         setIsUploading(true);
+        setUploadLabel(file.type.startsWith("video/") ? "Multipart Cloudflare R2 upload" : "Pinata TUS upload");
         setUploadProgress(0);
         setUploadedBytes(0);
         setTotalBytes(file.size);
+
+        if (file.type.startsWith("video/")) {
+          const resumePercent = getR2ResumePercentForFile(file, "video");
+          if (resumePercent !== null) {
+            toast.info(`Resuming Cloudflare upload from ${resumePercent}%`);
+          }
+
+          const fileType = getFileType(file);
+          const { publicUrl } = await uploadR2MediaFile(file, "video", (bytesSent, bytesTotal) => {
+            setUploadedBytes(bytesSent);
+            setTotalBytes(bytesTotal);
+            setUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
+          });
+          setUploadProgress(100);
+          onUploadComplete(publicUrl, fileType, file.name);
+          toast.success("Video uploaded to Cloudflare R2!");
+          return;
+        }
 
         // Get signed TUS URL
         const signedRes = await fetch("/api/pinata/signed-upload-url", {
@@ -73,7 +103,7 @@ export function FileUpload({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             filename: file.name,
-            maxFileSize: 5 * 1024 * 1024 * 1024,
+            fileSize: file.size,
           }),
         });
 
@@ -108,13 +138,13 @@ export function FileUpload({
           });
         });
       } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to upload file"
-        );
+        toast.error(formatPinataUploadError(error));
       } finally {
         setIsUploading(false);
+        setUploadLabel(null);
         setUploadProgress(0);
         uploadHandleRef.current = null;
+        setPendingRefreshKey((key) => key + 1);
       }
     },
     [onUploadComplete]
@@ -137,15 +167,15 @@ export function FileUpload({
         return;
       }
 
-      if (file.size > 15 * 1024 * 1024 * 1024) {
-        toast.error("File size must be less than 15GB");
+      if (file.size > R2_MAX_UPLOAD_BYTES) {
+        toast.error("Cloudflare R2 video uploads are limited to 15GB");
         return;
       }
 
-      void uploadToPinata(file);
+      void uploadToStorage(file);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [uploadToPinata]
+    [uploadToStorage]
   );
 
   const handleDrop = useCallback(
@@ -176,8 +206,16 @@ export function FileUpload({
     [handleFile]
   );
 
+  const guardActive = useMemo(() => isUploading, [isUploading]);
+
   return (
+    <UploadLeaveGuard active={guardActive}>
     <div className="space-y-6">
+      <R2PendingUploadBanner
+        kind="video"
+        refreshKey={pendingRefreshKey}
+        onResumeClick={openFilePicker}
+      />
       <AnimatePresence mode="wait">
         {uploadedFile ? (
           <motion.div
@@ -232,7 +270,7 @@ export function FileUpload({
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            onClick={() => !isUploading && fileInputRef.current?.click()}
+            onClick={openFilePicker}
             className={`
               relative cursor-pointer rounded-xl border-2 border-dashed p-12 backdrop-blur-lg text-center transition-all duration-300 bg-zinc-950/20
               ${
@@ -256,7 +294,7 @@ export function FileUpload({
                 <Loader2 className="mx-auto h-12 w-12 animate-spin text-white" />
                 <div>
                   <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                    Uploading...
+                    {uploadLabel ?? "Uploading..."}
                   </p>
                   {totalBytes > 0 && (
                     <p className="text-xs text-zinc-400 mt-1">
@@ -285,7 +323,7 @@ export function FileUpload({
                     or click to browse
                   </p>
                   <p className="mt-3 text-xs text-zinc-50 dark:text-zinc-500">
-                    Accepted: Any audio, video, image, .md, .pdf, .doc, .docx, .txt • Max 5GB
+                    Accepted: Video uploads go to Cloudflare R2. Audio, image, .md, .pdf, .doc, .docx, and .txt keep using Pinata • Max 15GB
                   </p>
                 </div>
               </>
@@ -303,5 +341,6 @@ export function FileUpload({
         </Link>
       </p>
     </div>
+    </UploadLeaveGuard>
   );
 }
