@@ -39,13 +39,7 @@ export async function GET() {
 
     const latestBlock = Number(await publicClient.getBlockNumber());
     console.log(`[SYNC-MINTS] Latest block: ${latestBlock}`);
-    const logsTest = await publicClient.getLogs({
-      address: nftAddress,
-      fromBlock: BigInt(9149343),
-      toBlock: BigInt(9149343),
-    });
-    console.dir(logsTest, { depth: null });
-    console.log(logsTest);
+
     if (!syncState && nftCount > 0) {
       await db.syncState.upsert({
         where: { id: 1 },
@@ -77,29 +71,35 @@ export async function GET() {
       const toBlock = Math.min(currentBlock + BLOCK_BATCH_SIZE - 1, latestBlock);
       console.log(`[SYNC-MINTS] Fetching logs from blocks ${currentBlock} → ${toBlock}...`);
 
-      let logs = [];
+      let transferLogs = [];
       try {
-        logs = await publicClient.getLogs({
+        // Apollo RPC does not reliably filter indexed args — filter mints client-side
+        transferLogs = await publicClient.getLogs({
           address: nftAddress,
           event: parseAbiItem(
             "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)"
           ),
           fromBlock: BigInt(currentBlock),
           toBlock: BigInt(toBlock),
-          args: { from: zeroAddress },
         });
       } catch (err) {
         console.warn(`[SYNC-MINTS] Failed fetching logs for blocks ${currentBlock}-${toBlock}, will retry next run`, err);
         break;
       }
 
-      console.log(`[SYNC-MINTS] Found ${logs.length} mint log(s) in batch`);
+      const mintLogs = transferLogs.filter(
+        (log) => log.args.from?.toLowerCase() === zeroAddress.toLowerCase()
+      );
 
-      const newMints = logs
+      console.log(
+        `[SYNC-MINTS] Found ${transferLogs.length} Transfer log(s), ${mintLogs.length} mint(s) in batch`
+      );
+
+      const newMints = mintLogs
         .filter((log) => Number(log.args.tokenId) >= fromToken)
         .sort((a, b) => Number(a.args.tokenId) - Number(b.args.tokenId));
 
-      if (logs.length > 0 && newMints.length === 0) {
+      if (mintLogs.length > 0 && newMints.length === 0) {
         console.log(`[SYNC-MINTS] All mints in batch are below fromToken ${fromToken}, skipping`);
       }
 
