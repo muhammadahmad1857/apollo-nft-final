@@ -44,7 +44,7 @@ export async function GET() {
       fromBlock: BigInt(9149343),
       toBlock: BigInt(9149343),
     });
-    
+    console.dir(logsTest, { depth: null });
     console.log(logsTest);
     if (!syncState && nftCount > 0) {
       await db.syncState.upsert({
