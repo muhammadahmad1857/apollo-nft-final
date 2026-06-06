@@ -34,3 +34,11 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Environment variables
+
+### `NFT_DEPLOYMENT_BLOCK`
+
+Block number where the NFT contract was deployed on Apollo mainnet. Used by `/api/sync-mints` for cold-start backfill when the database has no NFTs and no sync cursor yet.
+
+Look up the value on ApolloScan for your `NEXT_PUBLIC_CONTRACT_ADDRESS_NFT` contract creation block. After the first successful sync, progress is tracked in the `SyncState` table and this variable is only needed for fresh databases.

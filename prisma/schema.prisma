@@ -208,3 +208,9 @@ model Notification {
   @@index([recipientWalletAddress, isRead])
   @@index([recipientWalletAddress, createdAt])
 }
+
+model SyncState {
+  id              Int      @id @default(1)
+  lastSyncedBlock Int
+  updatedAt       DateTime @updatedAt
+}
