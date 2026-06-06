@@ -39,7 +39,13 @@ export async function GET() {
 
     const latestBlock = Number(await publicClient.getBlockNumber());
     console.log(`[SYNC-MINTS] Latest block: ${latestBlock}`);
-
+    const logsTest = await publicClient.getLogs({
+      address: nftAddress,
+      fromBlock: BigInt(9149343),
+      toBlock: BigInt(9149343),
+    });
+    
+    console.log(logsTest);
     if (!syncState && nftCount > 0) {
       await db.syncState.upsert({
         where: { id: 1 },
