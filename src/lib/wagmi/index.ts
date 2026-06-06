@@ -102,17 +102,17 @@ export const config = getDefaultConfig({
   chains: [apolloMainnet],
   ssr: false,
   // Avoid duplicate EIP-6963 connectors that bypass our Apollo disconnect handler
-  multiInjectedProviderDiscovery: false,
-  wallets: [
-    {
-      groupName: "Popular",
-      wallets: [
-        apolloWallet,
-        metaMaskWallet,
-        rainbowWallet,
-        coinbaseWallet,
-        walletConnectWallet,
-      ],
-    },
-  ],
+  multiInjectedProviderDiscovery: true,
+  // wallets: [
+  //   {
+  //     groupName: "Popular",
+  //     wallets: [
+  //       apolloWallet,
+  //       metaMaskWallet,
+  //       rainbowWallet,
+  //       coinbaseWallet,
+  //       walletConnectWallet,
+  //     ],
+  //   },
+  // ],
 });
