@@ -3,7 +3,6 @@ import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { apolloMainnet } from "./apollo-chain";
 import {
   coinbaseWallet,
-  injectedWallet,
   metaMaskWallet,
   rainbowWallet,
   walletConnectWallet,
@@ -16,11 +15,12 @@ export const config = getDefaultConfig({
   projectId,
   chains: [apolloMainnet],
   ssr: false,
+  // Auto-detect installed browser wallets (EIP-6963) and show them under "Installed"
+  multiInjectedProviderDiscovery: true,
   wallets: [
     {
       groupName: "Popular",
       wallets: [
-        injectedWallet,
         metaMaskWallet,
         rainbowWallet,
         coinbaseWallet,
