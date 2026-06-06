@@ -1,17 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-  ApolloWalletDebugLog,
-  clearApolloWalletDebugLogs,
-  getApolloWalletDebugLogs,
-  getApolloWalletDebugState,
-  getApolloWalletProvider,
-  isApolloWalletInstalled,
-  pushApolloWalletDebugLog,
-  requestApolloWalletProviders,
-  subscribeApolloWalletDebugLogs,
-} from "@/lib/wagmi/apollo-wallet-provider";
+import React, { useCallback, useEffect, useState } from "react";
 import { useAccount, useConnect, useConnectors } from "wagmi";
 
 type Eip6963Entry = {
@@ -19,7 +8,13 @@ type Eip6963Entry = {
   name?: string;
   rdns?: string;
   uuid?: string;
-  isApollo: boolean;
+};
+
+type DebugLog = {
+  ts: string;
+  level: "info" | "warn" | "error";
+  message: string;
+  data?: unknown;
 };
 
 function safeStringify(obj: unknown) {
@@ -38,44 +33,35 @@ function safeStringify(obj: unknown) {
   );
 }
 
-function logLevelColor(level: ApolloWalletDebugLog["level"]) {
+function logLevelColor(level: DebugLog["level"]) {
   if (level === "error") return "#f87171";
   if (level === "warn") return "#fbbf24";
   return "#86efac";
 }
 
 export default function ProvidersDebug() {
-  const [logs, setLogs] = useState<ApolloWalletDebugLog[]>([]);
+  const [logs, setLogs] = useState<DebugLog[]>([]);
   const [eip6963Providers, setEip6963Providers] = useState<Eip6963Entry[]>([]);
   const [snapshot, setSnapshot] = useState<Record<string, unknown> | null>(null);
   const [collapsed, setCollapsed] = useState(false);
-  const logEndRef = useRef<HTMLDivElement>(null);
 
   const { address, chainId, status, connector } = useAccount();
   const { status: connectStatus, error: connectError } = useConnect();
   const connectors = useConnectors();
 
-  const refreshLogs = useCallback(() => {
-    setLogs(getApolloWalletDebugLogs());
-  }, []);
+  const pushLog = useCallback(
+    (message: string, data?: unknown, level: DebugLog["level"] = "info") => {
+      setLogs((prev) =>
+        [{ ts: new Date().toISOString(), level, message, data }, ...prev].slice(0, 100)
+      );
+    },
+    []
+  );
 
   const refreshSnapshot = useCallback(async () => {
     try {
-      const win = window as any;
+      const win = window as Window & { ethereum?: { request?: (args: { method: string }) => Promise<unknown>; isMetaMask?: boolean; providers?: unknown[] } };
       const ethereum = win.ethereum;
-      const apolloProvider = getApolloWalletProvider();
-
-      let apolloChainId: unknown = null;
-      let apolloAccounts: unknown = null;
-
-      if (apolloProvider?.request) {
-        apolloChainId = await apolloProvider
-          .request({ method: "eth_chainId" })
-          .catch((e: unknown) => `error: ${String(e)}`);
-        apolloAccounts = await apolloProvider
-          .request({ method: "eth_accounts" })
-          .catch((e: unknown) => `error: ${String(e)}`);
-      }
 
       const ethChainId = ethereum?.request
         ? await ethereum.request({ method: "eth_chainId" }).catch((e: unknown) => `error: ${String(e)}`)
@@ -85,7 +71,6 @@ export default function ProvidersDebug() {
         : null;
 
       setSnapshot({
-        apollo: getApolloWalletDebugState(),
         wagmi: {
           status,
           address,
@@ -104,14 +89,8 @@ export default function ProvidersDebug() {
           hasEthereum: Boolean(ethereum),
           ethereumIsMetaMask: Boolean(ethereum?.isMetaMask),
           providerCount: Array.isArray(ethereum?.providers) ? ethereum.providers.length : null,
-          apolloKeys: Object.keys(win).filter((k) => /apollo|muse/i.test(k)),
-          hasApolloWallet: Boolean(win.apolloWallet),
-          hasApollo: Boolean(win.apollo),
-          hasMuses: Boolean(win.muses),
         },
         probes: {
-          apolloChainId,
-          apolloAccounts,
           ethChainId,
           ethAccounts,
         },
@@ -122,28 +101,17 @@ export default function ProvidersDebug() {
   }, [address, chainId, connectError, connectStatus, connector, connectors, status]);
 
   useEffect(() => {
-    pushApolloWalletDebugLog("ProvidersDebug panel opened");
-    refreshLogs();
-
-    const unsubLogs = subscribeApolloWalletDebugLogs(refreshLogs);
+    pushLog("ProvidersDebug panel opened");
 
     const onAnnounce = (event: Event) => {
       const detail = (event as CustomEvent).detail;
       const info = detail?.info;
-      const name = String(info?.name ?? "").toLowerCase();
-      const rdns = String(info?.rdns ?? "").toLowerCase();
-      const isApollo =
-        name.includes("apollo") ||
-        name.includes("muses") ||
-        rdns.includes("apollo") ||
-        rdns.includes("muses");
 
       const entry: Eip6963Entry = {
         ts: new Date().toISOString(),
         name: info?.name,
         rdns: info?.rdns,
         uuid: info?.uuid,
-        isApollo,
       };
 
       setEip6963Providers((prev) => {
@@ -152,39 +120,35 @@ export default function ProvidersDebug() {
         return [entry, ...without].slice(0, 30);
       });
 
-      pushApolloWalletDebugLog(`EIP-6963 announce: ${info?.name ?? "unknown"}`, {
+      pushLog(`EIP-6963 announce: ${info?.name ?? "unknown"}`, {
         rdns: info?.rdns,
         uuid: info?.uuid,
-        isApollo,
       });
     };
 
     window.addEventListener("eip6963:announceProvider", onAnnounce);
-    requestApolloWalletProviders();
+    window.dispatchEvent(new Event("eip6963:requestProvider"));
 
     refreshSnapshot();
     const timer = window.setInterval(refreshSnapshot, 3000);
 
     return () => {
-      unsubLogs();
       window.removeEventListener("eip6963:announceProvider", onAnnounce);
       window.clearInterval(timer);
     };
-  }, [refreshLogs, refreshSnapshot]);
+  }, [pushLog, refreshSnapshot]);
 
   useEffect(() => {
     if (status === "connected" && address) {
-      pushApolloWalletDebugLog("wagmi connected", { address, chainId, connector: connector?.name });
-      refreshLogs();
+      pushLog("wagmi connected", { address, chainId, connector: connector?.name });
     }
-  }, [address, chainId, connector?.name, refreshLogs, status]);
+  }, [address, chainId, connector?.name, pushLog, status]);
 
   useEffect(() => {
     if (connectStatus === "error" && connectError) {
-      pushApolloWalletDebugLog("wagmi connect error", { message: connectError.message }, "error");
-      refreshLogs();
+      pushLog("wagmi connect error", { message: connectError.message }, "error");
     }
-  }, [connectError, connectStatus, refreshLogs]);
+  }, [connectError, connectStatus, pushLog]);
 
   if (collapsed) {
     return (
@@ -236,10 +200,7 @@ export default function ProvidersDebug() {
         <div style={{ display: "flex", gap: 6 }}>
           <button
             type="button"
-            onClick={() => {
-              clearApolloWalletDebugLogs();
-              refreshLogs();
-            }}
+            onClick={() => setLogs([])}
             style={btnStyle}
           >
             Clear logs
@@ -254,7 +215,6 @@ export default function ProvidersDebug() {
       </div>
 
       <div style={{ marginBottom: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
-        <Badge label="Apollo installed" ok={isApolloWalletInstalled()} />
         <Badge label="Wagmi" value={status} />
         <Badge label="Connect" value={connectStatus} />
         {address ? <Badge label="Address" value={`${address.slice(0, 6)}…${address.slice(-4)}`} /> : null}
@@ -273,7 +233,7 @@ export default function ProvidersDebug() {
           }}
         >
           {logs.length === 0 ? (
-            <div style={{ color: "#888" }}>No logs yet — click Connect Wallet → Apollo Wallet</div>
+            <div style={{ color: "#888" }}>No logs yet — open Connect Wallet and try a wallet</div>
           ) : (
             logs.map((entry, i) => (
               <div key={`${entry.ts}-${i}`} style={{ marginBottom: 4, borderBottom: "1px solid #222", paddingBottom: 4 }}>
@@ -290,7 +250,6 @@ export default function ProvidersDebug() {
               </div>
             ))
           )}
-          <div ref={logEndRef} />
         </div>
       </Section>
 
@@ -301,10 +260,7 @@ export default function ProvidersDebug() {
           ) : (
             eip6963Providers.map((p) => (
               <div key={p.uuid ?? p.rdns ?? p.ts} style={{ marginBottom: 4 }}>
-                <span style={{ color: p.isApollo ? "#fbbf24" : "#86efac" }}>
-                  {p.isApollo ? "★ " : ""}
-                  {p.name ?? "unknown"}
-                </span>
+                <span style={{ color: "#86efac" }}>{p.name ?? "unknown"}</span>
                 <span style={{ color: "#888" }}> — {p.rdns ?? "no rdns"}</span>
               </div>
             ))
