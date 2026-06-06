@@ -34,7 +34,7 @@ export async function GET() {
 
     console.log("[SYNC-MINTS] Fetching last synced tokenId...");
 
-
+    console.log("NFT Address:", nftAddress);
 
     const [lastNFT, syncState, nftCount] = await Promise.all([
 
@@ -148,7 +148,15 @@ export async function GET() {
           args: { from: zeroAddress },
 
         });
+        console.log("[SYNC-MINTS] Raw logs found:", logs.length);
 
+        for (const log of logs) {
+          console.log({
+            tokenId: log.args.tokenId?.toString(),
+            from: log.args.from,
+            to: log.args.to,
+          });
+        }
       } catch (err) {
 
         console.warn(`[SYNC-MINTS] Failed fetching logs for blocks ${currentBlock}-${toBlock}, will retry next run`, err);
